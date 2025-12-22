@@ -39,3 +39,15 @@ body {
 .animate-fadeIn {
   animation: fadeIn 0.8s ease-out;
 }
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  overflow-x: hidden;
+}
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}

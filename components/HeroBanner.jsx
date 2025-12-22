@@ -9,10 +9,10 @@ import {
   Star,
   CheckCircle,
 } from "lucide-react";
-import { creators } from "../data/creators";
+import { providers } from "../data/providers";
 
 export default function HeroBanner() {
-  const featured = [...creators].sort((a, b) => a.rank - b.rank).slice(0, 5);
+  const featured = [...providers].sort((a, b) => a.rank - b.rank).slice(0, 5);
   const [index, setIndex] = useState(0);
 
   // auto rotate

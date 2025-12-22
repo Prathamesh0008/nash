@@ -1,229 +1,442 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import {
-  Sparkles,
-  Menu,
-  X,
-  User,
-  LogOut,
-  Settings,
+  Menu, X, Globe, User, Search, Filter, MapPin,
+  ChevronDown, HelpCircle, Sparkles, CheckCircle,
+  Home, Users, Briefcase, Video
 } from "lucide-react";
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [languageOpen, setLanguageOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isMobile, setIsMobile] = useState(false);
+  const [mode, setMode] = useState("full");
+
+  const lastScrollY = useRef(0);
+  const ticking = useRef(false);
   const profileRef = useRef(null);
+  const languageRef = useRef(null);
 
-  // DEMO USER (replace with auth later)
-  const user = {
-    name: "John Doe",
-    image:
-      "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80",
-  };
+  const user = null;
 
-  // Close profile dropdown on outside click
+  const mainLinks = [
+    { label: "Home", href: "/", icon: Home },
+    { label: "Women", href: "/women", icon: Users },
+    { label: "Men", href: "/men", icon: Users },
+    { label: "Couple", href: "/couple", icon: Users },
+    { label: "Companies", href: "/companies", icon: Briefcase },
+    { label: "Videos", href: "/videos", icon: Video },
+  ];
+
+  const categories = ["BDSM", "Escort", "Massage", "Role Play", "Fetish"];
+  const languages = [
+    { code: "en", name: "English", flag: "🇺🇸" },
+    { code: "fr", name: "Français", flag: "🇫🇷" },
+    { code: "de", name: "Deutsch", flag: "🇩🇪" },
+    { code: "es", name: "Español", flag: "🇪🇸" },
+  ];
+
+  // Check if mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  // Scroll logic
+  useEffect(() => {
+    if (isMobile) return;
+    
+    const onScroll = () => {
+      if (!ticking.current) {
+        window.requestAnimationFrame(() => {
+          const y = window.scrollY;
+          const delta = y - lastScrollY.current;
+
+          if (y < 60) {
+            setMode("full");
+          } else if (delta > 8 && y > 100) {
+            setMode("compact");
+          } else if (delta < -8) {
+            setMode("full");
+          }
+
+          lastScrollY.current = y;
+          ticking.current = false;
+        });
+        ticking.current = true;
+      }
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [isMobile]);
+
+  // Close dropdowns
   useEffect(() => {
     const handler = (e) => {
       if (profileRef.current && !profileRef.current.contains(e.target)) {
         setProfileOpen(false);
+      }
+      if (languageRef.current && !languageRef.current.contains(e.target)) {
+        setLanguageOpen(false);
       }
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  return (
-    <header className="sticky top-0 z-50">
-      {/* BACKDROP */}
-     <div className="absolute inset-0 bg-black/70 backdrop-blur-md border-b border-white/10 pointer-events-none" />
-
-
-      <div className="relative max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-        {/* LOGO */}
-        <Link
-          href="/"
-          className="flex items-center gap-2 shrink-0"
-          onClick={() => setMenuOpen(false)}
-        >
-          <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-amber-400 via-fuchsia-500 to-cyan-400 flex items-center justify-center">
-            <Sparkles className="h-5 w-5 text-black" />
+  // Compact bar
+  const CompactBar = useCallback(() => (
+    <div className="w-full px-4 py-2">
+      <div className="max-w-7xl mx-auto flex items-center justify-between">
+        <Link href="/" className="flex items-center gap-2">
+          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center font-bold">
+            V
           </div>
-          <div className="leading-tight">
-            <div className="text-white font-semibold tracking-wide">
-               Valentina's Platform
-            </div>
-            <div className="text-[11px] text-white/60 -mt-0.5">
-              Premium service marketplace
-            </div>
-          </div>
+          <span className="text-lg font-bold text-white">Valentina's</span>
         </Link>
 
-        {/* DESKTOP NAV */}
-        <nav className="hidden md:flex items-center gap-6 text-sm text-white/80">
-          <Link href="/" className="hover:text-white transition">
-            Home
-          </Link>
-          <Link href="/creators" className="hover:text-white transition">
-            Providers
-          </Link>
-          <Link href="/pricing" className="hover:text-white transition">
-            Pricing
-          </Link>
-
-          <Link
-            href="/onboarding"
-            className="px-5 py-2 rounded-full bg-gradient-to-r from-pink-600 to-purple-600 text-white font-semibold hover:opacity-90 transition"
-          >
-            Become a Provider
-          </Link>
-        </nav>
-
-        {/* RIGHT SIDE */}
         <div className="flex items-center gap-3">
-          {/* PROFILE DESKTOP */}
-          <div ref={profileRef} className="relative hidden md:block">
-            <button
-              onClick={() => {
-                setProfileOpen(!profileOpen);
-                setMenuOpen(false);
-              }}
-              className="h-10 w-10 rounded-full overflow-hidden border border-white/20 hover:border-white/40 transition"
-            >
-              <Image
-                src={user.image}
-                alt={user.name}
-                width={40}
-                height={40}
-                className="object-cover"
+          <button 
+            onClick={() => setMenuOpen(true)}
+            className="md:hidden p-2 rounded-lg hover:bg-white/10"
+          >
+            <Search className="h-5 w-5" />
+          </button>
+
+          <div className="hidden md:flex items-center gap-3">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/50" />
+              <input
+                type="search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search..."
+                className="pl-10 pr-4 py-1.5 w-48 bg-black/40 border border-white/20 rounded-lg text-sm focus:outline-none focus:border-pink-500"
               />
-            </button>
+            </div>
 
-            {profileOpen && (
-              <div className="absolute right-0 mt-3 w-52 rounded-2xl bg-[#12051f] border border-white/10 shadow-2xl overflow-hidden">
-                <div className="px-4 py-3 border-b border-white/10">
-                  <div className="text-xs text-white/50">Signed in as</div>
-                  <div className="font-semibold text-white">
-                    {user.name}
-                  </div>
-                </div>
-
-                <Link
-                  href="/profile"
-                  onClick={() => setProfileOpen(false)}
-                  className="flex items-center gap-2 px-4 py-3 hover:bg-white/5 text-sm"
-                >
-                  <User size={16} /> My Profile
-                </Link>
-
-                <Link
-                  href="/settings"
-                  onClick={() => setProfileOpen(false)}
-                  className="flex items-center gap-2 px-4 py-3 hover:bg-white/5 text-sm"
-                >
-                  <Settings size={16} /> Settings
-                </Link>
-
-                <button className="w-full flex items-center gap-2 px-4 py-3 hover:bg-white/5 text-sm text-red-400">
-                  <LogOut size={16} /> Logout
-                </button>
-              </div>
+            {user ? (
+              <button className="h-8 w-8 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center">
+                <User className="h-4 w-4" />
+              </button>
+            ) : (
+              <Link href="/login" className="text-sm px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20">
+                Login
+              </Link>
             )}
           </div>
 
-          {/* MOBILE TOGGLE */}
           <button
-            onClick={() => {
-              setMenuOpen(!menuOpen);
-              setProfileOpen(false);
-            }}
-            className="md:hidden text-white"
+            onClick={() => setMenuOpen(!menuOpen)}
+            className="md:hidden p-2 rounded-lg hover:bg-white/10"
           >
-            {menuOpen ? <X /> : <Menu />}
+            {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
         </div>
       </div>
+    </div>
+  ), [searchQuery, user, menuOpen]);
 
-      {/* MOBILE MENU */}
-      {menuOpen && (
-  <div className="md:hidden relative z-50 bg-[#0b0214] border-t border-white/10 px-6 py-6 space-y-5">
-
-          <Link
-            href="/"
-            onClick={() => setMenuOpen(false)}
-            className="block text-white/80 hover:text-white"
-          >
-            Home
-          </Link>
-          <Link
-            href="/creators"
-            onClick={() => setMenuOpen(false)}
-            className="block text-white/80 hover:text-white"
-          >
-            Providers
-          </Link>
-          <Link
-            href="/pricing"
-            onClick={() => setMenuOpen(false)}
-            className="block text-white/80 hover:text-white"
-          >
-            Pricing
-          </Link>
-
-          <Link
-            href="/onboarding"
-            onClick={() => setMenuOpen(false)}
-            className="block text-center px-5 py-3 rounded-xl bg-gradient-to-r from-pink-600 to-purple-600 text-white font-semibold"
-          >
-            Become a Provider
-          </Link>
-
-          {/* MOBILE PROFILE */}
-          <div className="pt-5 border-t border-white/10">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full overflow-hidden border border-white/20">
-                <Image
-                  src={user.image}
-                  alt={user.name}
-                  width={40}
-                  height={40}
-                  className="object-cover"
-                />
+  // Full navbar
+  const FullNavbar = () => (
+    <div className="w-full">
+      {/* Row 1 */}
+      <div className="border-b border-white/10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
+          <div className="flex items-center justify-between">
+            <Link href="/" className="flex items-center gap-3">
+              <div className="relative h-10 w-10 md:h-12 md:w-12 rounded-2xl bg-gradient-to-br from-pink-500 via-purple-600 to-pink-500 flex items-center justify-center overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-tr from-white/30 via-transparent to-transparent"></div>
+                <span className="text-lg md:text-xl font-bold tracking-tighter relative z-10">V</span>
               </div>
-              <div>
-                <div className="text-white font-semibold text-sm">
-                  {user.name}
+              <div className="flex flex-col">
+                <span className="text-xl md:text-2xl font-bold bg-gradient-to-r from-pink-300 via-purple-300 to-pink-300 bg-clip-text text-transparent">
+                  Valentina's
+                </span>
+                <span className="text-xs text-white/60 tracking-[0.2em] uppercase hidden sm:block">
+                  Premium Companions
+                </span>
+              </div>
+            </Link>
+
+            <div className="hidden md:flex items-center gap-4">
+              <Link 
+                href="/support" 
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-white/5 to-white/3 hover:from-white/10 hover:to-white/5 border border-white/10"
+              >
+                <HelpCircle className="h-4 w-4 text-pink-400" />
+                <span className="text-sm font-medium">Support</span>
+              </Link>
+
+              {user ? (
+                <div ref={profileRef} className="relative">
+                  <button
+                    onClick={() => setProfileOpen(!profileOpen)}
+                    className="flex items-center gap-3 px-4 py-2 rounded-xl bg-gradient-to-r from-white/5 to-white/3 hover:from-white/10 hover:to-white/5 border border-white/10"
+                  >
+                    <div className="relative h-8 w-8 rounded-full overflow-hidden border-2 border-pink-500/50">
+                      <div className="absolute inset-0 bg-gradient-to-tr from-pink-500/20 to-purple-500/20"></div>
+                    </div>
+                    <div className="text-left">
+                      <div className="text-sm font-semibold">{user?.name || "Account"}</div>
+                      <div className="text-xs text-white/60">Premium Member</div>
+                    </div>
+                    <ChevronDown className={`h-4 w-4 ${profileOpen ? "rotate-180" : ""}`} />
+                  </button>
                 </div>
-                <div className="text-white/50 text-xs">
-                  Account
+              ) : (
+                <div className="flex items-center gap-3">
+                  <Link
+                    href="/login"
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-white/5 to-white/3 hover:from-white/10 hover:to-white/5 border border-white/10"
+                  >
+                    <User className="h-4 w-4" />
+                    <span className="text-sm font-medium">Login</span>
+                  </Link>
+                  <Link
+                    href="/register"
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 shadow-lg shadow-pink-500/30"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    <span className="text-sm font-medium">Register</span>
+                  </Link>
                 </div>
+              )}
+
+              <div ref={languageRef} className="relative">
+                <button
+                  onClick={() => setLanguageOpen(!languageOpen)}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-white/5 to-white/3 hover:from-white/10 hover:to-white/5 border border-white/10"
+                >
+                  <Globe className="h-4 w-4" />
+                  <span className="text-sm">EN</span>
+                  <ChevronDown className={`h-4 w-4 ${languageOpen ? "rotate-180" : ""}`} />
+                </button>
               </div>
             </div>
 
-            <div className="mt-4 space-y-3">
+            <button
+              onClick={() => setMenuOpen(!menuOpen)}
+              className="md:hidden p-2.5 rounded-xl bg-gradient-to-r from-white/5 to-white/3 hover:from-white/10 hover:to-white/5 border border-white/10"
+            >
+              {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Row 2 */}
+      <div className="hidden md:block border-b border-white/10 bg-gradient-to-r from-white/5 to-transparent">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
+          <nav className="flex items-center justify-center gap-6">
+            {mainLinks.map((item) => (
               <Link
-                href="/profile"
-                onClick={() => setMenuOpen(false)}
-                className="block text-white/70"
+                key={item.href}
+                href={item.href}
+                className="relative group px-4 py-2 rounded-xl hover:bg-gradient-to-r hover:from-pink-500/10 hover:to-purple-500/10"
               >
-                My Profile
+                <div className="flex items-center gap-2">
+                  <item.icon className="h-4 w-4" />
+                  <span className="text-sm font-medium">{item.label}</span>
+                </div>
               </Link>
-              <Link
-                href="/settings"
-                onClick={() => setMenuOpen(false)}
-                className="block text-white/70"
-              >
-                Settings
-              </Link>
-              <button className="block text-red-400">
-                Logout
-              </button>
+            ))}
+          </nav>
+        </div>
+      </div>
+
+      {/* Row 3 */}
+      <div className="hidden md:block border-b border-white/10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-pink-500/20 to-purple-500/20 border border-pink-500/30">
+              <Sparkles className="h-3 w-3" />
+              <span className="text-xs font-semibold">Categories</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {categories.map((category) => (
+                <button
+                  key={category}
+                  className="px-4 py-2 text-sm rounded-xl bg-gradient-to-r from-white/5 to-white/3 border border-white/10 hover:border-pink-500/50 hover:bg-white/10"
+                >
+                  {category}
+                </button>
+              ))}
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Row 4 */}
+      <div className="hidden md:block border-b border-white/10 bg-gradient-to-r from-white/5 to-transparent">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
+          <div className="relative max-w-3xl mx-auto">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-pink-400" />
+            <input
+              type="search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search premium companions, locations, services..."
+              className="w-full pl-12 pr-36 py-3.5 bg-gradient-to-r from-black/40 to-black/30 border border-white/20 rounded-2xl text-sm placeholder-white/50 focus:outline-none focus:border-pink-500"
+            />
+            <button className="absolute right-2 top-1/2 -translate-y-1/2 px-5 py-2.5 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 rounded-xl text-sm font-semibold">
+              Search
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Row 5 */}
+      <div className="hidden md:block">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <button className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-white/5 to-white/3 hover:from-white/10 hover:to-white/5 border border-white/10">
+                <Filter className="h-4 w-4" />
+                <span className="text-sm font-medium">Filters</span>
+              </button>
+              <button className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-white/5 to-white/3 hover:from-white/10 hover:to-white/5 border border-white/10">
+                <MapPin className="h-4 w-4" />
+                <span className="text-sm font-medium">Regions</span>
+              </button>
+            </div>
+            
+            <div className="flex items-center gap-2 text-sm text-white/60">
+              <CheckCircle className="h-4 w-4 text-emerald-400" />
+              <span>Premium Verified</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Mobile menu
+  const MobileMenu = () => (
+    <div className="md:hidden fixed inset-0 top-0 z-50 bg-black/95 backdrop-blur-xl pt-20">
+      <div className="px-4 py-6 space-y-6 overflow-y-auto h-full">
+        <button
+          onClick={() => setMenuOpen(false)}
+          className="absolute top-4 right-4 p-2 rounded-lg bg-white/10"
+        >
+          <X className="h-6 w-6" />
+        </button>
+
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-pink-400" />
+          <input
+            type="search"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search companions..."
+            className="w-full pl-12 pr-4 py-3.5 bg-white/5 border border-white/10 rounded-xl text-sm"
+          />
+        </div>
+
+        <div className="space-y-2">
+          {mainLinks.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={() => setMenuOpen(false)}
+              className="flex items-center gap-3 px-4 py-3.5 rounded-xl bg-white/5 hover:bg-white/10"
+            >
+              <item.icon className="h-5 w-5" />
+              <span className="text-sm font-medium">{item.label}</span>
+            </Link>
+          ))}
+        </div>
+
+        <div>
+          <div className="text-sm font-semibold mb-3 px-2">Categories</div>
+          <div className="flex flex-wrap gap-2">
+            {categories.map((category) => (
+              <button
+                key={category}
+                onClick={() => setMenuOpen(false)}
+                className="px-3 py-2 text-sm rounded-lg bg-white/5"
+              >
+                {category}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <div className="text-sm font-semibold mb-3 px-2">Quick Actions</div>
+          <div className="grid grid-cols-2 gap-3">
+            <button className="flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl bg-white/5">
+              <Filter className="h-4 w-4" />
+              <span>Filters</span>
+            </button>
+            <button className="flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl bg-white/5">
+              <MapPin className="h-4 w-4" />
+              <span>Regions</span>
+            </button>
+          </div>
+        </div>
+
+        <div className="pt-6 border-t border-white/10 space-y-3">
+          {!user && (
+            <div className="grid grid-cols-2 gap-3">
+              <Link
+                href="/login"
+                onClick={() => setMenuOpen(false)}
+                className="px-4 py-3.5 rounded-xl bg-white/5 text-center"
+              >
+                Login
+              </Link>
+              <Link
+                href="/register"
+                onClick={() => setMenuOpen(false)}
+                className="px-4 py-3.5 rounded-xl bg-gradient-to-r from-pink-600 to-purple-600 text-center"
+              >
+                Register
+              </Link>
+            </div>
+          )}
+          <Link
+            href="/support"
+            onClick={() => setMenuOpen(false)}
+            className="flex items-center gap-3 px-4 py-3.5 rounded-xl bg-white/5"
+          >
+            <HelpCircle className="h-5 w-5 text-pink-400" />
+            <div>
+              <div className="text-sm font-medium">24/7 Support</div>
+              <div className="text-xs text-white/60">Customer Service</div>
+            </div>
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <>
+      <header
+        className={`fixed top-0 w-full z-40 bg-gradient-to-b from-black via-black/95 to-black/90 backdrop-blur-xl border-b border-white/10 text-white shadow-2xl shadow-purple-900/20 transition-all duration-300 ${
+          mode === "compact" && !isMobile ? "py-0" : "py-0"
+        }`}
+      >
+        {mode === "full" || isMobile ? <FullNavbar /> : <CompactBar />}
+      </header>
+
+      {menuOpen && <MobileMenu />}
+      {menuOpen && (
+        <div 
+          className="md:hidden fixed inset-0 bg-black/50 z-30"
+          onClick={() => setMenuOpen(false)}
+        />
       )}
-    </header>
+    </>
   );
 }

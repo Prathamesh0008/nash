@@ -10,10 +10,20 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className="bg-gradient-to-br from-rose-50 via-white to-pink-50 text-gray-900">
-
+      <body className="bg-black text-white">
         <Navbar />
-        {children}
+
+        <main
+          className="
+            pt-[70px]          /* mobile navbar height */
+            sm:pt-[70px]
+            md:pt-[320px]      /* desktop full navbar */
+            transition-all duration-300
+          "
+        >
+          {children}
+        </main>
+
         <Footer />
       </body>
     </html>

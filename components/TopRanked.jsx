@@ -3,8 +3,8 @@ import Link from "next/link";
 import { Crown, Flame, ArrowRight } from "lucide-react";
 import RankBadge from "./RankBadge";
 
-export default function TopRanked({ creators }) {
-  const top = [...creators].sort((a, b) => a.rank - b.rank).slice(0, 5);
+export default function TopRanked({ providers }) {
+  const top = [...providers].sort((a, b) => a.rank - b.rank).slice(0, 5);
 
   return (
     <section className="max-w-7xl mx-auto px-4  relative z-10">
@@ -93,7 +93,7 @@ export default function TopRanked({ creators }) {
         {/* MOBILE CTA */}
         <div className="p-5 md:hidden">
           <Link
-            href="/creators"
+            href="/providers"
             className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-white text-black text-sm font-semibold hover:bg-white/90 transition"
           >
             View all creators <ArrowRight className="h-4 w-4" />
