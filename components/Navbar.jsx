@@ -7,6 +7,7 @@ import {
   ChevronDown, HelpCircle, Sparkles, CheckCircle,
   Home, Users, Briefcase, Video
 } from "lucide-react";
+import BrandLogo from "./BrandLogo";
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -51,33 +52,23 @@ export default function Navbar() {
   }, []);
 
   // Scroll logic
-  useEffect(() => {
-    if (isMobile) return;
-    
-    const onScroll = () => {
-      if (!ticking.current) {
-        window.requestAnimationFrame(() => {
-          const y = window.scrollY;
-          const delta = y - lastScrollY.current;
+ useEffect(() => {
+  if (isMobile) return;
 
-          if (y < 60) {
-            setMode("full");
-          } else if (delta > 8 && y > 100) {
-            setMode("compact");
-          } else if (delta < -8) {
-            setMode("full");
-          }
+  const onScroll = () => {
+    const y = window.scrollY;
 
-          lastScrollY.current = y;
-          ticking.current = false;
-        });
-        ticking.current = true;
-      }
-    };
+    if (y <= 40) {
+      setMode("full");
+    } else {
+      setMode("compact");
+    }
+  };
 
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, [isMobile]);
+  window.addEventListener("scroll", onScroll, { passive: true });
+  return () => window.removeEventListener("scroll", onScroll);
+}, [isMobile]);
+
 
   // Close dropdowns
   useEffect(() => {
@@ -97,12 +88,20 @@ export default function Navbar() {
   const CompactBar = useCallback(() => (
     <div className="w-full px-4 py-2">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2">
+        {/* <Link href="/" className="flex items-center gap-2">
           <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center font-bold">
             V
           </div>
-          <span className="text-lg font-bold text-white">Valentina's</span>
-        </Link>
+          <div className="flex flex-col">
+                <span className="text-xl md:text-2xl font-bold bg-gradient-to-r from-pink-300 via-purple-300 to-pink-300 bg-clip-text text-transparent">
+                  Valentina's
+                </span>
+                <span className="text-xs text-white/60 tracking-[0.2em] uppercase hidden sm:block">
+                  Premium Companions
+                </span>
+              </div>
+        </Link> */}
+        <BrandLogo/>
 
         <div className="flex items-center gap-3">
           <button 
@@ -129,9 +128,13 @@ export default function Navbar() {
                 <User className="h-4 w-4" />
               </button>
             ) : (
-              <Link href="/login" className="text-sm px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20">
-                Login
-              </Link>
+              <Link
+                    href="/login"
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-white/5 to-white/3 hover:from-white/10 hover:to-white/5 border border-white/10"
+                  >
+                    <User className="h-4 w-4" />
+                    <span className="text-sm font-medium">Login</span>
+                  </Link>
             )}
           </div>
 
@@ -153,7 +156,7 @@ export default function Navbar() {
       <div className="border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
           <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-3">
+            {/* <Link href="/" className="flex items-center gap-3">
               <div className="relative h-10 w-10 md:h-12 md:w-12 rounded-2xl bg-gradient-to-br from-pink-500 via-purple-600 to-pink-500 flex items-center justify-center overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-tr from-white/30 via-transparent to-transparent"></div>
                 <span className="text-lg md:text-xl font-bold tracking-tighter relative z-10">V</span>
@@ -166,7 +169,8 @@ export default function Navbar() {
                   Premium Companions
                 </span>
               </div>
-            </Link>
+            </Link> */}
+            <BrandLogo/>
 
             <div className="hidden md:flex items-center gap-4">
               <Link 
@@ -330,6 +334,7 @@ export default function Navbar() {
         >
           <X className="h-6 w-6" />
         </button>
+        
 
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-pink-400" />
@@ -388,13 +393,13 @@ export default function Navbar() {
         <div className="pt-6 border-t border-white/10 space-y-3">
           {!user && (
             <div className="grid grid-cols-2 gap-3">
-              <Link
-                href="/login"
-                onClick={() => setMenuOpen(false)}
-                className="px-4 py-3.5 rounded-xl bg-white/5 text-center"
-              >
-                Login
-              </Link>
+             <Link
+                    href="/login"
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-white/5 to-white/3 hover:from-white/10 hover:to-white/5 border border-white/10"
+                  >
+                    <User className="h-4 w-4" />
+                    <span className="text-sm font-medium">Login</span>
+                  </Link>
               <Link
                 href="/register"
                 onClick={() => setMenuOpen(false)}
