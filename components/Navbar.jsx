@@ -101,7 +101,14 @@ export default function Navbar() {
           <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center font-bold">
             V
           </div>
-          <span className="text-lg font-bold text-white">Valentina's</span>
+          <div className="flex flex-col">
+                <span className="text-xl md:text-2xl font-bold bg-gradient-to-r from-pink-300 via-purple-300 to-pink-300 bg-clip-text text-transparent">
+                  Valentina's
+                </span>
+                <span className="text-xs text-white/60 tracking-[0.2em] uppercase hidden sm:block">
+                  Premium Companions
+                </span>
+              </div>
         </Link>
 
         <div className="flex items-center gap-3">
