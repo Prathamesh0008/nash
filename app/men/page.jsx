@@ -1,6 +1,6 @@
 import PageShell from "@/components/PageShell";
 import ProviderGrid from "@/components/ProviderGrid";
-import { providers } from "@/data/providers";
+import { extendedProviders } from "@/data/providers";
 
 export const metadata = {
   title: "Men | Valentina's",
@@ -8,11 +8,10 @@ export const metadata = {
 };
 
 export default function MenPage() {
-  // TEMP LOGIC:
-  // later you’ll filter by gender === "male"
-  // for now we just show a subset or all
-  const menProviders = providers.filter(
-    (p) => p.gender === "male" || p.category === "men"
+  const menProviders = extendedProviders.filter(
+    (p) =>
+      p.gender?.toLowerCase() === "male" ||
+      p.category?.toLowerCase() === "men"
   );
 
   return (

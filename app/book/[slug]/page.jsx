@@ -16,11 +16,9 @@ import {
   Sparkles,
   CalendarDays,
   Clock4,
-  Wallet,
+  Bell,
   MessageCircle,
-  Phone,
-  X,
-  Bell
+  Phone
 } from "lucide-react";
 import { providers } from "@/data/providers";
 
@@ -71,7 +69,6 @@ export default function BookPage() {
       setError("Please select a date");
       return;
     }
-    // Show booking confirmation
     alert(`Booking confirmed!\n\nTotal: €${total}\nDeposit: €${deposit}\nDate: ${date}\nDuration: ${duration === "overnight" ? "Overnight" : `${duration} hours`}`);
   };
 
@@ -91,15 +88,20 @@ export default function BookPage() {
         <div className="absolute bottom-1/4 -right-40 w-96 h-96 bg-pink-900/10 rounded-full blur-3xl"></div>
       </div>
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-8 lg:py-12">
+      {/* Navbar Spacer - Add this to prevent content from hiding behind fixed navbar */}
+      <div className="h-32 md:h-36"></div>
+
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 pb-12">
         {/* Back Button */}
-        <button
-          onClick={() => router.back()}
-          className="mb-6 flex items-center gap-2 text-white/60 hover:text-white transition-colors"
-        >
-          <ChevronLeft className="h-5 w-5" />
-          Back to Profile
-        </button>
+        <div className="mb-6">
+          <button
+            onClick={() => router.back()}
+            className="flex items-center gap-2 text-white/60 hover:text-white transition-colors"
+          >
+            <ChevronLeft className="h-5 w-5" />
+            Back to Profile
+          </button>
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* LEFT SIDE - PROVIDER & DETAILS */}
@@ -270,7 +272,7 @@ export default function BookPage() {
           {/* RIGHT SIDE - BOOKING SUMMARY */}
           <div className="space-y-8">
             {/* Booking Summary */}
-            <div className="rounded-3xl bg-gradient-to-b from-white/5 to-white/3 backdrop-blur-sm border border-white/10 p-6 sticky top-8">
+            <div className="rounded-3xl bg-gradient-to-b from-white/5 to-white/3 backdrop-blur-sm border border-white/10 p-6 lg:sticky lg:top-32">
               <h2 className="text-xl font-semibold mb-6">Booking Summary</h2>
               
               <div className="space-y-4">

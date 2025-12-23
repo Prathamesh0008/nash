@@ -1,6 +1,7 @@
 import "./globals.css";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import AgeGateWrapper from "@/components/AgeGateWrapper";
 
 export const metadata = {
   title: "CreatorRank — Premium Creator Marketplace",
@@ -14,14 +15,16 @@ export default function RootLayout({ children }) {
         <Navbar />
 
         <main
-          className="
-            pt-[70px]          /* mobile navbar height */
-            sm:pt-[70px]
-            md:pt-[320px]      /* desktop full navbar */
-            transition-all duration-300
-          "
-        >
+  className="
+    pt-[95px]     /* mobile */
+    md:pt-[180px] /* desktop full navbar height */
+    transition-all duration-300
+  "
+>
+
+          <AgeGateWrapper>
           {children}
+          </AgeGateWrapper>
         </main>
 
         <Footer />

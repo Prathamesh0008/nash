@@ -1,24 +1,25 @@
 import PageShell from "@/components/PageShell";
+import ProviderGrid from "@/components/ProviderGrid";
+import { extendedProviders } from "@/data/providers";
 
 export const metadata = {
-  title: "Couple Companions | Valentina's",
+  title: "Elite Couples | Valentina's",
 };
 
 export default function CouplePage() {
+  const coupleProviders = extendedProviders.filter(
+    p => p.category?.toLowerCase() === "couple"
+  );
+
   return (
     <PageShell>
-      <section className="max-w-7xl mx-auto px-4 py-16">
-        <div className="mb-10">
-          <h1 className="text-4xl font-bold mb-3">Couple Companions</h1>
-          <p className="text-white/60 max-w-2xl">
-            Discover verified couples offering exclusive private and social experiences.
-          </p>
-        </div>
+      <section className="max-w-7xl mx-auto px-4 py-24">
+        <h1 className="text-4xl font-bold text-white mb-4">Couples</h1>
+        <p className="text-white/60 max-w-2xl mb-12">
+          Exclusive couples curated for refined and unforgettable shared experiences.
+        </p>
 
-        {/* COUPLE GRID WILL GO HERE */}
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-10 text-center text-white/50">
-          Couple listings coming next
-        </div>
+        <ProviderGrid providers={coupleProviders} />
       </section>
     </PageShell>
   );

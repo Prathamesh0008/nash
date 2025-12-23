@@ -281,3 +281,31 @@ export const providers = [
 
   // ---- 11 to 20 follow the SAME structure (ready to extend safely)
 ];
+
+// data/providers.js (same file, BELOW providers)
+
+export const extendedProviders = [
+  ...providers,
+
+  ...Array.from({ length: 40 }, (_, i) => {
+    const base = providers[i % providers.length];
+
+    return {
+      ...base,
+
+      // IMPORTANT: unique values
+      id: providers.length + i + 1,
+      name: `${base.name} ${i + 1}`,
+      slug: `${base.slug}-${i + 1}`,
+
+      // small variations so UI feels real
+      age: base.age + (i % 3),
+      rating: Number((4.2 + Math.random() * 0.8).toFixed(1)),
+      reviewsCount: base.reviewsCount + Math.floor(Math.random() * 120),
+      ratePerHour: base.ratePerHour + (i % 4) * 10,
+      overnightRate: base.overnightRate + (i % 3) * 150,
+
+      available: Math.random() > 0.2,
+    };
+  }),
+];
