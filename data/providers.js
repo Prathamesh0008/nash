@@ -266,7 +266,7 @@ export const providers = [
     rating: 4.9,
     reviewsCount: 134,
     tier: "Diamond",
-    ratePerHour: 180,
+    ratePerHour: 380,
     overnightRate: 1500,
     availability: { inCall: true, outCall: true },
     essentials: { height: "170 cm", size: "M", style: "Luxury" },
