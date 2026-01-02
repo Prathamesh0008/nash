@@ -13,6 +13,7 @@ import { FaHome, FaMale, FaFemale, FaVideo } from 'react-icons/fa';
 import BrandLogo from "./BrandLogo";
 import { SEARCH_INDEX } from "@/data/searchIndex";
 import FilterDrawer from "./FilterDrawer";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 const SearchInput = memo(({
   value,
@@ -505,7 +506,7 @@ export default function Navbar() {
   const pathname = usePathname();
   const profileRef = useRef(null);
   const languageRef = useRef(null);
-  const user = null;
+  const { user, loading } = useCurrentUser();
   
 
   const mainLinks = [
