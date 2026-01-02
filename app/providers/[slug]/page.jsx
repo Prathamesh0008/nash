@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useRouter  } from "next/navigation";
 import Image from "next/image";
 import {
   CheckCircle,
@@ -55,6 +55,8 @@ import {
   Check,
   X,
   ExternalLink,
+  User,
+  Weight,
 } from "lucide-react";
 import { providers } from "@/data/providers";
 import { useState, useEffect, useRef } from "react";
@@ -70,8 +72,28 @@ export default function ProviderProfilePage() {
   const [showAllReviews, setShowAllReviews] = useState(false);
   const [selectedTab, setSelectedTab] = useState("overview");
   const intervalRef = useRef(null);
+  const router = useRouter();
 
-  // Mock data for enhanced features
+  // Detailed Physical Attributes Data
+  const physicalAttributes = {
+    height: "5'7\" (170 cm)",
+    weight: "125 lbs (57 kg)",
+    bodyType: "Slender & Athletic",
+    measurements: "34-24-36",
+    cupSize: "C",
+    dressSize: "4 (US) / 36 (EU)",
+    shoeSize: "7.5 (US) / 38 (EU)",
+    hairColor: "Dark Brown",
+    eyeColor: "Hazel",
+    ethnicity: "Caucasian",
+    skinTone: "Fair",
+    tattoos: "None visible",
+    piercings: "Ears only",
+    smoking: "Non-smoker",
+    drinking: "Socially",
+  };
+
+  // Detailed Stats
   const detailedStats = {
     responseTime: "15 min",
     completionRate: "98%",
@@ -226,6 +248,35 @@ export default function ProviderProfilePage() {
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 lg:gap-12">
           {/* LEFT – LARGE IMAGE GALLERY WITH SLIDESHOW */}
           <div className="lg:col-span-3 space-y-6">
+            {/* REVIEW STARS AT THE TOP */}
+            <div className="flex items-center justify-between bg-white/5 backdrop-blur-sm rounded-2xl p-4 border border-white/10">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center">
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+                    ))}
+                  </div>
+                  <span className="text-2xl font-bold">{provider.rating}</span>
+                  <span className="text-white/60 text-sm">/5.0</span>
+                </div>
+                <div className="h-6 w-px bg-white/20"></div>
+                <div className="text-sm">
+                  <span className="text-white/90 font-medium">{reviews.length} reviews</span>
+                  <span className="text-white/60 ml-2">• 98% satisfaction</span>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <div className="px-3 py-1.5 rounded-full bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30">
+                  <span className="text-sm font-medium text-green-300 flex items-center gap-1">
+                    <CheckCircle className="h-4 w-4" />
+                    Verified Reviews
+                  </span>
+                </div>
+              </div>
+            </div>
+
             {/* Premium Badge */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -392,7 +443,7 @@ export default function ProviderProfilePage() {
 
             {/* Tabs Navigation */}
             <div className="flex border-b border-white/10">
-              {["overview", "services", "reviews", "availability"].map((tab) => (
+              {["overview", "physical", "services", "reviews", "availability"].map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setSelectedTab(tab)}
@@ -442,10 +493,10 @@ export default function ProviderProfilePage() {
                     <div className="space-y-2">
                       <h5 className="font-medium text-white/90">Personal Details</h5>
                       {[
-                        { icon: <Ruler className="h-4 w-4" />, label: "Height", value: "170cm" },
-                        { icon: <Droplets className="h-4 w-4" />, label: "Hair Color", value: "Brunette" },
-                        { icon: <Palette className="h-4 w-4" />, label: "Eye Color", value: "Brown" },
-                        { icon: <Cake className="h-4 w-4" />, label: "Education", value: "University" },
+                        { icon: <Cake className="h-4 w-4" />, label: "Education", value: "University Graduate" },
+                        { icon: <Briefcase className="h-4 w-4" />, label: "Profession", value: "Elite Companion" },
+                        { icon: <Heart className="h-4 w-4" />, label: "Relationship", value: "Single" },
+                        { icon: <Target className="h-4 w-4" />, label: "Hobbies", value: "Art, Travel, Fine Dining" },
                       ].map((item, i) => (
                         <div key={i} className="flex items-center gap-3 p-2 rounded-lg bg-white/5">
                           <div className="p-1.5 rounded-lg bg-white/10">
@@ -457,6 +508,123 @@ export default function ProviderProfilePage() {
                           </div>
                         </div>
                       ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {selectedTab === "physical" && (
+                <div className="space-y-6">
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* Left Column */}
+                    <div className="space-y-4">
+                      <div className="bg-white/5 rounded-xl p-4">
+                        <h5 className="font-medium mb-3 flex items-center gap-2">
+                          <User className="h-4 w-4" />
+                          Body Measurements
+                        </h5>
+                        <div className="space-y-3">
+                          <div className="flex justify-between items-center">
+                            <span className="text-white/70">Height</span>
+                            <span className="font-medium">{physicalAttributes.height}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-white/70">Weight</span>
+                            <span className="font-medium">{physicalAttributes.weight}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-white/70">Body Type</span>
+                            <span className="font-medium">{physicalAttributes.bodyType}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-white/70">Measurements</span>
+                            <span className="font-medium text-pink-400">{physicalAttributes.measurements}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="bg-white/5 rounded-xl p-4">
+                        <h5 className="font-medium mb-3">Cup & Dress Size</h5>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="text-center p-3 rounded-lg bg-gradient-to-br from-pink-500/20 to-purple-500/20">
+                            <div className="text-2xl font-bold text-pink-400">{physicalAttributes.cupSize}</div>
+                            <div className="text-xs text-white/60 mt-1">Cup Size</div>
+                          </div>
+                          <div className="text-center p-3 rounded-lg bg-gradient-to-br from-blue-500/20 to-cyan-500/20">
+                            <div className="text-2xl font-bold text-blue-400">{physicalAttributes.dressSize}</div>
+                            <div className="text-xs text-white/60 mt-1">Dress Size</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Right Column */}
+                    <div className="space-y-4">
+                      <div className="bg-white/5 rounded-xl p-4">
+                        <h5 className="font-medium mb-3">Appearance Details</h5>
+                        <div className="space-y-3">
+                          <div className="flex justify-between items-center">
+                            <span className="text-white/70">Hair Color</span>
+                            <span className="font-medium">{physicalAttributes.hairColor}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-white/70">Eye Color</span>
+                            <span className="font-medium">{physicalAttributes.eyeColor}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-white/70">Ethnicity</span>
+                            <span className="font-medium">{physicalAttributes.ethnicity}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-white/70">Skin Tone</span>
+                            <span className="font-medium">{physicalAttributes.skinTone}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="bg-white/5 rounded-xl p-4">
+                        <h5 className="font-medium mb-3">Additional Details</h5>
+                        <div className="space-y-3">
+                          <div className="flex justify-between items-center">
+                            <span className="text-white/70">Shoe Size</span>
+                            <span className="font-medium">{physicalAttributes.shoeSize}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-white/70">Tattoos</span>
+                            <span className="font-medium">{physicalAttributes.tattoos}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-white/70">Piercings</span>
+                            <span className="font-medium">{physicalAttributes.piercings}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-gradient-to-br from-emerald-500/10 to-green-500/10 border border-emerald-500/20 rounded-xl p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-emerald-500/20">
+                          <X className="h-4 w-4 text-emerald-400" />
+                        </div>
+                        <div>
+                          <div className="font-medium">Non-smoker</div>
+                          <div className="text-sm text-white/60">Does not smoke</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-gradient-to-br from-amber-500/10 to-yellow-500/10 border border-amber-500/20 rounded-xl p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-amber-500/20">
+                          <Wine className="h-4 w-4 text-amber-400" />
+                        </div>
+                        <div>
+                          <div className="font-medium">Social Drinker</div>
+                          <div className="text-sm text-white/60">Drinks socially</div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -653,10 +821,13 @@ export default function ProviderProfilePage() {
               </h3>
               
               <div className="grid grid-cols-2 gap-3">
-                <button className="p-4 rounded-xl bg-gradient-to-r from-pink-600 to-purple-600 font-semibold flex items-center justify-center gap-3 hover:from-pink-500 hover:to-purple-500 transition-all hover:scale-[1.02]">
-                  <MessageCircle className="h-5 w-5" />
-                  Message
-                </button>
+                <button 
+  onClick={() => router.push('/chat')}
+  className="p-4 rounded-xl bg-gradient-to-r from-pink-600 to-purple-600 font-semibold flex items-center justify-center gap-3 hover:from-pink-500 hover:to-purple-500 transition-all hover:scale-[1.02]"
+>
+  <MessageCircle className="h-5 w-5" />
+  Message
+</button>
                 
                 <button className="p-4 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 font-semibold flex items-center justify-center gap-3 hover:bg-white/20 transition-all">
                   <Phone className="h-5 w-5" />
@@ -791,7 +962,7 @@ export default function ProviderProfilePage() {
   );
 }
 
-// ShoppingBag icon component (since it's not in lucide-react)
+// ShoppingBag icon component
 const ShoppingBag = (props) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"

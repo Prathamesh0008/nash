@@ -1,6 +1,6 @@
 import "./globals.css";
-import Navbar from "../components/Navbar";
-import Footer from "../components/Footer";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 import AgeGateWrapper from "@/components/AgeGateWrapper";
 
 export const metadata = {
@@ -15,15 +15,14 @@ export default function RootLayout({ children }) {
         <Navbar />
 
         <main
-  className="
-    pt-[95px]     /* mobile */
-    md:pt-[180px] /* desktop full navbar height */
-    transition-all duration-300
-  "
->
-
+          className="
+            pt-[95px]
+            md:pt-[180px]
+            transition-all duration-300
+          "
+        >
           <AgeGateWrapper>
-          {children}
+            {children}
           </AgeGateWrapper>
         </main>
 
