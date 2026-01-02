@@ -16,13 +16,29 @@ export default function Navbar() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isMobile, setIsMobile] = useState(false);
   const [mode, setMode] = useState("full");
+  
+
+
 
   const lastScrollY = useRef(0);
   const ticking = useRef(false);
   const profileRef = useRef(null);
   const languageRef = useRef(null);
 
-  const user = null;
+  const [user, setUser] = useState(null);
+  const [workerStatus, setWorkerStatus] = useState(null);
+useEffect(() => {
+  if (!user || user.role !== "worker") return;
+
+  fetch("/api/worker/status")
+    .then((res) => res.json())
+    .then((data) => {
+      if (data?.ok) {
+        setWorkerStatus(data.status); // draft | pending_payment | active | rejected
+      }
+    })
+    .catch(() => {});
+}, [user]);
 
   const mainLinks = [
     { label: "Home", href: "/", icon: Home },
@@ -83,6 +99,20 @@ export default function Navbar() {
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
+
+  useEffect(() => {
+  fetch("/api/auth/me")
+    .then(res => res.json())
+    .then(data => {
+      if (data?.ok) {
+        setUser(data.user);
+      } else {
+        setUser(null);
+      }
+    })
+    .catch(() => setUser(null));
+}, []);
+
 
   // Compact bar
   const CompactBar = useCallback(() => (
@@ -183,6 +213,44 @@ export default function Navbar() {
 
               {user ? (
                 <div ref={profileRef} className="relative">
+                  {profileOpen && (
+  <div className="absolute right-0 mt-3 w-48 rounded-2xl bg-black/90 border border-white/10 backdrop-blur-xl shadow-xl overflow-hidden z-50">
+    
+    {user.role === "worker" ? (
+      <button
+        onClick={() => {
+          setProfileOpen(false);
+          window.location.href = "/worker/dashboard";
+        }}
+        className="w-full text-left px-4 py-3 text-sm hover:bg-white/5"
+      >
+        Dashboard
+      </button>
+    ) : (
+      <button
+        onClick={() => {
+          setProfileOpen(false);
+          window.location.href = "/profile";
+        }}
+        className="w-full text-left px-4 py-3 text-sm hover:bg-white/5"
+      >
+        My Profile
+      </button>
+    )}
+
+    <button
+      onClick={async () => {
+        await fetch("/api/auth/logout", { method: "POST" });
+        setUser(null);
+        window.location.href = "/login";
+      }}
+      className="w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-red-500/10"
+    >
+      Logout
+    </button>
+  </div>
+)}
+
                   <button
                     onClick={() => setProfileOpen(!profileOpen)}
                     className="flex items-center gap-3 px-4 py-2 rounded-xl bg-gradient-to-r from-white/5 to-white/3 hover:from-white/10 hover:to-white/5 border border-white/10"
@@ -191,7 +259,13 @@ export default function Navbar() {
                       <div className="absolute inset-0 bg-gradient-to-tr from-pink-500/20 to-purple-500/20"></div>
                     </div>
                     <div className="text-left">
-                      <div className="text-sm font-semibold">{user?.name || "Account"}</div>
+                     <div className="text-sm font-semibold">
+  {user?.fullName || user?.email}
+</div>
+<div className="text-xs text-white/60 capitalize">
+  {user?.role}
+</div>
+
                       <div className="text-xs text-white/60">Premium Member</div>
                     </div>
                     <ChevronDown className={`h-4 w-4 ${profileOpen ? "rotate-180" : ""}`} />
@@ -314,10 +388,45 @@ export default function Navbar() {
               </button>
             </div>
             
-            <div className="flex items-center gap-2 text-sm text-white/60">
-              <CheckCircle className="h-4 w-4 text-emerald-400" />
-              <span>Premium Verified</span>
-            </div>
+            <div className="flex items-center gap-2 text-sm">
+  {user?.role === "worker" && workerStatus ? (
+    <>
+      <CheckCircle
+        className={`h-4 w-4 ${
+          workerStatus === "active"
+            ? "text-emerald-400"
+            : workerStatus === "pending_payment"
+            ? "text-yellow-400"
+            : workerStatus === "rejected"
+            ? "text-red-400"
+            : "text-white/40"
+        }`}
+      />
+      <span
+        className={`font-medium ${
+          workerStatus === "active"
+            ? "text-emerald-300"
+            : workerStatus === "pending_payment"
+            ? "text-yellow-300"
+            : workerStatus === "rejected"
+            ? "text-red-300"
+            : "text-white/50"
+        }`}
+      >
+        {workerStatus === "active" && "Premium Verified"}
+        {workerStatus === "pending_payment" && "Verification Pending"}
+        {workerStatus === "rejected" && "Verification Rejected"}
+        {workerStatus === "draft" && "Profile Incomplete"}
+      </span>
+    </>
+  ) : (
+    <>
+      <CheckCircle className="h-4 w-4 text-emerald-400" />
+      <span className="text-white/60">Premium Verified</span>
+    </>
+  )}
+</div>
+
           </div>
         </div>
       </div>
@@ -409,6 +518,40 @@ export default function Navbar() {
               </Link>
             </div>
           )}
+          {user && (
+  <div className="space-y-3">
+    {user.role === "worker" ? (
+      <Link
+        href="/worker/dashboard"
+        onClick={() => setMenuOpen(false)}
+        className="block px-4 py-3 rounded-xl bg-white/5"
+      >
+        Dashboard
+      </Link>
+    ) : (
+      <Link
+        href="/profile"
+        onClick={() => setMenuOpen(false)}
+        className="block px-4 py-3 rounded-xl bg-white/5"
+      >
+        My Profile
+      </Link>
+    )}
+
+    <button
+      onClick={async () => {
+        await fetch("/api/auth/logout", { method: "POST" });
+        setUser(null);
+        setMenuOpen(false);
+        window.location.href = "/login";
+      }}
+      className="w-full px-4 py-3 rounded-xl bg-red-500/10 text-red-400"
+    >
+      Logout
+    </button>
+  </div>
+)}
+
           <Link
             href="/support"
             onClick={() => setMenuOpen(false)}
