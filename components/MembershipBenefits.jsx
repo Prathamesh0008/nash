@@ -79,7 +79,7 @@ const MembershipBenefits = () => {
       highlighted: false
     },
     {
-      name: 'Elite Membership',
+      name: 'Elite',
       price: '$199/month',
       features: ['All Premium Features', 'VIP Client Access', '24/7 Priority Support', 'Exclusive Events'],
       highlighted: true
@@ -87,41 +87,41 @@ const MembershipBenefits = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-16">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <Crown className="w-12 h-12 text-yellow-500" />
-            <h1 className="text-4xl md:text-5xl font-bold">
-              ELITE <span className="text-yellow-500">MEMBERSHIP</span> BENEFITS
+    <div className="min-h-screen bg-gray-900 text-white">
+      {/* Header Section */}
+      <div className="container mx-auto px-4 py-12 md:py-16">
+        <div className="text-center max-w-4xl mx-auto mb-16 md:mb-20">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
+            <Crown className="w-10 h-10 md:w-12 md:h-12 text-yellow-500" />
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold">
+              Elite <span className="text-yellow-500">Membership</span> Benefits
             </h1>
           </div>
-          <p className="text-xl text-gray-300 mt-4 max-w-3xl mx-auto">
+          <p className="text-lg md:text-xl text-gray-300 mt-4 max-w-2xl mx-auto px-4">
             Unlock exclusive features and premium access designed for top-tier creators
           </p>
         </div>
 
         {/* Benefits Grid */}
-        <div className="mb-20">
-          <h2 className="text-3xl font-bold text-center mb-12">
-            Unlock <span className="text-yellow-500">Premium</span> Features
+        <div className="mb-16 md:mb-20">
+          <h2 className="text-2xl md:text-3xl font-bold text-center mb-10 md:mb-12">
+            Premium <span className="text-yellow-500">Features</span>
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {benefits.map((benefit, index) => {
               const Icon = benefit.icon;
               return (
                 <div
                   key={index}
-                  className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700 hover:border-yellow-500/50 transition-all duration-300 hover:scale-[1.02]"
+                  className="bg-gray-800 rounded-lg p-6 border border-gray-700 hover:border-yellow-500/50 transition-colors duration-200"
                 >
                   <div className="flex items-start gap-4">
-                    <div className="p-3 bg-yellow-500/10 rounded-lg">
+                    <div className="p-3 bg-yellow-500/10 rounded-lg shrink-0">
                       <Icon className="w-6 h-6 text-yellow-500" />
                     </div>
                     <div>
-                      <h3 className="text-xl font-semibold mb-2">{benefit.title}</h3>
-                      <p className="text-gray-400">{benefit.description}</p>
+                      <h3 className="font-semibold text-lg mb-2">{benefit.title}</h3>
+                      <p className="text-gray-400 text-sm">{benefit.description}</p>
                     </div>
                   </div>
                 </div>
@@ -131,49 +131,52 @@ const MembershipBenefits = () => {
         </div>
 
         {/* Pricing Tiers */}
-        <div className="mb-12">
-          <h2 className="text-3xl font-bold text-center mb-12">
-            Choose Your <span className="text-yellow-500">Membership</span>
+        <div className="mb-16 md:mb-20">
+          <h2 className="text-2xl md:text-3xl font-bold text-center mb-10 md:mb-12">
+            Choose Your <span className="text-yellow-500">Plan</span>
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {tiers.map((tier, index) => (
               <div
                 key={index}
-                className={`rounded-2xl p-8 ${tier.highlighted ? 'bg-gradient-to-b from-yellow-500/20 to-yellow-600/10 border-2 border-yellow-500' : 'bg-gray-800/50 border border-gray-700'}`}
+                className={`rounded-xl p-6 md:p-8 ${tier.highlighted 
+                  ? 'bg-gray-800 border-2 border-yellow-500' 
+                  : 'bg-gray-800/80 border border-gray-700'
+                }`}
               >
                 {tier.highlighted && (
-                  <div className="flex justify-center mb-4">
-                    <span className="bg-yellow-500 text-black px-4 py-1 rounded-full text-sm font-bold">
+                  <div className="flex justify-center mb-6">
+                    <span className="bg-yellow-500 text-gray-900 px-4 py-1.5 rounded-full text-sm font-bold">
                       RECOMMENDED
                     </span>
                   </div>
                 )}
                 
-                <h3 className={`text-2xl font-bold text-center mb-4 ${tier.highlighted ? 'text-yellow-500' : 'text-white'}`}>
+                <h3 className={`text-xl md:text-2xl font-bold text-center mb-6 ${tier.highlighted ? 'text-yellow-500' : 'text-white'}`}>
                   {tier.name}
                 </h3>
                 
-                <div className="text-center mb-6">
-                  <span className="text-4xl font-bold">{tier.price}</span>
+                <div className="text-center mb-8">
+                  <span className="text-3xl md:text-4xl font-bold">{tier.price}</span>
                   {tier.price !== 'Free' && <span className="text-gray-400 ml-2">/month</span>}
                 </div>
                 
-                <ul className="space-y-3 mb-8">
+                <ul className="space-y-4 mb-8">
                   {tier.features.map((feature, idx) => (
                     <li key={idx} className="flex items-center gap-3">
                       <CheckCircle className={`w-5 h-5 ${tier.highlighted ? 'text-yellow-500' : 'text-green-500'}`} />
-                      <span>{feature}</span>
+                      <span className="text-gray-300">{feature}</span>
                     </li>
                   ))}
                 </ul>
                 
                 <button
-                  className={`w-full py-3 rounded-lg font-semibold transition-all duration-300 ${tier.highlighted 
-                    ? 'bg-yellow-500 text-black hover:bg-yellow-600 hover:scale-[1.02]' 
-                    : 'bg-gray-700 hover:bg-gray-600'
+                  className={`w-full py-3.5 rounded-lg font-medium transition-all duration-200 ${tier.highlighted 
+                    ? 'bg-yellow-500 text-gray-900 hover:bg-yellow-600' 
+                    : 'bg-gray-700 text-white hover:bg-gray-600'
                   }`}
                 >
-                  {tier.highlighted ? 'Upgrade to Elite - $199/mo' : `Choose ${tier.name}`}
+                  {tier.highlighted ? 'Upgrade to Elite' : `Select ${tier.name}`}
                 </button>
               </div>
             ))}
@@ -181,36 +184,35 @@ const MembershipBenefits = () => {
         </div>
 
         {/* CTA Section */}
-        <div className="bg-gradient-to-r from-yellow-500/10 to-yellow-600/10 border border-yellow-500/30 rounded-2xl p-8 text-center">
-          <Crown className="w-16 h-16 text-yellow-500 mx-auto mb-6" />
-          <h2 className="text-3xl font-bold mb-4">
-            Ready to Elevate Your Experience?
-          </h2>
-          <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-            Join thousands of elite creators who have transformed their success with our premium membership
-          </p>
-          <button className="bg-gradient-to-r from-yellow-500 to-yellow-600 text-black font-bold py-3 px-8 rounded-lg text-lg hover:scale-105 transition-transform duration-300">
-            Start Your Elite Journey Today
-          </button>
+        <div className="bg-gray-800 rounded-xl p-8 md:p-10 text-center border border-gray-700 mb-16 md:mb-20">
+          <div className="max-w-3xl mx-auto">
+            <Crown className="w-12 h-12 md:w-14 md:h-14 text-yellow-500 mx-auto mb-6" />
+            <h2 className="text-2xl md:text-3xl font-bold mb-6">
+              Ready to Elevate Your Experience?
+            </h2>
+            <p className="text-lg text-gray-300 mb-8 max-w-2xl mx-auto">
+              Join thousands of elite creators who have transformed their success with our premium membership
+            </p>
+            <button className="bg-yellow-500 text-gray-900 font-semibold py-3.5 px-8 rounded-lg text-lg hover:bg-yellow-600 transition-colors duration-200">
+              Start Your Elite Journey
+            </button>
+          </div>
         </div>
 
-        {/* Stats */}
-        <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-          <div>
-            <div className="text-3xl font-bold text-yellow-500">99%</div>
-            <div className="text-gray-400">Client Satisfaction</div>
-          </div>
-          <div>
-            <div className="text-3xl font-bold text-yellow-500">24/7</div>
-            <div className="text-gray-400">Support Available</div>
-          </div>
-          <div>
-            <div className="text-3xl font-bold text-yellow-500">5K+</div>
-            <div className="text-gray-400">Elite Members</div>
-          </div>
-          <div>
-            <div className="text-3xl font-bold text-yellow-500">30d</div>
-            <div className="text-gray-400">Money-Back Guarantee</div>
+        {/* Stats Section */}
+        <div className="border-t border-gray-700 pt-12 md:pt-16">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+            {[
+              { value: '99%', label: 'Client Satisfaction' },
+              { value: '24/7', label: 'Support Available' },
+              { value: '5K+', label: 'Elite Members' },
+              { value: '30d', label: 'Money-Back Guarantee' }
+            ].map((stat, index) => (
+              <div key={index} className="space-y-2">
+                <div className="text-2xl md:text-3xl font-bold text-yellow-500">{stat.value}</div>
+                <div className="text-gray-400 text-sm md:text-base">{stat.label}</div>
+              </div>
+            ))}
           </div>
         </div>
       </div>

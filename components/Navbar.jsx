@@ -63,6 +63,72 @@ const SearchInput = memo(({
 
 SearchInput.displayName = 'SearchInput';
 
+// User Dropdown Component
+const UserDropdown = memo(({ user, profileOpen, onLogout }) => (
+  <div className={`absolute right-0 mt-2 w-64 bg-black/95 border border-white/10 rounded-xl shadow-2xl shadow-purple-900/30 backdrop-blur-xl overflow-hidden transition-all duration-200 transform origin-top-right ${
+    profileOpen ? "scale-100 opacity-100" : "scale-95 opacity-0 pointer-events-none"
+  }`}>
+    {/* User Info Header */}
+    <div className="p-4 border-b border-white/10">
+      <div className="flex items-center gap-3">
+        <div className="relative h-12 w-12 rounded-full overflow-hidden border-2 border-pink-500/60 bg-gradient-to-br from-pink-500/30 to-purple-500/30">
+          {user?.image ? (
+            <img src={user.image} alt={user.name} className="h-full w-full object-cover" />
+          ) : (
+            <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-pink-600/50 to-purple-600/50">
+              <User className="h-6 w-6 text-white" />
+            </div>
+          )}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold text-white truncate">{user?.name || "User"}</p>
+          <p className="text-xs text-white/60 truncate">{user?.email || user?.username || ""}</p>
+          <div className="flex items-center gap-1 mt-1">
+            <Crown className="h-3 w-3 text-yellow-400" />
+            <span className="text-xs text-yellow-400 font-medium">Premium Member</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {/* Dropdown Menu Items */}
+    <div className="py-2">
+      <Link href="/profile" className="flex items-center gap-3 px-4 py-3 hover:bg-white/10 transition-all">
+        <User className="h-4 w-4" />
+        <span className="text-sm">My Profile</span>
+      </Link>
+      
+      <Link href="/messages" className="flex items-center gap-3 px-4 py-3 hover:bg-white/10 transition-all">
+        <MessageCircle className="h-4 w-4" />
+        <span className="text-sm">Messages</span>
+        <span className="ml-auto px-2 py-0.5 text-xs bg-pink-600 rounded-full">3</span>
+      </Link>
+      
+      <Link href="/favorites" className="flex items-center gap-3 px-4 py-3 hover:bg-white/10 transition-all">
+        <Heart className="h-4 w-4" />
+        <span className="text-sm">Favorites</span>
+      </Link>
+      
+      <Link href="/settings" className="flex items-center gap-3 px-4 py-3 hover:bg-white/10 transition-all">
+        <Settings className="h-4 w-4" />
+        <span className="text-sm">Settings</span>
+      </Link>
+      
+      <div className="border-t border-white/10 my-2"></div>
+      
+      <button
+        onClick={onLogout}
+        className="flex items-center gap-3 w-full px-4 py-3 text-red-400 hover:bg-red-500/10 transition-all"
+      >
+        <LogOut className="h-4 w-4" />
+        <span className="text-sm">Logout</span>
+      </button>
+    </div>
+  </div>
+));
+
+UserDropdown.displayName = 'UserDropdown';
+
 const CompactBar = memo(({
   searchQuery,
   onSearchChange,
@@ -73,8 +139,13 @@ const CompactBar = memo(({
   activeLink,
   setActiveLink,
   setMenuOpen,
-  onFilterClick, // ✅ ADDED
-  onRegionClick  // ✅ ADDED
+  onFilterClick,
+  onRegionClick,
+  user,
+  profileOpen,
+  setProfileOpen,
+  profileRef,
+  handleLogout
 }) => (
   <div className="w-full px-4 py-3">
     <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -113,12 +184,38 @@ const CompactBar = memo(({
         </div>
 
         <div className="hidden lg:flex items-center gap-2">
-          <Link href="/login" className="px-3 py-1.5 text-sm rounded-lg bg-white/5 border border-white/10 hover:border-pink-500/50">
-            Login
-          </Link>
-          <Link href="/register" className="px-3 py-1.5 text-sm rounded-lg bg-gradient-to-r from-pink-600 to-purple-600 font-semibold hover:from-pink-500 hover:to-purple-500">
-            Register
-          </Link>
+          {user ? (
+            <div ref={profileRef} className="relative">
+              <button
+                onClick={() => setProfileOpen(!profileOpen)}
+                className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg bg-white/5 border border-white/10 hover:border-pink-500/50 transition-colors"
+              >
+                <div className="relative h-6 w-6 rounded-full overflow-hidden border border-pink-500/50">
+                  <div className="absolute inset-0 bg-gradient-to-tr from-pink-500/20 to-purple-500/20"></div>
+                  {user?.image ? (
+                    <img src={user.image} alt={user.name} className="h-full w-full object-cover" />
+                  ) : (
+                    <User className="h-3 w-3 absolute inset-0 m-auto" />
+                  )}
+                </div>
+                <span className="font-medium">{user.name?.split(' ')[0] || 'User'}</span>
+                <ChevronDown className={`h-3 w-3 transition-transform ${profileOpen ? "rotate-180" : ""}`} />
+              </button>
+              
+              {profileOpen && (
+                <UserDropdown user={user} profileOpen={profileOpen} onLogout={handleLogout} />
+              )}
+            </div>
+          ) : (
+            <>
+              <Link href="/login" className="px-3 py-1.5 text-sm rounded-lg bg-white/5 border border-white/10 hover:border-pink-500/50">
+                Login
+              </Link>
+              <Link href="/register" className="px-3 py-1.5 text-sm rounded-lg bg-gradient-to-r from-pink-600 to-purple-600 font-semibold hover:from-pink-500 hover:to-purple-500">
+                Register
+              </Link>
+            </>
+          )}
         </div>
 
         <button
@@ -151,8 +248,9 @@ const FullNavbar = memo(({
   profileRef,
   languageRef,
   setMenuOpen,
-  onFilterClick, // ✅ ADDED
-  onRegionClick  // ✅ ADDED
+  onFilterClick,
+  onRegionClick,
+  handleLogout
 }) => (
   <div className="w-full">
     {/* Row 1 - Logo & Top Actions */}
@@ -181,17 +279,28 @@ const FullNavbar = memo(({
               <div ref={profileRef} className="relative">
                 <button
                   onClick={() => setProfileOpen(!profileOpen)}
-                  className="flex items-center gap-3 px-4 py-2 rounded-xl bg-gradient-to-r from-white/5 to-white/3 hover:from-white/10 hover:to-white/5 border border-white/10"
+                  className="flex items-center gap-3 px-4 py-2 rounded-xl bg-gradient-to-r from-white/5 to-white/3 hover:from-white/10 hover:to-white/5 border border-white/10 transition-all duration-200"
                 >
                   <div className="relative h-8 w-8 rounded-full overflow-hidden border-2 border-pink-500/50">
-                    <div className="absolute inset-0 bg-gradient-to-tr from-pink-500/20 to-purple-500/20"></div>
+                    {user?.image ? (
+                      <img src={user.image} alt={user.name} className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="absolute inset-0 bg-gradient-to-tr from-pink-500/20 to-purple-500/20 flex items-center justify-center">
+                        <User className="h-4 w-4 text-white" />
+                      </div>
+                    )}
                   </div>
-                  <div>
+                  <div className="text-left">
                     <div className="text-sm font-semibold">{user?.name || "Account"}</div>
                     <div className="text-xs text-white/60">Premium Member</div>
                   </div>
-                  <ChevronDown className={`h-4 w-4 transition-transform ${profileOpen ? "rotate-180" : ""}`} />
+                  <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${profileOpen ? "rotate-180" : ""}`} />
                 </button>
+                
+                {/* User Dropdown */}
+                {profileOpen && (
+                  <UserDropdown user={user} profileOpen={profileOpen} onLogout={handleLogout} />
+                )}
               </div>
             ) : (
               <>
@@ -267,7 +376,7 @@ const FullNavbar = memo(({
       </div>
     </div>
 
-    {/* Row 3 - Search & Filters - ✅ FIXED BUTTONS */}
+    {/* Row 3 - Search & Filters */}
     <div className="border-b border-white/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
         <div className="hidden lg:flex items-center gap-3">
@@ -325,8 +434,9 @@ const MobileMenu = memo(({
   categories,
   user,
   userMenuItems,
-  onFilterClick, // ✅ ADDED
-  onRegionClick  // ✅ ADDED
+  onFilterClick,
+  onRegionClick,
+  handleLogout
 }) => (
   <div className={`lg:hidden fixed inset-0 z-50 bg-black/95 backdrop-blur-xl transform transition-all duration-300 ease-out ${menuOpen ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0 pointer-events-none"}`}>
     <div className="mobile-menu-content px-4 pt-20 pb-8 space-y-6 overflow-y-auto h-full">
@@ -341,6 +451,26 @@ const MobileMenu = memo(({
       <div className="flex items-center gap-3 p-4 rounded-2xl bg-gradient-to-r from-white/5 to-white/10 border border-white/10">
         <BrandLogo />
       </div>
+
+      {user && (
+        <div className="p-4 rounded-2xl bg-gradient-to-r from-white/5 to-white/10 border border-white/10">
+          <div className="flex items-center gap-3">
+            <div className="relative h-12 w-12 rounded-full overflow-hidden border-2 border-pink-500/60">
+              {user?.image ? (
+                <img src={user.image} alt={user.name} className="h-full w-full object-cover" />
+              ) : (
+                <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-pink-600/50 to-purple-600/50">
+                  <User className="h-6 w-6 text-white" />
+                </div>
+              )}
+            </div>
+            <div>
+              <p className="font-semibold">{user.name}</p>
+              <p className="text-sm text-white/60">Premium Member</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <SearchInput
         value={searchQuery}
@@ -394,7 +524,7 @@ const MobileMenu = memo(({
         </div>
       </div>
 
-      {/* Quick Actions - ✅ FIXED WITH HANDLERS */}
+      {/* Quick Actions */}
       <div>
         <p className="text-sm font-semibold text-white/60 mb-3 px-2">Quick Actions</p>
         <div className="grid grid-cols-2 gap-3">
@@ -463,7 +593,12 @@ const MobileMenu = memo(({
               <Link
                 key={item.label}
                 href={item.href}
-                onClick={() => setMenuOpen(false)}
+                onClick={() => {
+                  setMenuOpen(false);
+                  if (item.label === "Logout") {
+                    handleLogout();
+                  }
+                }}
                 className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 transition-all"
               >
                 <item.icon className="h-5 w-5" />
@@ -500,14 +635,18 @@ export default function Navbar() {
   const [activeLink, setActiveLink] = useState("Home");
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  // const [filterOpen, setFilterOpen] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [filters, setFilters] = useState({
+    category: [],
+    country: "",
+    price: 1000
+  });
 
   const router = useRouter();
   const pathname = usePathname();
   const profileRef = useRef(null);
   const languageRef = useRef(null);
   const { user, loading } = useCurrentUser();
-  
 
   const mainLinks = [
     { label: "Home", href: "/", icon: FaHome },
@@ -516,7 +655,6 @@ export default function Navbar() {
     { label: "Couple", href: "/couple", icon: Users },
     { label: "Videos", href: "/videos", icon: FaVideo },
   ];
-  
 
   const categories = ["BDSM", "Escort", "Massage", "Role Play", "Fetish"];
   const userMenuItems = [
@@ -525,23 +663,18 @@ export default function Navbar() {
     { label: "Notifications", icon: Bell, href: "/notifications" },
     { label: "Favorites", icon: Heart, href: "/favorites" },
     { label: "Settings", icon: Settings, href: "/settings" },
-    { label: "Logout", icon: LogOut, href: "/logout" },
+    { label: "Logout", icon: LogOut, href: "#" },
   ];
 
-  // ✅ FIXED: Better path matching for active link
-  useEffect(() => {
-    if (pathname === "/") {
-      setActiveLink("Home");
-    } else if (pathname === "/women" || pathname.startsWith("/women/")) {
-      setActiveLink("Women");
-    } else if (pathname === "/men" || pathname.startsWith("/men/")) {
-      setActiveLink("Men");
-    } else if (pathname === "/couple" || pathname.startsWith("/couple/")) {
-      setActiveLink("Couple");
-    } else if (pathname === "/videos" || pathname.startsWith("/videos/")) {
-      setActiveLink("Videos");
-    }
-  }, [pathname]);
+  // ✅ Handle logout
+  const handleLogout = useCallback(() => {
+    // Here you would typically call your logout API
+    console.log("Logging out...");
+    // Example: await logout();
+    router.push("/");
+    setProfileOpen(false);
+    setMenuOpen(false);
+  }, [router]);
 
   // ✅ Search handlers
   const onSearchChange = useCallback((e) => {
@@ -578,40 +711,33 @@ export default function Navbar() {
     setMenuOpen(false);
   }, [searchQuery, router]);
 
-  // ✅ BUTTON HANDLERS - FIXED
-  const [filterOpen, setFilterOpen] = useState(false);
-const [filters, setFilters] = useState({
-  category: [],
-  country: "",
-  price: 1000
-});
-const applyFilters = () => {
-  const params = new URLSearchParams();
+  // ✅ Filter handlers
+  const handleFilterClick = () => {
+    setFilterOpen(true);
+  };
 
-  if (filters.category.length)
-    params.set("category", filters.category.join(","));
+  const applyFilters = () => {
+    const params = new URLSearchParams();
 
-  if (filters.country)
-    params.set("country", filters.country);
+    if (filters.category.length)
+      params.set("category", filters.category.join(","));
 
-  if (filters.price)
-    params.set("price", filters.price);
+    if (filters.country)
+      params.set("country", filters.country);
 
-  router.push(`/search?${params.toString()}`);
-  setFilterOpen(false);
-};
+    if (filters.price)
+      params.set("price", filters.price);
 
-
- const handleFilterClick = () => {
-  setFilterOpen(true);
-};
+    router.push(`/search?${params.toString()}`);
+    setFilterOpen(false);
+  };
 
   const handleRegionClick = useCallback(() => {
     console.log("Regions clicked - Navigate to /regions");
     router.push("/regions");
   }, [router]);
 
-  // Existing useEffects
+  // ✅ Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (menuOpen && !e.target.closest('.mobile-menu-content')) {
@@ -620,11 +746,19 @@ const applyFilters = () => {
       if (!e.target.closest('[data-search-container]')) {
         setShowSuggestions(false);
       }
+      if (profileRef.current && !profileRef.current.contains(e.target)) {
+        setProfileOpen(false);
+      }
+      if (languageRef.current && !languageRef.current.contains(e.target)) {
+        setLanguageOpen(false);
+      }
     };
+    
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
   }, [menuOpen]);
 
+  // ✅ Responsive behavior
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 1024);
@@ -650,18 +784,20 @@ const applyFilters = () => {
     return () => window.removeEventListener("scroll", onScroll);
   }, [isMobile]);
 
+  // ✅ Set active link based on pathname
   useEffect(() => {
-    const handler = (e) => {
-      if (profileRef.current && !profileRef.current.contains(e.target)) {
-        setProfileOpen(false);
-      }
-      if (languageRef.current && !languageRef.current.contains(e.target)) {
-        setLanguageOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
+    if (pathname === "/") {
+      setActiveLink("Home");
+    } else if (pathname === "/women" || pathname.startsWith("/women/")) {
+      setActiveLink("Women");
+    } else if (pathname === "/men" || pathname.startsWith("/men/")) {
+      setActiveLink("Men");
+    } else if (pathname === "/couple" || pathname.startsWith("/couple/")) {
+      setActiveLink("Couple");
+    } else if (pathname === "/videos" || pathname.startsWith("/videos/")) {
+      setActiveLink("Videos");
+    }
+  }, [pathname]);
 
   return (
     <>
@@ -705,6 +841,7 @@ const applyFilters = () => {
             setMenuOpen={setMenuOpen}
             onFilterClick={handleFilterClick}
             onRegionClick={handleRegionClick}
+            handleLogout={handleLogout}
           />
         ) : (
           <CompactBar
@@ -719,6 +856,11 @@ const applyFilters = () => {
             setMenuOpen={setMenuOpen}
             onFilterClick={handleFilterClick}
             onRegionClick={handleRegionClick}
+            user={user}
+            profileOpen={profileOpen}
+            setProfileOpen={setProfileOpen}
+            profileRef={profileRef}
+            handleLogout={handleLogout}
           />
         )}
       </header>
@@ -740,16 +882,17 @@ const applyFilters = () => {
           userMenuItems={userMenuItems}
           onFilterClick={handleFilterClick}
           onRegionClick={handleRegionClick}
+          handleLogout={handleLogout}
         />
       )}
+      
       <FilterDrawer
-  open={filterOpen}
-  onClose={() => setFilterOpen(false)}
-  filters={filters}
-  setFilters={setFilters}
-  onApply={applyFilters}
-/>
-
+        open={filterOpen}
+        onClose={() => setFilterOpen(false)}
+        filters={filters}
+        setFilters={setFilters}
+        onApply={applyFilters}
+      />
     </>
   );
 }

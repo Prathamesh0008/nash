@@ -8,8 +8,8 @@ export async function GET() {
   try {
     await dbConnect();
 
-    // ✅ cookies() IS ASYNC NOW
-    const cookieStore = await cookies();
+    // ✅ Get cookie correctly
+    const cookieStore = cookies(); // NO await here
     const token = cookieStore.get("token")?.value;
 
     if (!token) {
@@ -35,6 +35,6 @@ export async function GET() {
     });
   } catch (err) {
     console.error("AUTH ME ERROR:", err);
-    return NextResponse.json({ ok: false }, { status: 401 });
+    return NextResponse.json({ ok: false, message: "Server error" }, { status: 500 });
   }
 }
