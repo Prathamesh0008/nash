@@ -7,13 +7,13 @@ import {
   Menu, X, Globe, User, Search, Filter, MapPin,
   ChevronDown, HelpCircle, CheckCircle,
   Users, MessageCircle, Settings,
-  LogOut, Bell, Heart, Shield, Crown
+  LogOut, Bell, Heart, Shield, Crown,
+  Clock, AlertCircle, XCircle
 } from "lucide-react";
 import { FaHome, FaMale, FaFemale, FaVideo } from 'react-icons/fa';
 import BrandLogo from "./BrandLogo";
 import { SEARCH_INDEX } from "@/data/searchIndex";
 import FilterDrawer from "./FilterDrawer";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 const SearchInput = memo(({
   value,
@@ -63,12 +63,49 @@ const SearchInput = memo(({
 
 SearchInput.displayName = 'SearchInput';
 
-// User Dropdown Component
+const WorkerStatusBadge = ({ status }) => {
+  if (!status) return null;
+
+  const map = {
+    active: {
+      label: "Verified",
+      color: "text-emerald-400",
+      icon: CheckCircle,
+    },
+    pending_payment: {
+      label: "Payment Pending",
+      color: "text-yellow-400",
+      icon: Clock,
+    },
+    draft: {
+      label: "Profile Incomplete",
+      color: "text-orange-400",
+      icon: AlertCircle,
+    },
+    rejected: {
+      label: "Rejected",
+      color: "text-red-400",
+      icon: XCircle,
+    },
+  };
+
+  const Item = map[status];
+  if (!Item) return null;
+
+  const Icon = Item.icon;
+
+  return (
+    <span className={`flex items-center gap-1 text-xs font-medium ${Item.color}`}>
+      <Icon className="h-3.5 w-3.5" />
+      {Item.label}
+    </span>
+  );
+};
+
 const UserDropdown = memo(({ user, profileOpen, onLogout }) => (
   <div className={`absolute right-0 mt-2 w-64 bg-black/95 border border-white/10 rounded-xl shadow-2xl shadow-purple-900/30 backdrop-blur-xl overflow-hidden transition-all duration-200 transform origin-top-right ${
     profileOpen ? "scale-100 opacity-100" : "scale-95 opacity-0 pointer-events-none"
   }`}>
-    {/* User Info Header */}
     <div className="p-4 border-b border-white/10">
       <div className="flex items-center gap-3">
         <div className="relative h-12 w-12 rounded-full overflow-hidden border-2 border-pink-500/60 bg-gradient-to-br from-pink-500/30 to-purple-500/30">
@@ -91,12 +128,24 @@ const UserDropdown = memo(({ user, profileOpen, onLogout }) => (
       </div>
     </div>
 
-    {/* Dropdown Menu Items */}
     <div className="py-2">
-      <Link href="/profile" className="flex items-center gap-3 px-4 py-3 hover:bg-white/10 transition-all">
-        <User className="h-4 w-4" />
-        <span className="text-sm">My Profile</span>
-      </Link>
+      {user.role === "worker" ? (
+        <Link
+          href="/worker/dashboard"
+          className="flex items-center gap-3 px-4 py-3 hover:bg-white/10"
+        >
+          <Settings className="h-4 w-4" />
+          <span className="text-sm">Dashboard</span>
+        </Link>
+      ) : (
+        <Link
+          href="/profile"
+          className="flex items-center gap-3 px-4 py-3 hover:bg-white/10"
+        >
+          <User className="h-4 w-4" />
+          <span className="text-sm">My Profile</span>
+        </Link>
+      )}
       
       <Link href="/messages" className="flex items-center gap-3 px-4 py-3 hover:bg-white/10 transition-all">
         <MessageCircle className="h-4 w-4" />
@@ -208,7 +257,7 @@ const CompactBar = memo(({
             </div>
           ) : (
             <>
-              <Link href="/login" className="px-3 py-1.5 text-sm rounded-lg bg-white/5 border border-white/10 hover:border-pink-500/50">
+              <Link href="/login" className="px-3 py-1.5 text-sm rounded-lg bg-white/5 border border-white/10 hover:border-pink-500/50 transition-colors">
                 Login
               </Link>
               <Link href="/register" className="px-3 py-1.5 text-sm rounded-lg bg-gradient-to-r from-pink-600 to-purple-600 font-semibold hover:from-pink-500 hover:to-purple-500">
@@ -230,9 +279,12 @@ const CompactBar = memo(({
   </div>
 ));
 
+CompactBar.displayName = 'CompactBar';
+
 const FullNavbar = memo(({
   searchQuery,
   onSearchChange,
+  workerStatus,
   handleSearch,
   showSuggestions,
   suggestions,
@@ -253,7 +305,6 @@ const FullNavbar = memo(({
   handleLogout
 }) => (
   <div className="w-full">
-    {/* Row 1 - Logo & Top Actions */}
     <div className="border-b border-white/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
         <div className="flex items-center justify-between">
@@ -263,10 +314,9 @@ const FullNavbar = memo(({
               <span className="px-2.5 py-0.5 text-[11px] rounded-full bg-gradient-to-r from-pink-600 to-purple-600 font-semibold">
                 Premium
               </span>
-              <span className="flex items-center gap-1 text-[11px] text-emerald-400">
-                <CheckCircle className="h-3.5 w-3.5" />
-                Verified
-              </span>
+              {user?.role === "worker" && (
+                <WorkerStatusBadge status={workerStatus} />
+              )}
             </div>
           </div>
 
@@ -297,7 +347,6 @@ const FullNavbar = memo(({
                   <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${profileOpen ? "rotate-180" : ""}`} />
                 </button>
                 
-                {/* User Dropdown */}
                 {profileOpen && (
                   <UserDropdown user={user} profileOpen={profileOpen} onLogout={handleLogout} />
                 )}
@@ -307,7 +356,7 @@ const FullNavbar = memo(({
                 <Link href="/login" className="px-4 py-2 text-sm rounded-xl bg-white/5 border border-white/10 hover:border-pink-500/50 transition-colors">
                   Login
                 </Link>
-                <Link href="/register" className="px-4 py-2 text-sm rounded-xl bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 font-semibold transition-all hover:scale-105">
+                <Link href="/register" className="px-4 py-2 text-sm rounded-xl bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 font-semibold">
                   Register
                 </Link>
               </>
@@ -336,7 +385,6 @@ const FullNavbar = memo(({
       </div>
     </div>
 
-    {/* Row 2 - Navigation & Categories */}
     <div className="border-b border-white/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2">
         <div className="hidden lg:flex items-center justify-between">
@@ -376,7 +424,6 @@ const FullNavbar = memo(({
       </div>
     </div>
 
-    {/* Row 3 - Search & Filters */}
     <div className="border-b border-white/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
         <div className="hidden lg:flex items-center gap-3">
@@ -419,6 +466,8 @@ const FullNavbar = memo(({
     </div>
   </div>
 ));
+
+FullNavbar.displayName = 'FullNavbar';
 
 const MobileMenu = memo(({
   menuOpen,
@@ -484,7 +533,6 @@ const MobileMenu = memo(({
         onSuggestionClick={handleSearch}
       />
 
-      {/* Navigation */}
       <div className="space-y-2">
         <p className="text-sm font-semibold text-white/60 px-2">Navigation</p>
         {mainLinks.map((item) => (
@@ -507,7 +555,6 @@ const MobileMenu = memo(({
         ))}
       </div>
 
-      {/* Categories */}
       <div>
         <p className="text-sm font-semibold text-white/60 mb-3 px-2">Categories</p>
         <div className="grid grid-cols-2 gap-2">
@@ -524,7 +571,6 @@ const MobileMenu = memo(({
         </div>
       </div>
 
-      {/* Quick Actions */}
       <div>
         <p className="text-sm font-semibold text-white/60 mb-3 px-2">Quick Actions</p>
         <div className="grid grid-cols-2 gap-3">
@@ -559,7 +605,6 @@ const MobileMenu = memo(({
         </div>
       </div>
 
-      {/* Premium Section */}
       <div className="p-4 rounded-2xl bg-gradient-to-r from-pink-600/10 to-purple-600/10 border border-pink-500/20">
         <div className="flex items-center gap-3 mb-3">
           <Crown className="h-5 w-5 text-pink-400" />
@@ -575,7 +620,6 @@ const MobileMenu = memo(({
         </Link>
       </div>
 
-      {/* Auth & Language */}
       <div className="pt-6 border-t border-white/10 space-y-3">
         {!user ? (
           <div className="grid grid-cols-2 gap-3">
@@ -625,7 +669,10 @@ const MobileMenu = memo(({
   </div>
 ));
 
+MobileMenu.displayName = 'MobileMenu';
+
 export default function Navbar() {
+  // ALL HOOKS DECLARED UNCONDITIONALLY
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [languageOpen, setLanguageOpen] = useState(false);
@@ -641,12 +688,59 @@ export default function Navbar() {
     country: "",
     price: 1000
   });
+  const [workerStatus, setWorkerStatus] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState(null);
+
+const [loadingUser, setLoadingUser] = useState(true);
+
+
 
   const router = useRouter();
   const pathname = usePathname();
   const profileRef = useRef(null);
   const languageRef = useRef(null);
-  const { user, loading } = useCurrentUser();
+
+  // Simulate user loading - NO conditional returns inside useEffect
+  // useEffect(() => {
+  //   const timer = setTimeout(() => {
+  //     const mockUser = {
+  //       id: '1',
+  //       name: 'Demo User',
+  //       email: 'demo@example.com',
+  //       role: 'user',
+  //       image: null,
+  //       username: 'demo_user'
+  //     };
+      
+  //     const urlParams = new URLSearchParams(window.location.search);
+  //     const shouldLogOut = urlParams.get('logout') === 'true';
+      
+  //     setUser(shouldLogOut ? null : mockUser);
+  //     setIsLoading(false);
+      
+  //     if (mockUser.role === 'worker') {
+  //       setWorkerStatus('active');
+  //     }
+  //   }, 300);
+
+  //   return () => clearTimeout(timer);
+  // }, []);
+
+  // NO conditional return here - render loading state within the same component
+  // if (isLoading) {
+  //   return (
+  //     <header className="fixed top-0 w-full z-40 bg-black border-b border-white/10">
+  //       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+  //         <BrandLogo />
+  //         <div className="h-8 w-24 rounded-lg bg-white/10 animate-pulse" />
+  //       </div>
+  //     </header>
+  //   );
+  // }
+
+  // The rest of your hooks MUST come AFTER any conditional returns
+  // Move all other hooks here...
 
   const mainLinks = [
     { label: "Home", href: "/", icon: FaHome },
@@ -666,17 +760,14 @@ export default function Navbar() {
     { label: "Logout", icon: LogOut, href: "#" },
   ];
 
-  // ✅ Handle logout
   const handleLogout = useCallback(() => {
-    // Here you would typically call your logout API
     console.log("Logging out...");
-    // Example: await logout();
-    router.push("/");
+    setUser(null);
+    router.push("/?logout=true");
     setProfileOpen(false);
     setMenuOpen(false);
   }, [router]);
 
-  // ✅ Search handlers
   const onSearchChange = useCallback((e) => {
     const value = e.target.value;
     setSearchQuery(value);
@@ -711,7 +802,6 @@ export default function Navbar() {
     setMenuOpen(false);
   }, [searchQuery, router]);
 
-  // ✅ Filter handlers
   const handleFilterClick = () => {
     setFilterOpen(true);
   };
@@ -737,7 +827,6 @@ export default function Navbar() {
     router.push("/regions");
   }, [router]);
 
-  // ✅ Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (menuOpen && !e.target.closest('.mobile-menu-content')) {
@@ -758,7 +847,6 @@ export default function Navbar() {
     return () => document.removeEventListener('click', handleClickOutside);
   }, [menuOpen]);
 
-  // ✅ Responsive behavior
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 1024);
@@ -784,7 +872,6 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", onScroll);
   }, [isMobile]);
 
-  // ✅ Set active link based on pathname
   useEffect(() => {
     if (pathname === "/") {
       setActiveLink("Home");
@@ -798,7 +885,43 @@ export default function Navbar() {
       setActiveLink("Videos");
     }
   }, [pathname]);
+  useEffect(() => {
+  const loadUser = async () => {
+    try {
+      const res = await fetch("/api/auth/me");
+      const data = await res.json();
 
+      if (data?.ok && data.user) {
+        setUser({
+          ...data.user,
+          name:
+            data.user.fullName ||
+            data.user.name ||
+            data.user.email?.split("@")[0] ||
+            "User",
+        });
+
+        // If worker → load status
+        if (data.user.role === "worker") {
+          const s = await fetch("/api/worker/status");
+          const sd = await s.json();
+          if (sd?.ok) setWorkerStatus(sd.status);
+        }
+      } else {
+        setUser(null);
+      }
+    } catch (e) {
+      setUser(null);
+    } finally {
+      setLoadingUser(false);
+    }
+  };
+
+  loadUser();
+}, []);
+
+
+  // FINAL RETURN - only one return statement
   return (
     <>
       <header className={`fixed top-0 w-full z-40 bg-gradient-to-b from-black via-black/95 to-black/90 backdrop-blur-xl border-b border-white/10 text-white shadow-2xl shadow-purple-900/20 transition-all duration-300 ${mode === "compact" && !isMobile ? 'py-0' : ''}`}>
@@ -824,6 +947,7 @@ export default function Navbar() {
           <FullNavbar
             searchQuery={searchQuery}
             onSearchChange={onSearchChange}
+            workerStatus={workerStatus}
             handleSearch={handleSearch}
             showSuggestions={showSuggestions}
             suggestions={suggestions}

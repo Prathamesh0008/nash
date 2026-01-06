@@ -9,7 +9,7 @@ export async function GET() {
     await dbConnect();
 
     // ✅ Get cookie correctly
-    const cookieStore = cookies(); // NO await here
+    const cookieStore = await cookies(); // NO await here
     const token = cookieStore.get("token")?.value;
 
     if (!token) {

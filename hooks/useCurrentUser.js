@@ -1,27 +1,34 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import api from "@/lib/api"; // simple fetch wrapper, or just use fetch
+import { useState, useEffect, useCallback } from "react";
 
 export function useCurrentUser() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const res = await fetch("/api/auth/me");
-        const data = await res.json();
-        if (data.ok) setUser({ ...data.user, name: data.user.fullName });
-      } catch (err) {
-        console.error("Failed to fetch user:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchUser = useCallback(async () => {
+    try {
+      const res = await fetch("/api/auth/me", {
+        credentials: "include", // IMPORTANT
+      });
+      const data = await res.json();
 
-    fetchUser();
+      if (data?.ok) {
+        setUser(data.user); // 👈 DO NOT rename fields
+      } else {
+        setUser(null);
+      }
+    } catch (err) {
+      console.error("Failed to fetch user:", err);
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  return { user, loading };
+  useEffect(() => {
+    fetchUser();
+  }, [fetchUser]);
+
+  return { user, loading, refreshUser: fetchUser };
 }

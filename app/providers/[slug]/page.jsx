@@ -73,6 +73,8 @@ export default function ProviderProfilePage() {
   const [selectedTab, setSelectedTab] = useState("overview");
   const intervalRef = useRef(null);
   const router = useRouter();
+  const [showPhone, setShowPhone] = useState(false);
+const phoneNumber = "+1 (555) 123-4567";
 
   // Detailed Physical Attributes Data
   const physicalAttributes = {
@@ -814,32 +816,49 @@ export default function ProviderProfilePage() {
             </div>
 
             {/* Quick Actions */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold flex items-center gap-2">
-                <Zap className="h-5 w-5 text-pink-400" />
-                Quick Actions
-              </h3>
-              
-              <div className="grid grid-cols-2 gap-3">
-                <button 
-  onClick={() => router.push('/chat')}
-  className="p-4 rounded-xl bg-gradient-to-r from-pink-600 to-purple-600 font-semibold flex items-center justify-center gap-3 hover:from-pink-500 hover:to-purple-500 transition-all hover:scale-[1.02]"
->
-  <MessageCircle className="h-5 w-5" />
-  Message
-</button>
-                
-                <button className="p-4 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 font-semibold flex items-center justify-center gap-3 hover:bg-white/20 transition-all">
-                  <Phone className="h-5 w-5" />
-                  Call Now
-                </button>
-              </div>
-              
-              <button className="w-full p-4 rounded-xl bg-gradient-to-r from-emerald-600 to-green-600 font-semibold flex items-center justify-center gap-3 hover:from-emerald-500 hover:to-green-500 transition-all">
-                <Calendar className="h-5 w-5" />
-                Book Appointment
-              </button>
-            </div>
+<div className="space-y-4">
+  <h3 className="text-lg font-semibold flex items-center gap-2">
+    <Zap className="h-5 w-5 text-pink-400" />
+    Quick Actions
+  </h3>
+
+  <div className="grid grid-cols-2 gap-3">
+    <button
+      onClick={() => router.push("/chat")}
+      className="p-4 rounded-xl bg-gradient-to-r from-pink-600 to-purple-600 font-semibold flex items-center justify-center gap-3 hover:from-pink-500 hover:to-purple-500 transition-all hover:scale-[1.02]"
+    >
+      <MessageCircle className="h-5 w-5" />
+      Message
+    </button>
+
+    <button
+      onClick={() => setShowPhone(!showPhone)}
+      className={`p-4 rounded-xl font-semibold flex items-center justify-center gap-3 transition-all hover:scale-[1.02] ${
+        showPhone 
+          ? 'bg-gradient-to-r from-green-600 to-emerald-600' 
+          : 'bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500'
+      }`}
+    >
+      {showPhone ? (
+        <>
+          <a 
+            href={`tel:${phoneNumber.replace(/\D/g, '')}`}
+            onClick={(e) => e.stopPropagation()}
+            className="flex items-center gap-2"
+          >
+            <Phone className="h-5 w-5" />
+            <span className="font-bold">{phoneNumber}</span>
+          </a>
+        </>
+      ) : (
+        <>
+          <Phone className="h-5 w-5" />
+          Call Now
+        </>
+      )}
+    </button>
+  </div>
+</div>
 
             {/* Booking Widget */}
             <div className="rounded-2xl bg-gradient-to-br from-white/10 to-white/5 border border-white/10 p-5">

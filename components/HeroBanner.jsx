@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import {
@@ -140,12 +142,16 @@ export default function HeroBanner() {
 
             {/* ACTIONS */}
            <div className="mt-8 flex flex-col sm:flex-row gap-4 w-full">
-  <button className="w-full sm:w-auto px-8 py-3 rounded-xl
-                     bg-gradient-to-r from-pink-600 to-purple-600
-                     hover:from-pink-700 hover:to-purple-700
-                     font-semibold shadow-lg transition">
-    Unlock Full Profile
-  </button>
+<Link
+  href={`/providers/${active.slug}`}
+  className="w-full sm:w-auto px-8 py-3 rounded-xl
+             bg-gradient-to-r from-pink-600 to-purple-600
+             hover:from-pink-700 hover:to-purple-700
+             font-semibold shadow-lg transition text-center"
+>
+  View Profile
+</Link>
+
 
   <button className="w-full sm:w-auto px-8 py-3 rounded-xl
                      bg-white text-gray-900 font-semibold

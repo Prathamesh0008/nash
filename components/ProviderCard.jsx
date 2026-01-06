@@ -259,7 +259,7 @@ export default function ProviderCard({ provider }) {
           </Link>
 
           <Link
-            href={`/book/${provider.slug}`}
+            href={`/chat`}
             className="
               flex-1 text-center py-2 rounded-lg
               bg-gradient-to-r from-pink-600 to-purple-600
@@ -269,7 +269,7 @@ export default function ProviderCard({ provider }) {
               shadow-md shadow-pink-900/20
             "
           >
-            Book
+            Message
           </Link>
         </div>
       </div>
