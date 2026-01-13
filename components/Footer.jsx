@@ -1,6 +1,7 @@
 // components/Footer.jsx
 "use client"
 import { Shield, Lock, CreditCard, Heart, Diamond } from 'lucide-react'
+import Link from "next/link"
 
 export default function Footer() {
   // Simple Upgrade Button Component
@@ -35,23 +36,26 @@ export default function Footer() {
   )
 
   // Footer Links Section
-  const FooterLinks = ({ title, links, gradient = "from-pink-500 to-blue-500" }) => (
-    <div>
-      <h3 className="font-semibold text-lg mb-4 text-white">{title}</h3>
-      <ul className="space-y-3">
-        {links.map((link) => (
-          <li key={link}>
-            <a 
-              href="#" 
-              className="text-gray-400 hover:text-white transition-colors duration-200 block py-1"
-            >
-              {link}
-            </a>
-          </li>
-        ))}
-      </ul>
-    </div>
-  )
+
+
+const FooterLinks = ({ title, links }) => (
+  <div>
+    <h3 className="font-semibold text-lg mb-4 text-white">{title}</h3>
+    <ul className="space-y-3">
+      {links.map(({ label, href }) => (
+        <li key={href}>
+          <Link
+            href={href}
+            className="text-gray-400 hover:text-white transition-colors duration-200 block py-1"
+          >
+            {label}
+          </Link>
+        </li>
+      ))}
+    </ul>
+  </div>
+)
+
 
   return (
     <footer className="bg-gray-900 border-t border-gray-800">
@@ -77,22 +81,40 @@ export default function Footer() {
 
         {/* Main Footer Links */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
-          <FooterLinks
-            title="Quick Links"
-            links={['Home', 'Models Directory', 'Top Ranking', 'New Models', 'Online Now']}
-          />
           
           <FooterLinks
-            title="For Models"
-            links={['Join Our Platform', 'Ranking System', 'Earning Calculator', 'Safety Guidelines', 'FAQ & Support']}
-            gradient="from-purple-500 to-pink-500"
-          />
-          
-          <FooterLinks
-            title="Legal & Support"
-            links={['Terms of Service', 'Privacy Policy', 'Payment Methods', 'Contact Support', 'DMCA & Compliance']}
-            gradient="from-blue-500 to-purple-500"
-          />
+  title="Quick Links"
+  links={[
+    { label: "Home", href: "/" },
+    { label: "Models Directory", href: "/models" },
+    { label: "Top Ranking", href: "/models/top" },
+    { label: "New Models", href: "/models/new" },
+    { label: "Online Now", href: "/models/online" },
+  ]}
+/>
+
+<FooterLinks
+  title="For Models"
+  links={[
+    { label: "Join Our Platform", href: "/models-join" },
+    { label: "Ranking System", href: "/ranking-system" },
+    { label: "Earning Calculator", href: "/earning-calculator" },
+    { label: "Safety Guidelines", href: "/safety-guidelines" },
+    { label: "FAQ & Support", href: "/faq" },
+  ]}
+/>
+
+<FooterLinks
+  title="Legal & Support"
+  links={[
+    { label: "Terms of Service", href: "/legal/terms" },
+    { label: "Privacy Policy", href: "/legal/privacy" },
+    { label: "Payment Methods", href: "/legal/payments" },
+    { label: "Contact Support", href: "/support" },
+    { label: "DMCA & Compliance", href: "/legal/dmca" },
+  ]}
+/>
+
           
           <div>
             <h3 className="font-semibold text-lg mb-4 text-white">Contact</h3>
@@ -121,9 +143,10 @@ export default function Footer() {
             </div>
             
             <div className="flex items-center space-x-6 text-sm text-gray-400">
-              <a href="#" className="hover:text-white transition-colors">Privacy</a>
-              <a href="#" className="hover:text-white transition-colors">Terms</a>
-              <a href="#" className="hover:text-white transition-colors">Cookies</a>
+             <Link href="/legal/privacy">Privacy</Link>
+<Link href="/legal/terms">Terms</Link>
+<Link href="/legal/cookies">Cookies</Link>
+
             </div>
           </div>
         </div>

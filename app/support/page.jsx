@@ -1,14 +1,12 @@
-import PageContainer from "@/components/PageContainer";
+import PageLayout from "@/components/PageLayout"
 
 export default function SupportPage() {
   return (
-    <PageContainer>
-      <h1 className="text-2xl font-semibold text-white">
-        Customer Support
-      </h1>
-      <p className="text-white/60 mt-2">
-        24/7 assistance for premium members.
-      </p>
-    </PageContainer>
-  );
+    <PageLayout
+      title="Contact Support"
+      subtitle="Available 24/7"
+    >
+      <p className="text-gray-400">Email: support@elitecompanions.com</p>
+    </PageLayout>
+  )
 }
