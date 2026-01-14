@@ -2,6 +2,7 @@ import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import AgeGateWrapper from "@/components/AgeGateWrapper";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 export const metadata = {
   title: {
@@ -29,6 +30,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className="bg-black text-white">
+        <AuthProvider>
         <Navbar />
 
         <main
@@ -44,6 +46,7 @@ export default function RootLayout({ children }) {
         </main>
 
         <Footer />
+        </AuthProvider>
       </body>
     </html>
   );

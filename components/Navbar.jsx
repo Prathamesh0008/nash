@@ -14,6 +14,8 @@ import { FaHome, FaMale, FaFemale, FaVideo } from 'react-icons/fa';
 import BrandLogo from "./BrandLogo";
 import { SEARCH_INDEX } from "@/data/searchIndex";
 import FilterDrawer from "./FilterDrawer";
+import { useAuth } from "@/contexts/AuthContext"; // Import the auth context
+import StatusBadge from "./StatusBadge"; // Import your StatusBadge component
 
 const SearchInput = memo(({
   value,
@@ -118,7 +120,7 @@ const UserDropdown = memo(({ user, profileOpen, onLogout }) => (
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-white truncate">{user?.name || "User"}</p>
+          <p className="font-semibold text-white truncate">{user?.name || user?.email?.split("@")[0] || "User"}</p>
           <p className="text-xs text-white/60 truncate">{user?.email || user?.username || ""}</p>
           <div className="flex items-center gap-1 mt-1">
             <Crown className="h-3 w-3 text-yellow-400" />
@@ -130,12 +132,35 @@ const UserDropdown = memo(({ user, profileOpen, onLogout }) => (
 
     <div className="py-2">
       {user.role === "worker" ? (
+        <>
+          <Link
+            href="/worker/dashboard"
+            className="flex items-center gap-3 px-4 py-3 hover:bg-white/10"
+          >
+            <Settings className="h-4 w-4" />
+            <span className="text-sm">Dashboard</span>
+          </Link>
+          
+          <Link
+            href="/worker/inbox"
+            className="flex items-center gap-3 px-4 py-3 hover:bg-white/10 transition-all"
+          >
+            <MessageCircle className="h-4 w-4" />
+            <span className="text-sm">Inbox</span>
+          </Link>
+          
+          {/* Show status badge in dropdown for workers */}
+          <div className="px-4 py-3">
+            <StatusBadge status={user.workerStatus} />
+          </div>
+        </>
+      ) : user.role === "admin" ? (
         <Link
-          href="/worker/dashboard"
+          href="/admin"
           className="flex items-center gap-3 px-4 py-3 hover:bg-white/10"
         >
-          <Settings className="h-4 w-4" />
-          <span className="text-sm">Dashboard</span>
+          <Shield className="h-4 w-4" />
+          <span className="text-sm">Admin Panel</span>
         </Link>
       ) : (
         <Link
@@ -144,6 +169,13 @@ const UserDropdown = memo(({ user, profileOpen, onLogout }) => (
         >
           <User className="h-4 w-4" />
           <span className="text-sm">My Profile</span>
+        </Link>
+      )}
+      
+      {user.role !== "worker" && (
+        <Link href="/user/inbox" className="flex items-center gap-3 px-4 py-3 hover:bg-white/10 transition-all">
+          <MessageCircle className="h-4 w-4" />
+          <span className="text-sm">Inbox</span>
         </Link>
       )}
       
@@ -247,7 +279,7 @@ const CompactBar = memo(({
                     <User className="h-3 w-3 absolute inset-0 m-auto" />
                   )}
                 </div>
-                <span className="font-medium">{user.name?.split(' ')[0] || 'User'}</span>
+                <span className="font-medium">{user.name || user.email?.split("@")[0] || 'User'}</span>
                 <ChevronDown className={`h-3 w-3 transition-transform ${profileOpen ? "rotate-180" : ""}`} />
               </button>
               
@@ -325,6 +357,10 @@ const FullNavbar = memo(({
               Support
             </Link>
 
+            <Link href="/workers" className="px-4 py-2 text-sm rounded-xl bg-white/5 border border-white/10 hover:border-pink-500/50 transition-colors">
+              Workers
+            </Link>
+
             {user ? (
               <div ref={profileRef} className="relative">
                 <button
@@ -341,7 +377,7 @@ const FullNavbar = memo(({
                     )}
                   </div>
                   <div className="text-left">
-                    <div className="text-sm font-semibold">{user?.name || "Account"}</div>
+                    <div className="text-sm font-semibold">{user?.name || user?.email?.split("@")[0] || "Account"}</div>
                     <div className="text-xs text-white/60">Premium Member</div>
                   </div>
                   <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${profileOpen ? "rotate-180" : ""}`} />
@@ -514,8 +550,13 @@ const MobileMenu = memo(({
               )}
             </div>
             <div>
-              <p className="font-semibold">{user.name}</p>
+              <p className="font-semibold">{user.name || user.email?.split("@")[0] || "User"}</p>
               <p className="text-sm text-white/60">Premium Member</p>
+              {user.role === "worker" && (
+                <div className="mt-1">
+                  <StatusBadge status={user.workerStatus} />
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -553,6 +594,16 @@ const MobileMenu = memo(({
             <span className="text-sm font-medium">{item.label}</span>
           </Link>
         ))}
+        
+        {/* Add Workers link to mobile menu */}
+        <Link
+          href="/workers"
+          onClick={() => setMenuOpen(false)}
+          className="flex items-center gap-3 px-4 py-3.5 rounded-xl bg-white/5 hover:bg-white/15 hover:border-white/30 text-white/80 hover:text-white transition-all duration-200 border border-transparent"
+        >
+          <Users className="h-5 w-5" />
+          <span className="text-sm font-medium">Workers</span>
+        </Link>
       </div>
 
       <div>
@@ -633,6 +684,50 @@ const MobileMenu = memo(({
           </div>
         ) : (
           <div className="space-y-2">
+            {/* Dashboard links based on role */}
+            {user.role === "worker" && (
+              <>
+                <Link
+                  href="/worker/dashboard"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 transition-all"
+                >
+                  <Settings className="h-5 w-5" />
+                  <span className="text-sm">Worker Dashboard</span>
+                </Link>
+                <Link
+                  href="/worker/inbox"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 transition-all"
+                >
+                  <MessageCircle className="h-5 w-5" />
+                  <span className="text-sm">Inbox</span>
+                </Link>
+              </>
+            )}
+            
+            {user.role === "admin" && (
+              <Link
+                href="/admin"
+                onClick={() => setMenuOpen(false)}
+                className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 transition-all"
+              >
+                <Shield className="h-5 w-5" />
+                <span className="text-sm">Admin Panel</span>
+              </Link>
+            )}
+            
+            {user.role === "user" && (
+              <Link
+                href="/user/inbox"
+                onClick={() => setMenuOpen(false)}
+                className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 transition-all"
+              >
+                <MessageCircle className="h-5 w-5" />
+                <span className="text-sm">Inbox</span>
+              </Link>
+            )}
+            
             {userMenuItems.map((item) => (
               <Link
                 key={item.label}
@@ -672,6 +767,10 @@ const MobileMenu = memo(({
 MobileMenu.displayName = 'MobileMenu';
 
 export default function Navbar() {
+  // Use the auth context instead of managing user state manually
+  const { user, loading, logout } = useAuth();
+  const router = useRouter();
+  
   // ALL HOOKS DECLARED UNCONDITIONALLY
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -689,58 +788,25 @@ export default function Navbar() {
     price: 1000
   });
   const [workerStatus, setWorkerStatus] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [user, setUser] = useState(null);
 
-const [loadingUser, setLoadingUser] = useState(true);
-
-
-
-  const router = useRouter();
   const pathname = usePathname();
   const profileRef = useRef(null);
   const languageRef = useRef(null);
 
-  // Simulate user loading - NO conditional returns inside useEffect
-  // useEffect(() => {
-  //   const timer = setTimeout(() => {
-  //     const mockUser = {
-  //       id: '1',
-  //       name: 'Demo User',
-  //       email: 'demo@example.com',
-  //       role: 'user',
-  //       image: null,
-  //       username: 'demo_user'
-  //     };
-      
-  //     const urlParams = new URLSearchParams(window.location.search);
-  //     const shouldLogOut = urlParams.get('logout') === 'true';
-      
-  //     setUser(shouldLogOut ? null : mockUser);
-  //     setIsLoading(false);
-      
-  //     if (mockUser.role === 'worker') {
-  //       setWorkerStatus('active');
-  //     }
-  //   }, 300);
+  // Handle logout using the auth context
+  const handleLogout = useCallback(async () => {
+    await logout();
+    router.push("/login");
+    setProfileOpen(false);
+    setMenuOpen(false);
+  }, [logout, router]);
 
-  //   return () => clearTimeout(timer);
-  // }, []);
-
-  // NO conditional return here - render loading state within the same component
-  // if (isLoading) {
-  //   return (
-  //     <header className="fixed top-0 w-full z-40 bg-black border-b border-white/10">
-  //       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-  //         <BrandLogo />
-  //         <div className="h-8 w-24 rounded-lg bg-white/10 animate-pulse" />
-  //       </div>
-  //     </header>
-  //   );
-  // }
-
-  // The rest of your hooks MUST come AFTER any conditional returns
-  // Move all other hooks here...
+  // Update worker status when user changes
+  useEffect(() => {
+    if (user?.role === "worker" && user.workerStatus) {
+      setWorkerStatus(user.workerStatus);
+    }
+  }, [user]);
 
   const mainLinks = [
     { label: "Home", href: "/", icon: FaHome },
@@ -759,14 +825,6 @@ const [loadingUser, setLoadingUser] = useState(true);
     { label: "Settings", icon: Settings, href: "/settings" },
     { label: "Logout", icon: LogOut, href: "#" },
   ];
-
-  const handleLogout = useCallback(() => {
-    console.log("Logging out...");
-    setUser(null);
-    router.push("/?logout=true");
-    setProfileOpen(false);
-    setMenuOpen(false);
-  }, [router]);
 
   const onSearchChange = useCallback((e) => {
     const value = e.target.value;
@@ -885,41 +943,18 @@ const [loadingUser, setLoadingUser] = useState(true);
       setActiveLink("Videos");
     }
   }, [pathname]);
-  useEffect(() => {
-  const loadUser = async () => {
-    try {
-      const res = await fetch("/api/auth/me");
-      const data = await res.json();
 
-      if (data?.ok && data.user) {
-        setUser({
-          ...data.user,
-          name:
-            data.user.fullName ||
-            data.user.name ||
-            data.user.email?.split("@")[0] ||
-            "User",
-        });
-
-        // If worker → load status
-        if (data.user.role === "worker") {
-          const s = await fetch("/api/worker/status");
-          const sd = await s.json();
-          if (sd?.ok) setWorkerStatus(sd.status);
-        }
-      } else {
-        setUser(null);
-      }
-    } catch (e) {
-      setUser(null);
-    } finally {
-      setLoadingUser(false);
-    }
-  };
-
-  loadUser();
-}, []);
-
+  // Show loading state while auth is loading
+  if (loading) {
+    return (
+      <header className="fixed top-0 w-full z-40 bg-black border-b border-white/10">
+        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+          <BrandLogo />
+          <div className="h-8 w-24 rounded-lg bg-white/10 animate-pulse" />
+        </div>
+      </header>
+    );
+  }
 
   // FINAL RETURN - only one return statement
   return (
@@ -955,7 +990,7 @@ const [loadingUser, setLoadingUser] = useState(true);
             activeLink={activeLink}
             setActiveLink={setActiveLink}
             categories={categories}
-            user={user}
+            user={user} // Pass user from auth context
             profileOpen={profileOpen}
             setProfileOpen={setProfileOpen}
             languageOpen={languageOpen}
@@ -980,7 +1015,7 @@ const [loadingUser, setLoadingUser] = useState(true);
             setMenuOpen={setMenuOpen}
             onFilterClick={handleFilterClick}
             onRegionClick={handleRegionClick}
-            user={user}
+            user={user} // Pass user from auth context
             profileOpen={profileOpen}
             setProfileOpen={setProfileOpen}
             profileRef={profileRef}
@@ -1002,7 +1037,7 @@ const [loadingUser, setLoadingUser] = useState(true);
           activeLink={activeLink}
           setActiveLink={setActiveLink}
           categories={categories}
-          user={user}
+          user={user} // Pass user from auth context
           userMenuItems={userMenuItems}
           onFilterClick={handleFilterClick}
           onRegionClick={handleRegionClick}
