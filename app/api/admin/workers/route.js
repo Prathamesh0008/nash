@@ -10,22 +10,43 @@ export async function GET() {
 
   const token = (await cookies()).get("auth")?.value;
   const decoded = token ? verifyToken(token) : null;
-  if (!decoded) return NextResponse.json({ ok: false }, { status: 401 });
-  if (decoded.role !== "admin") return NextResponse.json({ ok: false }, { status: 403 });
+
+  if (!decoded || decoded.role !== "admin") {
+    return NextResponse.json({ ok: false }, { status: 403 });
+  }
 
   const profiles = await WorkerProfile.find({}).lean();
   const users = await User.find({ role: "worker" }).lean();
-  const map = {};
-  users.forEach((u) => (map[u._id.toString()] = u));
 
-  const result = profiles.map((p) => ({
-    workerUserId: p.userId,
-    name: map[p.userId.toString()]?.name || "",
-    email: map[p.userId.toString()]?.email || "",
-    city: p.city,
-    services: p.services,
-    status: p.status,
-  }));
+  const userMap = {};
+  users.forEach((u) => (userMap[u._id.toString()] = u));
 
-  return NextResponse.json({ ok: true, workers: result });
+  const workers = profiles.map((p) => {
+    const u = userMap[p.userId?.toString()] || {};
+
+    return {
+      workerUserId: p.userId,
+      fullName: p.fullName || u.name || "",
+      email: u.email || "",
+      phone: p.phone || "",
+      city: p.city || "",
+      status: p.status,
+
+      profilePhoto: p.profilePhoto,
+      galleryPhotos: p.galleryPhotos || [],
+
+      services: p.services || [],
+      extraServices: p.extraServices || [],
+      speciality: p.speciality,
+
+      skills: p.skills || [],
+      languages: p.languages || [],
+
+      availability: p.availability,
+      documents: p.documents,
+      bio: p.bio,
+    };
+  });
+
+  return NextResponse.json({ ok: true, workers });
 }
