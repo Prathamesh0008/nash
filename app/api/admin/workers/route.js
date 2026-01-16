@@ -1,27 +1,52 @@
-import dbConnect from "@/lib/db";
+import dbConnect from "@/lib/dbConnect";
 import WorkerProfile from "@/models/WorkerProfile";
-import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { verifyToken } from "@/lib/auth";
 import User from "@/models/User";
+import { NextResponse } from "next/server";
+import { verifyToken } from "@/lib/auth";
+import { cookies } from "next/headers";
 
 export async function GET() {
   await dbConnect();
 
-  const token = (await cookies()).get("token")?.value;
-  if (!token) return NextResponse.json({ ok: false }, { status: 401 });
+  const token = (await cookies()).get("auth")?.value;
+  const decoded = token ? verifyToken(token) : null;
 
-  const decoded = verifyToken(token);
-  const admin = await User.findById(decoded.userId);
-
-  if (!admin || admin.role !== "admin") {
+  if (!decoded || decoded.role !== "admin") {
     return NextResponse.json({ ok: false }, { status: 403 });
   }
 
-  const workers = await WorkerProfile.find()
-    .populate("userId", "email")
-    .sort({ createdAt: -1 })
-    .lean();
+  const profiles = await WorkerProfile.find({}).lean();
+  const users = await User.find({ role: "worker" }).lean();
+
+  const userMap = {};
+  users.forEach((u) => (userMap[u._id.toString()] = u));
+
+  const workers = profiles.map((p) => {
+    const u = userMap[p.userId?.toString()] || {};
+
+    return {
+      workerUserId: p.userId,
+      fullName: p.fullName || u.name || "",
+      email: u.email || "",
+      phone: p.phone || "",
+      city: p.city || "",
+      status: p.status,
+
+      profilePhoto: p.profilePhoto,
+      galleryPhotos: p.galleryPhotos || [],
+
+      services: p.services || [],
+      extraServices: p.extraServices || [],
+      speciality: p.speciality,
+
+      skills: p.skills || [],
+      languages: p.languages || [],
+
+      availability: p.availability,
+      documents: p.documents,
+      bio: p.bio,
+    };
+  });
 
   return NextResponse.json({ ok: true, workers });
 }

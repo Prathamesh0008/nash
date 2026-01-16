@@ -2,53 +2,92 @@ import mongoose from "mongoose";
 
 const WorkerProfileSchema = new mongoose.Schema(
   {
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      unique: true,
+    },
 
-    profile: Object,
-    services: [String],
-    languages: [String],
+    /* ================= BASIC INFO ================= */
+    fullName: String,
+    phone: String,
+    city: String,
+    address: String,
 
+    dob: Date,
+    gender: {
+      type: String,
+      enum: ["male", "female", "other"],
+    },
+    nationality: String,
+
+    heightCm: Number,
+    weightKg: Number,
+    hairColor: String,
+
+    /* ================= PHOTOS ================= */
+    profilePhoto: String,
+    galleryPhotos: { type: [String], default: [] },
+
+    /* ================= SERVICES ================= */
+    services: {
+      type: [
+        {
+          name: String,
+          experienceYears: Number,
+          basePrice: Number,
+        },
+      ],
+      default: [],
+    },
+
+    extraServices: {
+      type: [
+        {
+          title: String,
+          price: Number,
+        },
+      ],
+      default: [],
+    },
+
+    speciality: String,
+
+    /* ================= AVAILABILITY ================= */
     availability: {
       workingDays: [String],
-      startTime: String,
-      endTime: String,
+      timeFrom: String,
+      timeTo: String,
+      emergencyAvailable: Boolean,
     },
 
-    contactPreferences: {
-      call: Boolean,
-      whatsapp: Boolean,
-      platform: Boolean,
+    serviceRadiusKm: Number,
+
+    /* ================= SKILLS ================= */
+    skills: { type: [String], default: [] },
+    languages: { type: [String], default: [] },
+
+    /* ================= BIO ================= */
+    bio: String,
+
+    /* ================= DOCUMENTS ================= */
+    documents: {
+      idProof: String,
+      addressProof: String,
     },
 
-    verification: {
-      phoneCountry: String,
-      phoneNumber: String,
-      phoneVerified: Boolean,
-      identityPhoto: String,
-      bodyPhoto: String,
-    },
-    
-
-    advertisement: {
-      promoSticker: String,
+    /* ================= STATUS ================= */
+    status: {
+      type: String,
+      enum: ["draft", "pending", "active", "rejected"],
+      default: "draft",
     },
 
-    promotionPlan: String,
-    acceptedTerms: Boolean,
-status: {
-  type: String,
-  enum: ["draft", "pending_payment", "active", "rejected"],
-  default: "draft",
-},
-rejectionReason: {
-  type: String,
-  default: "",
-},
-
+    adminNote: String,
   },
   { timestamps: true }
 );
 
 export default mongoose.models.WorkerProfile ||
   mongoose.model("WorkerProfile", WorkerProfileSchema);
-

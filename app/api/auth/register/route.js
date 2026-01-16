@@ -1,48 +1,59 @@
-import dbConnect from "@/lib/db";
+import dbConnect from "@/lib/dbConnect";
 import User from "@/models/User";
+import WorkerProfile from "@/models/WorkerProfile";
 import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
-import { signToken } from "@/lib/auth";
+import { signToken, setAuthCookie } from "@/lib/auth";
 
 export async function POST(req) {
-  try {
-    await dbConnect();
-    const { fullName, email, password, role } = await req.json();
+  await dbConnect();
+  const body = await req.json();
 
-    if (!email || !password || !role) {
-      return NextResponse.json({ ok: false, message: "Missing fields" }, { status: 400 });
-    }
+ const { email, password, role, name } = body;
 
-    const exists = await User.findOne({ email: email.toLowerCase() });
-    if (exists) {
-      return NextResponse.json({ ok: false, message: "Email already exists" }, { status: 400 });
-    }
 
-    const passwordHash = await bcrypt.hash(password, 10);
-
-    const user = await User.create({
-      fullName: fullName || "",
-      email: email.toLowerCase(),
-      passwordHash,
-      role,
-    });
-
-    const token = signToken({ userId: user._id.toString(), role: user.role });
-
-    const res = NextResponse.json({
-      ok: true,
-      user: { id: user._id, email: user.email, role: user.role, fullName: user.fullName },
-    });
-
-    res.cookies.set("token", token, {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: false, // set true on production https
-      path: "/",
-    });
-
-    return res;
-  } catch (e) {
-    return NextResponse.json({ ok: false, message: "Server error" }, { status: 500 });
+  if (!email || !password || !role) {
+    return NextResponse.json({ ok: false, error: "Missing fields" }, { status: 400 });
   }
+
+  if (!["user", "worker"].includes(role)) {
+    return NextResponse.json({ ok: false, error: "Invalid role" }, { status: 400 });
+  }
+
+  const existing = await User.findOne({ email: email.toLowerCase() });
+  if (existing) {
+    return NextResponse.json({ ok: false, error: "Email already registered" }, { status: 409 });
+  }
+
+  const passwordHash = await bcrypt.hash(password, 10);
+
+  let finalRole = role;
+
+  // Optional: auto admin if matches env
+  if (process.env.ADMIN_EMAIL && email.toLowerCase() === process.env.ADMIN_EMAIL.toLowerCase()) {
+    finalRole = "admin";
+  }
+
+ const user = await User.create({
+  email: email.toLowerCase(),
+  passwordHash,
+  role: finalRole,
+  name: name?.trim() || "",
+});
+
+
+  // If worker, create worker profile draft
+  if (finalRole === "worker") {
+    await WorkerProfile.create({ userId: user._id, status: "draft", services: [] });
+  }
+
+  const token = signToken({ userId: user._id.toString(), role: user.role });
+
+  const res = NextResponse.json({
+    ok: true,
+    user: { id: user._id, email: user.email, role: user.role },
+  });
+
+  setAuthCookie(res, token);
+  return res;
 }
