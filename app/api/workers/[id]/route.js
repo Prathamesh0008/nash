@@ -1,14 +1,24 @@
 import dbConnect from "@/lib/dbConnect";
 import WorkerProfile from "@/models/WorkerProfile";
 import User from "@/models/User";
+import Review from "@/models/Review";
 import { NextResponse } from "next/server";
+import mongoose from "mongoose";
 
 export async function GET(req, context) {
   await dbConnect();
 
-  // ✅ unwrap params (IMPORTANT)
+  /* ✅ NEXT 15 PARAM FIX */
   const { id: workerUserId } = await context.params;
 
+  if (!mongoose.Types.ObjectId.isValid(workerUserId)) {
+    return NextResponse.json(
+      { ok: false, error: "Invalid worker id" },
+      { status: 400 }
+    );
+  }
+
+  /* ✅ ONLY ACTIVE WORKERS */
   const profile = await WorkerProfile.findOne({
     userId: workerUserId,
     status: "active",
@@ -23,18 +33,30 @@ export async function GET(req, context) {
 
   const user = await User.findById(workerUserId).lean();
 
+  /* 🔥 FETCH REVIEWS LIVE */
+  const reviews = await Review.find({ workerUserId })
+    .sort({ createdAt: -1 })
+    .lean();
+
+  /* 🔥 CALCULATE RATING LIVE */
+  const ratingCount = reviews.length;
+  const ratingAvg =
+    ratingCount > 0
+      ? reviews.reduce((sum, r) => sum + r.rating, 0) / ratingCount
+      : 0;
+
   return NextResponse.json({
     ok: true,
     worker: {
-      id: workerUserId,
-      name: user?.name || "Worker",
-      city: profile.city,
-      phone: profile.phone,
-      services: profile.services,
-      availability: profile.availability,
-      photoUrl: profile.photoUrl,
-      ratingAvg: profile.ratingAvg,
-      ratingCount: profile.ratingCount,
+      /* ===== PROFILE ===== */
+      ...profile,
+      userId: workerUserId,
+      email: user?.email || "",
+
+      /* ===== REVIEWS (LIVE) ===== */
+      reviews,
+      ratingAvg,
+      ratingCount,
     },
   });
 }

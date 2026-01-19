@@ -23,13 +23,23 @@ export async function middleware(req) {
     return NextResponse.next();
   }
 
-  // block auth pages if logged in
+  /* ================= AUTH PAGES ================= */
   if (authPages.some((p) => pathname.startsWith(p))) {
-    if (token) return NextResponse.redirect(new URL("/", req.url));
-    return NextResponse.next();
+    if (!token) {
+      return NextResponse.next();
+    }
+
+    try {
+      // 🔥 VERIFY TOKEN (CRITICAL FIX)
+      await jwtVerify(token, secret);
+      return NextResponse.redirect(new URL("/", req.url));
+    } catch {
+      // token invalid → allow login/register
+      return NextResponse.next();
+    }
   }
 
-  // protect routes
+  /* ================= PROTECTED ROUTES ================= */
   if (protectedRoutes.some((p) => pathname.startsWith(p))) {
     if (!token) {
       return NextResponse.redirect(new URL("/login", req.url));
@@ -60,6 +70,7 @@ export async function middleware(req) {
 
       return NextResponse.next();
     } catch {
+      // invalid token → force login
       return NextResponse.redirect(new URL("/login", req.url));
     }
   }

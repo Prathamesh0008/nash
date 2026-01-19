@@ -77,6 +77,40 @@ const WorkerProfileSchema = new mongoose.Schema(
       addressProof: String,
     },
 
+    /* ================= REVIEWS ================= */
+    reviews: [
+      {
+        userId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+        },
+        rating: {
+          type: Number,
+          min: 1,
+          max: 5,
+          required: true,
+        },
+        comment: {
+          type: String,
+          default: "",
+        },
+        createdAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
+
+    ratingAvg: {
+      type: Number,
+      default: 0,
+    },
+
+    ratingCount: {
+      type: Number,
+      default: 0,
+    },
+
     /* ================= STATUS ================= */
     status: {
       type: String,
