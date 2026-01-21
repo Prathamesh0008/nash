@@ -10,6 +10,13 @@ const UserSchema = new mongoose.Schema(
     name: { type: String, default: "" },
     email: { type: String, unique: true, required: true, lowercase: true },
     passwordHash: { type: String, required: true },
+    
+    // add inside your User schema fields:
+lastSeenAt: { type: Date, default: null },
+
+// optional: allow email notifications
+notifyEmail: { type: Boolean, default: true },
+
   },
   { timestamps: true }
 );

@@ -1,5 +1,5 @@
 "use client";
-
+import NotificationBell from "@/components/NotificationBell";
 import { useEffect, useRef, useState, useCallback, memo } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
@@ -204,6 +204,7 @@ const UserDropdown = memo(({ user, profileOpen, onLogout }) => (
         <LogOut className="h-4 w-4" />
         <span className="text-sm">Logout</span>
       </button>
+       
     </div>
   </div>
 ));
@@ -353,6 +354,8 @@ const FullNavbar = memo(({
           </div>
 
           <div className="hidden lg:flex items-center gap-3">
+             <NotificationBell />
+            
             <Link href="/support" className="px-4 py-2 text-sm rounded-xl bg-white/5 border border-white/10 hover:border-pink-500/50 transition-colors">
               Support
             </Link>
