@@ -203,7 +203,7 @@ const phoneNumber = "+1 (555) 123-4567";
         <div className="text-center">
           <div className="text-6xl mb-4">😔</div>
           <h1 className="text-2xl font-light mb-2">Provider Not Found</h1>
-          <p className="text-white/60">The profile you're looking for doesn't exist.</p>
+          <p className="text-white/60">The profile you&apos;re looking for doesn&apos;t exist.</p>
         </div>
       </div>
     );

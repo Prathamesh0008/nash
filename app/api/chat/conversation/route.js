@@ -1,39 +1,82 @@
+import mongoose from "mongoose";
+import { NextResponse } from "next/server";
 import dbConnect from "@/lib/dbConnect";
 import Conversation from "@/models/Conversation";
+import Booking from "@/models/Booking";
 import WorkerProfile from "@/models/WorkerProfile";
-import { NextResponse } from "next/server";
-import { verifyToken } from "@/lib/auth";
-import { cookies } from "next/headers";
+import { requireAuth, applyRefreshCookies } from "@/lib/apiAuth";
 
 export async function POST(req) {
   await dbConnect();
+  const { user, errorResponse, refreshedResponse } = await requireAuth({ roles: ["user", "worker", "admin"] });
+  if (errorResponse) return errorResponse;
 
-  const token = (await cookies()).get("auth")?.value;
-  const decoded = token ? verifyToken(token) : null;
-  if (!decoded) return NextResponse.json({ ok: false, error: "Not authenticated" }, { status: 401 });
+  const body = await req.json().catch(() => ({}));
+  const bookingId = body.bookingId;
+  const workerUserId = body.workerUserId;
 
-  const { workerUserId } = await req.json();
-  if (!workerUserId) return NextResponse.json({ ok: false, error: "Missing workerUserId" }, { status: 400 });
+  let userId = body.userId || null;
+  let workerId = workerUserId || null;
 
-  // Only allow starting chat with ACTIVE worker
-  const wp = await WorkerProfile.findOne({ userId: workerUserId, status: "active" }).lean();
-  if (!wp) return NextResponse.json({ ok: false, error: "Worker not available" }, { status: 400 });
+  if (bookingId) {
+    if (!mongoose.Types.ObjectId.isValid(bookingId)) {
+      return NextResponse.json({ ok: false, error: "Invalid bookingId" }, { status: 400 });
+    }
 
-  // user <-> worker only
-  let userId = decoded.userId;
-  let workerId = workerUserId;
+    const booking = await Booking.findById(bookingId).lean();
+    if (!booking) return NextResponse.json({ ok: false, error: "Booking not found" }, { status: 404 });
 
-  // If worker tries to open conversation, still keep correct fields
-  if (decoded.role === "worker") {
-    userId = workerUserId; // not typical, but keep simple: workers should not "start" chats
-    return NextResponse.json({ ok: false, error: "Workers cannot start chats" }, { status: 403 });
+    const allowed =
+      user.role === "admin" ||
+      booking.userId?.toString() === user.userId ||
+      booking.workerId?.toString() === user.userId;
+    if (!allowed) {
+      return NextResponse.json({ ok: false, error: "Forbidden for this booking" }, { status: 403 });
+    }
+
+    userId = booking.userId?.toString();
+    workerId = booking.workerId?.toString();
   }
 
+  if (!workerId || !mongoose.Types.ObjectId.isValid(workerId)) {
+    return NextResponse.json({ ok: false, error: "Invalid worker id" }, { status: 400 });
+  }
+
+  if (!userId) {
+    if (user.role !== "user") {
+      return NextResponse.json({ ok: false, error: "userId required" }, { status: 400 });
+    }
+    userId = user.userId;
+  }
+
+  if (user.role === "user" && userId !== user.userId) {
+    return NextResponse.json({ ok: false, error: "Cannot create conversation for another user" }, { status: 403 });
+  }
+
+  const worker = await WorkerProfile.findOne({ userId: workerId }).lean();
+  if (!worker) return NextResponse.json({ ok: false, error: "Worker not found" }, { status: 404 });
+
   const convo = await Conversation.findOneAndUpdate(
-    { userId, workerUserId: workerId },
-    {},
-    { upsert: true, new: true, setDefaultsOnInsert: true }
+    {
+      bookingId: bookingId || null,
+      userId,
+      workerUserId: workerId,
+    },
+    {
+      $setOnInsert: {
+        bookingId: bookingId || null,
+        userId,
+        workerUserId: workerId,
+      },
+      $set: { lastMessageAt: new Date() },
+    },
+    { upsert: true, new: true }
   );
 
-  return NextResponse.json({ ok: true, conversationId: convo._id });
+  if (bookingId) {
+    await Booking.updateOne({ _id: bookingId }, { $set: { conversationId: convo._id } });
+  }
+
+  const res = NextResponse.json({ ok: true, conversationId: convo._id, conversation: convo });
+  return applyRefreshCookies(res, refreshedResponse);
 }

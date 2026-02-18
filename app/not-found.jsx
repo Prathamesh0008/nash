@@ -1,19 +1,16 @@
+import Link from "next/link";
+
 export default function NotFound() {
   return (
-    <main className="min-h-screen bg-gray-950 text-white flex items-center justify-center">
-      <div className="text-center px-6">
-        <h1 className="text-6xl font-bold mb-4">404</h1>
-        <p className="text-gray-400 mb-6">
-          The page you’re looking for doesn’t exist.
-        </p>
+    <main className="flex min-h-screen items-center justify-center text-white">
+      <div className="panel max-w-xl px-6 py-10 text-center">
+        <h1 className="mb-4 text-6xl font-bold">404</h1>
+        <p className="mb-6 text-slate-300">The page you are looking for does not exist.</p>
 
-        <a
-          href="/"
-          className="inline-block px-6 py-3 bg-gradient-to-r from-pink-600 to-blue-600 rounded-lg font-semibold hover:opacity-90 transition"
-        >
+        <Link href="/" className="app-btn-primary inline-block rounded-lg px-6 py-3 text-sm font-semibold">
           Go Home
-        </a>
+        </Link>
       </div>
     </main>
-  )
+  );
 }

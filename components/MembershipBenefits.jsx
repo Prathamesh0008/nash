@@ -1,4 +1,3 @@
-import React from 'react';
 import { CheckCircle, Shield, Star, Eye, Lock, Users, Bell, TrendingUp, MessageSquare, BarChart, Headphones, Crown } from 'lucide-react';
 
 const MembershipBenefits = () => {
@@ -74,13 +73,15 @@ const MembershipBenefits = () => {
     },
     {
       name: 'Pro',
-      price: '$99/month',
+      price: '$99',
+      period: '/month',
       features: ['Enhanced Security', 'Better Visibility', 'Priority Verification', 'Profile Analytics'],
       highlighted: false
     },
     {
       name: 'Elite',
-      price: '$199/month',
+      price: '$199',
+      period: '/month',
       features: ['All Premium Features', 'VIP Client Access', '24/7 Priority Support', 'Exclusive Events'],
       highlighted: true
     }
@@ -108,11 +109,11 @@ const MembershipBenefits = () => {
             Premium <span className="text-yellow-500">Features</span>
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {benefits.map((benefit, index) => {
+            {benefits.map((benefit) => {
               const Icon = benefit.icon;
               return (
                 <div
-                  key={index}
+                  key={benefit.title}
                   className="bg-gray-800 rounded-lg p-6 border border-gray-700 hover:border-yellow-500/50 transition-colors duration-200"
                 >
                   <div className="flex items-start gap-4">
@@ -136,9 +137,9 @@ const MembershipBenefits = () => {
             Choose Your <span className="text-yellow-500">Plan</span>
           </h2>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            {tiers.map((tier, index) => (
+            {tiers.map((tier) => (
               <div
-                key={index}
+                key={tier.name}
                 className={`rounded-xl p-6 md:p-8 ${tier.highlighted 
                   ? 'bg-gray-800 border-2 border-yellow-500' 
                   : 'bg-gray-800/80 border border-gray-700'
@@ -158,12 +159,12 @@ const MembershipBenefits = () => {
                 
                 <div className="text-center mb-8">
                   <span className="text-3xl md:text-4xl font-bold">{tier.price}</span>
-                  {tier.price !== 'Free' && <span className="text-gray-400 ml-2">/month</span>}
+                  {tier.period && <span className="text-gray-400 ml-2">{tier.period}</span>}
                 </div>
                 
                 <ul className="space-y-4 mb-8">
-                  {tier.features.map((feature, idx) => (
-                    <li key={idx} className="flex items-center gap-3">
+                  {tier.features.map((feature) => (
+                    <li key={feature} className="flex items-center gap-3">
                       <CheckCircle className={`w-5 h-5 ${tier.highlighted ? 'text-yellow-500' : 'text-green-500'}`} />
                       <span className="text-gray-300">{feature}</span>
                     </li>
@@ -207,8 +208,8 @@ const MembershipBenefits = () => {
               { value: '24/7', label: 'Support Available' },
               { value: '5K+', label: 'Elite Members' },
               { value: '30d', label: 'Money-Back Guarantee' }
-            ].map((stat, index) => (
-              <div key={index} className="space-y-2">
+            ].map((stat) => (
+              <div key={stat.label} className="space-y-2">
                 <div className="text-2xl md:text-3xl font-bold text-yellow-500">{stat.value}</div>
                 <div className="text-gray-400 text-sm md:text-base">{stat.label}</div>
               </div>

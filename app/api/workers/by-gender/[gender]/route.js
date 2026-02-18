@@ -1,42 +1,37 @@
+import { NextResponse } from "next/server";
 import dbConnect from "@/lib/dbConnect";
 import WorkerProfile from "@/models/WorkerProfile";
 import User from "@/models/User";
-import { NextResponse } from "next/server";
 
 export async function GET(req, context) {
   await dbConnect();
-
-  // ✅ Next 15 param unwrap
   const { gender } = await context.params;
+  const requestedGender = ["male", "female", "other"].includes(gender) ? gender : "";
 
-  if (!["male", "female"].includes(gender)) {
-    return NextResponse.json(
-      { ok: false, error: "Invalid gender" },
-      { status: 400 }
-    );
-  }
+  const filter = {
+    verificationStatus: "APPROVED",
+    verificationFeePaid: true,
+    isOnline: true,
+  };
 
-  const profiles = await WorkerProfile.find({
-    gender,
-    status: "active",
-  }).lean();
+  const workers = await WorkerProfile.find(filter).sort({ ratingAvg: -1 }).limit(200).lean();
+  const users = await User.find({ _id: { $in: workers.map((w) => w.userId) } }).select("name gender").lean();
+  const userMap = new Map(users.map((u) => [u._id.toString(), u]));
 
-  const userIds = profiles.map((p) => p.userId);
-  const users = await User.find({ _id: { $in: userIds } }).lean();
+  const rows = workers
+    .map((worker) => {
+      const linkedUser = userMap.get(worker.userId.toString());
+      return {
+        id: worker.userId,
+        name: linkedUser?.name || "Worker",
+        gender: worker.gender || linkedUser?.gender || "other",
+        profilePhoto: worker.profilePhoto,
+        ratingAvg: worker.ratingAvg,
+        jobsCompleted: worker.jobsCompleted,
+        isOnline: worker.isOnline,
+      };
+    })
+    .filter((row) => (requestedGender ? row.gender === requestedGender : true));
 
-  const userMap = {};
-  users.forEach((u) => (userMap[u._id.toString()] = u));
-
- const workers = profiles.map((p) => ({
-  id: p.userId.toString(),     // ✅ THIS IS THE FIX
-  name: p.fullName || "Worker",
-  city: p.city || "",
-  photoUrl: p.profilePhoto || "",
-  ratingAvg: p.ratingAvg || 0,
-  ratingCount: p.ratingCount || 0,
-  services: (p.services || []).map((s) => s.name),
-}));
-
-
-  return NextResponse.json({ ok: true, workers });
+  return NextResponse.json({ ok: true, workers: rows });
 }

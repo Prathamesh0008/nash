@@ -10,8 +10,6 @@ import StepSkillsBio from "./StepSkillsBio";
 import StepDocuments from "./StepDocuments";
 import StepReviewSubmit from "./StepReviewSubmit";
 
-/* ================= CONSTANTS ================= */
-
 const LS_KEY = "worker-onboarding-draft-v1";
 
 const steps = [
@@ -28,6 +26,7 @@ const emptyForm = {
   fullName: "",
   phone: "",
   city: "",
+  pincode: "",
   address: "",
   dob: "",
   gender: "male",
@@ -57,11 +56,9 @@ const emptyForm = {
 
   documents: {
     idProof: "",
-    addressProof: "",
+    selfie: "",
   },
 };
-
-/* ================= COMPONENT ================= */
 
 export default function WorkerOnboardingWizard() {
   const [active, setActive] = useState(0);
@@ -70,19 +67,17 @@ export default function WorkerOnboardingWizard() {
   const [saving, setSaving] = useState(false);
   const [statusMsg, setStatusMsg] = useState("");
 
-  /* ================= LOAD (LS → DB) ================= */
-
   useEffect(() => {
     async function load() {
       let base = structuredClone(emptyForm);
 
-      // 1️⃣ Load localStorage FIRST
       const ls = localStorage.getItem(LS_KEY);
       if (ls) {
-        base = { ...base, ...JSON.parse(ls) };
+        try {
+          base = { ...base, ...JSON.parse(ls) };
+        } catch {}
       }
 
-      // 2️⃣ Load DB draft SECOND
       try {
         const res = await fetch("/api/worker/profile/me", {
           credentials: "include",
@@ -101,14 +96,10 @@ export default function WorkerOnboardingWizard() {
     load();
   }, []);
 
-  /* ================= AUTOSAVE (AFTER HYDRATE) ================= */
-
   useEffect(() => {
     if (!hydrated) return;
     localStorage.setItem(LS_KEY, JSON.stringify(form));
   }, [form, hydrated]);
-
-  /* ================= STEP PICKER ================= */
 
   const StepComp = useMemo(() => {
     const key = steps[active]?.key;
@@ -122,14 +113,19 @@ export default function WorkerOnboardingWizard() {
   }, [active]);
 
   function next() {
+    const key = steps[active]?.key;
+    const stepError = validateForStep(form, key);
+    if (stepError) {
+      setStatusMsg(stepError);
+      return;
+    }
+    setStatusMsg("");
     setActive((i) => Math.min(i + 1, steps.length - 1));
   }
 
   function back() {
     setActive((i) => Math.max(i - 1, 0));
   }
-
-  /* ================= SAVE DRAFT ================= */
 
   async function saveDraft() {
     setSaving(true);
@@ -147,7 +143,7 @@ export default function WorkerOnboardingWizard() {
       if (!data.ok) {
         setStatusMsg(data.error || "Draft save failed");
       } else {
-        setStatusMsg("✅ Draft saved");
+        setStatusMsg("Draft saved");
       }
     } catch {
       setStatusMsg("Draft save failed");
@@ -157,9 +153,13 @@ export default function WorkerOnboardingWizard() {
     }
   }
 
-  /* ================= FINAL SUBMIT ================= */
-
   async function submitFinal() {
+    const finalError = validateForSubmit(form);
+    if (finalError) {
+      setStatusMsg(finalError);
+      return;
+    }
+
     setSaving(true);
     setStatusMsg("");
 
@@ -175,7 +175,7 @@ export default function WorkerOnboardingWizard() {
       if (!data.ok) {
         setStatusMsg(data.error || "Submit failed");
       } else {
-        setStatusMsg("✅ Profile sent for approval");
+        setStatusMsg("Profile sent for approval");
         localStorage.removeItem(LS_KEY);
       }
     } catch {
@@ -185,11 +185,8 @@ export default function WorkerOnboardingWizard() {
     }
   }
 
-  /* ================= UI ================= */
-
   return (
     <div className="bg-white text-black rounded-2xl p-6">
-      {/* Step Header */}
       <div className="flex flex-wrap gap-2 mb-6">
         {steps.map((s, idx) => (
           <button
@@ -204,10 +201,8 @@ export default function WorkerOnboardingWizard() {
         ))}
       </div>
 
-      {/* Step Content */}
       <StepComp form={form} setForm={setForm} next={next} />
 
-      {/* Footer */}
       <div className="mt-6 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
         <div className="text-sm text-gray-600">{statusMsg}</div>
 
@@ -250,11 +245,26 @@ export default function WorkerOnboardingWizard() {
   );
 }
 
-/* ================= HELPERS ================= */
-
 function normalizeProfile(p) {
+  const firstArea = Array.isArray(p?.serviceAreas) ? p.serviceAreas[0] : null;
   return {
     ...p,
+    city: p?.city || firstArea?.city || "",
+    pincode: p?.pincode || firstArea?.pincode || "",
+    documents: {
+      idProof: p?.documents?.idProof || p?.docs?.idProof || "",
+      selfie: p?.documents?.selfie || p?.docs?.selfie || "",
+    },
+    services:
+      Array.isArray(p?.services) && p.services.length
+        ? p.services
+        : (p?.categories || []).map((name) => ({
+            name,
+            experienceYears: "",
+            basePrice: "",
+          })),
+    skills: Array.isArray(p?.skills) ? p.skills : [],
+    galleryPhotos: Array.isArray(p?.galleryPhotos) ? p.galleryPhotos : [],
     dob: p?.dob ? new Date(p.dob).toISOString().slice(0, 10) : "",
   };
 }
@@ -283,31 +293,93 @@ function mergeSafe(base, incoming) {
 
 function cleanForApi(f) {
   const copy = structuredClone(f);
-
-  copy.heightCm = copy.heightCm ? Number(copy.heightCm) : undefined;
-  copy.weightKg = copy.weightKg ? Number(copy.weightKg) : undefined;
-  copy.serviceRadiusKm = copy.serviceRadiusKm
-    ? Number(copy.serviceRadiusKm)
-    : undefined;
-
-  copy.services = (copy.services || [])
-    .map((s) => ({
-      name: s.name,
-      experienceYears: s.experienceYears
-        ? Number(s.experienceYears)
-        : 0,
-      basePrice: s.basePrice ? Number(s.basePrice) : 0,
+  const profilePhoto = String(copy.profilePhoto || "").trim();
+  const galleryPhotos = (copy.galleryPhotos || []).map((x) => String(x || "").trim()).filter(Boolean);
+  const skills = (copy.skills || []).map((x) => String(x || "").trim()).filter(Boolean);
+  const categories = Array.from(
+    new Set(
+      (copy.services || [])
+        .map((service) => String(service?.name || "").trim())
+        .filter(Boolean)
+    )
+  );
+  const city = String(copy.city || "").trim();
+  const pincode = String(copy.pincode || "").trim();
+  const address = String(copy.address || "").trim();
+  const docs = {
+    idProof: String(copy.documents?.idProof || "").trim(),
+    selfie: String(copy.documents?.selfie || "").trim(),
+    certificates: [],
+  };
+  const basePrice = Math.max(
+    0,
+    Number(
+      (copy.services || []).find((service) => String(service?.basePrice || "").trim())?.basePrice || 0
+    )
+  );
+  const extraServices = (copy.extraServices || [])
+    .map((row) => ({
+      title: String(row?.title || "").trim(),
+      price: Math.max(0, Number(row?.price || 0)),
     }))
-    .filter((s) => s.name);
+    .filter((row) => row.title)
+    .slice(0, 30);
 
-  copy.extraServices = (copy.extraServices || [])
-    .map((x) => ({
-      title: x.title,
-      price: x.price ? Number(x.price) : 0,
-    }))
-    .filter((x) => x.title);
+  return {
+    gender: copy.gender || "other",
+    profilePhoto,
+    galleryPhotos,
+    bio: String(copy.bio || "").trim(),
+    skills,
+    categories,
+    serviceAreas: city && pincode ? [{ city, pincode }] : [],
+    address,
+    pricing: {
+      basePrice,
+      extraServices,
+    },
+    docs,
+  };
+}
 
-  copy.dob = copy.dob ? new Date(copy.dob) : undefined;
+function validateForStep(form, key) {
+  if (key === "personal") {
+    if (!String(form.city || "").trim()) return "City is required";
+    if (!String(form.pincode || "").trim()) return "Pincode is required";
+    if (!/^\d{4,10}$/.test(String(form.pincode || "").trim())) return "Enter a valid pincode";
+    if (!String(form.address || "").trim()) return "Address is required";
+  }
 
-  return copy;
+  if (key === "photos") {
+    if (!String(form.profilePhoto || "").trim()) return "Profile photo is required";
+    const count = (form.galleryPhotos || []).filter(Boolean).length;
+    if (count < 3 || count > 8) return "Gallery must have 3 to 8 photos";
+  }
+
+  if (key === "services") {
+    const categories = (form.services || []).map((s) => String(s?.name || "").trim()).filter(Boolean);
+    if (categories.length < 1) return "Add at least one service";
+  }
+
+  if (key === "skills") {
+    const skills = (form.skills || []).map((x) => String(x || "").trim()).filter(Boolean);
+    if (skills.length < 1) return "Add at least one skill";
+    if (String(form.bio || "").trim().length < 20) return "Bio must be at least 20 characters";
+  }
+
+  if (key === "documents") {
+    if (!String(form.documents?.idProof || "").trim()) return "ID proof is required";
+    if (!String(form.documents?.selfie || "").trim()) return "Selfie is required";
+  }
+
+  return "";
+}
+
+function validateForSubmit(form) {
+  const checks = ["personal", "photos", "services", "skills", "documents"];
+  for (const key of checks) {
+    const error = validateForStep(form, key);
+    if (error) return error;
+  }
+  return "";
 }

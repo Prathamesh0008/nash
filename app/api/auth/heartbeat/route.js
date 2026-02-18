@@ -1,20 +1,14 @@
+import { NextResponse } from "next/server";
 import dbConnect from "@/lib/dbConnect";
 import User from "@/models/User";
-import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { verifyToken } from "@/lib/auth";
+import { requireAuth, applyRefreshCookies } from "@/lib/apiAuth";
 
 export async function POST() {
   await dbConnect();
+  const { user, errorResponse, refreshedResponse } = await requireAuth({ roles: ["user", "worker", "admin"] });
+  if (errorResponse) return errorResponse;
 
-  const token = (await cookies()).get("auth")?.value;
-  const decoded = token ? verifyToken(token) : null;
-  if (!decoded) return NextResponse.json({ ok: false }, { status: 401 });
-
-  await User.updateOne(
-    { _id: decoded.userId },
-    { $set: { lastSeenAt: new Date() } }
-  );
-
-  return NextResponse.json({ ok: true });
+  await User.updateOne({ _id: user.userId }, { $set: { lastSeenAt: new Date() } });
+  const res = NextResponse.json({ ok: true });
+  return applyRefreshCookies(res, refreshedResponse);
 }

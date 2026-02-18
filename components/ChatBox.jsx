@@ -1,46 +1,165 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getSocket } from "@/lib/socket";
 import { useAuth } from "@/contexts/AuthContext";
 
+function asId(value) {
+  if (!value) return "";
+  return String(value);
+}
+
 export default function ChatBox({ conversationId }) {
   const { user } = useAuth();
+  const currentUserId = asId(user?.id);
 
+  const [conversation, setConversation] = useState(null);
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
   const [typingName, setTypingName] = useState("");
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState("");
+  const [socketConnected, setSocketConnected] = useState(false);
 
   const bottomRef = useRef(null);
   const typingTimeoutRef = useRef(null);
-
   const socket = useMemo(() => getSocket(), []);
 
-  /* ---------------- LOAD MESSAGES ---------------- */
-  async function loadMessages() {
+  useEffect(() => {
+    const onConnect = () => setSocketConnected(true);
+    const onDisconnect = () => setSocketConnected(false);
+
+    setSocketConnected(Boolean(socket.connected));
+    socket.on("connect", onConnect);
+    socket.on("disconnect", onDisconnect);
+
+    return () => {
+      socket.off("connect", onConnect);
+      socket.off("disconnect", onDisconnect);
+    };
+  }, [socket]);
+
+  const markMessagesStatus = useCallback(
+    async (messageIds, { delivered = false, read = false, emitSocket = true } = {}) => {
+      const ids = (messageIds || []).filter(Boolean).map((id) => asId(id));
+      if (!conversationId || ids.length === 0) return { deliveredIds: [], readIds: [] };
+
+      const res = await fetch(`/api/chat/messages/${conversationId}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ messageIds: ids, delivered, read }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) return { deliveredIds: [], readIds: [] };
+
+      const deliveredIds = (data.deliveredIds || []).map(asId);
+      const readIds = (data.readIds || []).map(asId);
+
+      if (emitSocket) {
+        for (const id of deliveredIds) {
+          socket.emit("messageDelivered", { conversationId, messageId: id, byUserId: currentUserId });
+        }
+        for (const id of readIds) {
+          socket.emit("messageRead", { conversationId, messageId: id, byUserId: currentUserId });
+        }
+      }
+
+      return { deliveredIds, readIds };
+    },
+    [conversationId, currentUserId, socket]
+  );
+
+  const loadMessages = useCallback(async () => {
     if (!conversationId) return;
 
-    const res = await fetch(`/api/chat/messages/${conversationId}`, {
-      credentials: "include",
-    });
-    const data = await res.json();
+    setLoading(true);
+    setError("");
 
-    if (data.ok) {
+    try {
+      const res = await fetch(`/api/chat/messages/${conversationId}`, {
+        credentials: "include",
+        cache: "no-store",
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        setError(data?.error || "Failed to load messages");
+        setConversation(null);
+        setMessages([]);
+        return;
+      }
+
+      setConversation(data.conversation || null);
       setMessages(data.messages || []);
-    }
-  }
 
-  /* ---------------- SOCKET SETUP ---------------- */
+      const readIds = (data?.statusUpdates?.readIds || []).map(asId);
+      for (const messageId of readIds) {
+        socket.emit("messageRead", { conversationId, messageId, byUserId: currentUserId });
+      }
+    } catch {
+      setError("Failed to load messages");
+      setConversation(null);
+      setMessages([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [conversationId, currentUserId, socket]);
+
+  const applyStatusLocally = useCallback((messageId, status, byUserId) => {
+    const by = asId(byUserId);
+    const id = asId(messageId);
+    if (!id || !status) return;
+
+    setMessages((prev) =>
+      prev.map((msg) => {
+        if (asId(msg._id) !== id) return msg;
+
+        const nextDelivered = new Set((msg.deliveredTo || []).map(asId));
+        const nextRead = new Set((msg.readBy || []).map(asId));
+
+        if (by) {
+          if (status === "delivered") nextDelivered.add(by);
+          if (status === "read") {
+            nextDelivered.add(by);
+            nextRead.add(by);
+          }
+        }
+
+        return {
+          ...msg,
+          deliveredTo: Array.from(nextDelivered),
+          readBy: Array.from(nextRead),
+        };
+      })
+    );
+  }, []);
+
   useEffect(() => {
     if (!conversationId) return;
 
     loadMessages();
 
-    socket.emit("join", conversationId);
+    if (currentUserId) {
+      socket.emit("joinUser", currentUserId);
+    }
+    socket.emit("join", { conversationId });
 
     const onNewMessage = (msg) => {
-      setMessages((prev) => [...prev, msg]);
+      if (!msg?._id) return;
+
+      setMessages((prev) => {
+        const exists = prev.some((m) => asId(m._id) === asId(msg._id));
+        return exists ? prev : [...prev, msg];
+      });
+
+      const senderId = asId(msg.senderId);
+      if (!senderId || senderId === currentUserId) return;
+
+      markMessagesStatus([msg._id], { delivered: true, read: false, emitSocket: true });
+      setTimeout(() => {
+        markMessagesStatus([msg._id], { delivered: true, read: true, emitSocket: true });
+      }, 250);
     };
 
     const onTyping = ({ name }) => {
@@ -52,56 +171,78 @@ export default function ChatBox({ conversationId }) {
     };
 
     const onMessageDeleted = ({ messageId }) => {
-      setMessages((prev) =>
-        prev.filter((m) => String(m._id) !== String(messageId))
-      );
+      setMessages((prev) => prev.filter((m) => asId(m._id) !== asId(messageId)));
+    };
+
+    const onMessageStatus = ({ messageId, status, byUserId }) => {
+      if (!messageId || !status) return;
+      applyStatusLocally(messageId, status, byUserId);
     };
 
     socket.on("newMessage", onNewMessage);
     socket.on("typing", onTyping);
     socket.on("stopTyping", onStopTyping);
     socket.on("messageDeleted", onMessageDeleted);
+    socket.on("messageStatus", onMessageStatus);
 
     return () => {
+      socket.emit("leave", { conversationId });
       socket.off("newMessage", onNewMessage);
       socket.off("typing", onTyping);
       socket.off("stopTyping", onStopTyping);
       socket.off("messageDeleted", onMessageDeleted);
+      socket.off("messageStatus", onMessageStatus);
     };
-  }, [conversationId, socket]);
+  }, [conversationId, socket, currentUserId, markMessagesStatus, applyStatusLocally, loadMessages]);
 
-  /* ---------------- AUTO SCROLL ---------------- */
+  useEffect(() => {
+    if (!conversationId) return undefined;
+    const timer = setInterval(() => {
+      loadMessages();
+    }, 15000);
+    return () => clearInterval(timer);
+  }, [conversationId, loadMessages]);
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  /* ---------------- SEND MESSAGE ---------------- */
   async function send() {
-    if (!text.trim() || !conversationId) return;
+    if (!text.trim() || !conversationId || sending) return;
 
-    const res = await fetch("/api/chat/message", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ conversationId, text }),
-    });
+    setSending(true);
+    setError("");
+    try {
+      const res = await fetch("/api/chat/message", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ conversationId, text }),
+      });
 
-    const data = await res.json();
-    if (!data.ok) return;
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        setError(data?.error || "Failed to send message");
+        return;
+      }
 
-    setText("");
-
-    socket.emit("stopTyping", { conversationId });
-    socket.emit("sendMessage", {
-      conversationId,
-      message: data.message,
-    });
+      setText("");
+      const sentMessage = data.message;
+      setMessages((prev) => {
+        const exists = prev.some((msg) => asId(msg._id) === asId(sentMessage?._id));
+        return exists ? prev : [...prev, sentMessage];
+      });
+      socket.emit("stopTyping", { conversationId });
+      socket.emit("sendMessage", { conversationId, message: sentMessage });
+    } catch {
+      setError("Failed to send message");
+    } finally {
+      setSending(false);
+    }
   }
 
-  /* ---------------- TYPING HANDLER ---------------- */
   function handleTyping(val) {
     setText(val);
-
     if (!conversationId) return;
 
     const name = user?.name || user?.email || "Someone";
@@ -116,208 +257,164 @@ export default function ChatBox({ conversationId }) {
     }, 600);
   }
 
-  /* ---------------- DELETE MESSAGE ---------------- */
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+    };
+  }, []);
+
   async function deleteMsg(messageId) {
-    const res = await fetch(`/api/chat/message/${messageId}`, {
-      method: "DELETE",
-      credentials: "include",
-    });
+    setError("");
+    try {
+      const res = await fetch(`/api/chat/message/${messageId}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
 
-    const data = await res.json();
-    if (!data.ok) return;
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        setError(data?.error || "Failed to delete message");
+        return;
+      }
 
-    // optimistic UI
-    setMessages((prev) =>
-      prev.filter((m) => String(m._id) !== String(messageId))
-    );
-
-    socket.emit("messageDeleted", { conversationId, messageId });
+      setMessages((prev) => prev.filter((m) => String(m._id) !== String(messageId)));
+      socket.emit("messageDeleted", { conversationId, messageId });
+    } catch {
+      setError("Failed to delete message");
+    }
   }
 
+  const peerId = useMemo(() => {
+    if (!conversation || !currentUserId) return "";
+    const userId = asId(conversation.userId);
+    const workerId = asId(conversation.workerUserId);
+    if (currentUserId === userId) return workerId;
+    if (currentUserId === workerId) return userId;
+    return "";
+  }, [conversation, currentUserId]);
+
+  const getMessageStatus = useCallback(
+    (message) => {
+      if (!peerId) return "";
+      const isRead = (message.readBy || []).some((id) => asId(id) === peerId);
+      if (isRead) return "read";
+      const isDelivered = (message.deliveredTo || []).some((id) => asId(id) === peerId);
+      return isDelivered ? "delivered" : "sent";
+    },
+    [peerId]
+  );
+
   return (
-    <div className="flex mt-5 flex-col h-[calc(100vh-5rem)] sm:h-[70vh] w-full max-w-4xl mx-auto bg-gradient-to-br from-gray-50 to-white rounded-none sm:rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
-      {/* Header - Mobile Optimized */}
-      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-4 sm:px-6 py-3 sm:py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2 sm:space-x-3">
-            <button
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="sm:hidden text-white p-1"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
-            <div className="h-2 w-2 sm:h-3 sm:w-3 rounded-full bg-green-400 animate-pulse"></div>
+    <div className="min-h-[calc(100vh-220px)] px-4 py-6">
+      <div className="h-[70vh] max-w-4xl mx-auto flex flex-col rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl overflow-hidden">
+        <div className="px-5 py-4 border-b border-white/10 bg-black/20">
+          <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg sm:text-xl font-bold text-white">Chat</h2>
-              <p className="text-xs text-indigo-200 sm:hidden">Tap to view details</p>
+              <h2 className="text-lg sm:text-xl font-bold">Chat</h2>
+              <p className="text-xs sm:text-sm text-white/60">
+                Conversation #{conversationId}
+              </p>
             </div>
-          </div>
-          <div className="flex items-center space-x-3">
-            <div className="text-xs sm:text-sm text-indigo-100 bg-white/20 px-2 sm:px-3 py-1 rounded-full">
-              <span className="hidden sm:inline">{messages.length} messages</span>
-              <span className="sm:hidden">{messages.length}</span>
+            <div className="text-xs sm:text-sm text-white/70 rounded-full bg-white/10 px-3 py-1">
+              {messages.length} messages | {socketConnected ? "Live" : "Reconnecting..."}
             </div>
-            <button className="hidden sm:block text-white hover:bg-white/20 p-1 rounded-lg transition-colors">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-              </svg>
-            </button>
           </div>
         </div>
-      </div>
 
-      {/* Mobile Menu (Optional) */}
-      {isMobileMenuOpen && (
-        <div className="sm:hidden bg-white border-b">
-          <div className="px-4 py-3 space-y-2">
-            <button className="w-full text-left text-sm text-gray-700 py-2">Chat Details</button>
-            <button className="w-full text-left text-sm text-gray-700 py-2">Mute Notifications</button>
-            <button className="w-full text-left text-sm text-red-600 py-2">Clear Chat</button>
+        {typingName && (
+          <div className="px-5 py-2 border-b border-white/10 bg-white/5 text-sm text-pink-300">
+            {typingName} is typing...
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Typing Indicator */}
-      {typingName && (
-        <div className="px-4 sm:px-6 py-2 bg-gradient-to-r from-indigo-50 to-purple-50 border-b">
-          <div className="flex items-center space-x-2">
-            <div className="flex space-x-1">
-              <div className="h-1.5 w-1.5 sm:h-2 sm:w-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></div>
-              <div className="h-1.5 w-1.5 sm:h-2 sm:w-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></div>
-              <div className="h-1.5 w-1.5 sm:h-2 sm:w-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></div>
+        <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3 bg-gradient-to-b from-black/30 to-black/10">
+          {loading ? (
+            <div className="h-full flex items-center justify-center text-white/60 text-sm">
+              Loading messages...
             </div>
-            <span className="text-xs sm:text-sm text-indigo-600 font-medium truncate">
-              {typingName} is typing...
-            </span>
-          </div>
-        </div>
-      )}
-
-      {/* Messages Container */}
-      <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4 bg-gradient-to-b from-white via-gray-50/50 to-white">
-        {messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-gray-400 px-4">
-            <div className="w-12 h-12 sm:w-16 sm:h-16 mb-3 sm:mb-4 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center">
-              <svg className="w-6 h-6 sm:w-8 sm:h-8 text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-              </svg>
+          ) : messages.length === 0 ? (
+            <div className="h-full flex flex-col items-center justify-center text-white/50">
+              <p className="text-base sm:text-lg font-medium text-center">No messages yet</p>
+              <p className="text-xs sm:text-sm text-center mt-1">Start the conversation</p>
             </div>
-            <p className="text-base sm:text-lg font-medium text-center">No messages yet</p>
-            <p className="text-xs sm:text-sm text-center mt-1">Start the conversation!</p>
-          </div>
-        ) : (
-          messages.map((m) => {
-            const isOwnMessage = user?.id && String(m.senderId) === String(user.id);
-            const canDelete = isOwnMessage;
+          ) : (
+            messages.map((m) => {
+              const isOwnMessage = user?.id && String(m.senderId) === String(user.id);
+              const canDelete = isOwnMessage;
 
-            return (
-              <div
-                key={String(m._id)}
-                className={`flex ${isOwnMessage ? "justify-end" : "justify-start"}`}
-              >
-                <div
-                  className={`max-w-[85%] sm:max-w-[80%] rounded-2xl px-3 sm:px-4 py-2 sm:py-3 shadow-sm ${
-                    isOwnMessage
-                      ? "bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-br-none"
-                      : "bg-white border border-gray-200 rounded-bl-none"
-                  }`}
-                >
-                  {/* Message header with timestamp and delete button */}
-                  <div className="flex items-center justify-between mb-1">
-                    <div className={`text-xs ${isOwnMessage ? "text-indigo-100" : "text-gray-500"}`}>
-                      {m.createdAt && !isNaN(new Date(m.createdAt))
-                        ? new Date(m.createdAt).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })
-                        : ""}
+              return (
+                <div key={String(m._id)} className={`flex ${isOwnMessage ? "justify-end" : "justify-start"}`}>
+                  <div
+                    className={`max-w-[85%] sm:max-w-[78%] rounded-2xl px-4 py-3 border ${
+                      isOwnMessage
+                        ? "bg-gradient-to-r from-pink-600 to-purple-600 border-pink-400/20 text-white rounded-br-md"
+                        : "bg-white/10 border-white/15 text-white rounded-bl-md"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <div className={`text-xs ${isOwnMessage ? "text-white/80" : "text-white/60"}`}>
+                        {m.createdAt && !isNaN(new Date(m.createdAt))
+                          ? new Date(m.createdAt).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })
+                          : ""}
+                      </div>
+
+                      {canDelete && (
+                        <button
+                          onClick={() => deleteMsg(m._id)}
+                          className="ml-2 text-xs text-white/80 hover:text-white"
+                          aria-label="Delete message"
+                        >
+                          Delete
+                        </button>
+                      )}
                     </div>
-                    
-                    {canDelete && (
-                      <button
-                        onClick={() => deleteMsg(m._id)}
-                        className={`ml-2 sm:ml-3 p-1 transition-all duration-200 ${
-                          isOwnMessage
-                            ? "text-indigo-200 hover:text-white"
-                            : "text-gray-400 hover:text-red-500"
-                        }`}
-                        aria-label="Delete message"
-                      >
-                        <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
+
+                    <div className="break-words text-sm sm:text-base">{m.text}</div>
+                    {isOwnMessage && (
+                      <div className="mt-1 text-right text-[11px] uppercase tracking-wide text-white/70">
+                        {getMessageStatus(m)}
+                      </div>
                     )}
                   </div>
-
-                  {/* Message content */}
-                  <div className={`break-words text-sm sm:text-base ${isOwnMessage ? "" : "text-gray-800"}`}>
-                    {m.text}
-                  </div>
-
-                  {/* Message date - hidden on mobile to save space */}
-                  <div className={`text-xs mt-1 sm:mt-2 ${isOwnMessage ? "text-indigo-200" : "text-gray-400"} hidden sm:block`}>
-                    {m.createdAt && !isNaN(new Date(m.createdAt))
-                      ? new Date(m.createdAt).toLocaleDateString()
-                      : ""}
-                  </div>
                 </div>
-              </div>
-            );
-          })
-        )}
-        <div ref={bottomRef} />
-      </div>
+              );
+            })
+          )}
+          <div ref={bottomRef} />
+        </div>
 
-      {/* Input Area */}
-      <div className="border-t border-gray-200 p-3 sm:p-4 md:p-6 bg-white">
-        <div className="flex gap-2 sm:gap-3">
-          <div className="flex-1 relative">
+        <div className="border-t border-white/10 p-4 bg-black/20">
+          {error && <div className="mb-2 text-xs text-red-300">{error}</div>}
+          <div className="flex gap-2">
             <input
-              className="w-full border border-gray-300 rounded-xl sm:rounded-2xl px-4 sm:px-5 py-2.5 sm:py-3.5 pr-10 sm:pr-12 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 bg-gray-50 hover:bg-white shadow-sm text-sm sm:text-base"
+              className="flex-1 rounded-xl border border-white/20 bg-black/40 px-4 py-2.5 text-sm sm:text-base placeholder:text-white/50 focus:outline-none focus:border-pink-500/70"
               placeholder="Type your message..."
               value={text}
               onChange={(e) => handleTyping(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && send()}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  send();
+                }
+              }}
               aria-label="Message input"
             />
-            <div className="absolute right-3 sm:right-4 top-1/2 transform -translate-y-1/2 text-gray-400">
-              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
+            <button
+              onClick={send}
+              disabled={!text.trim() || sending}
+              className="px-4 sm:px-6 py-2.5 rounded-xl bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-semibold text-sm sm:text-base"
+              aria-label="Send message"
+            >
+              {sending ? "Sending..." : "Send"}
+            </button>
           </div>
-          <button
-            onClick={send}
-            disabled={!text.trim()}
-            className="px-4 sm:px-6 md:px-8 py-2.5 sm:py-3.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-medium rounded-xl sm:rounded-2xl hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md flex items-center space-x-1 sm:space-x-2"
-            aria-label="Send message"
-          >
-            <span className="text-sm sm:text-base">Send</span>
-            <svg className="w-3 h-3 sm:w-4 sm:h-4 hidden sm:inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-            </svg>
-          </button>
+          <div className="mt-2 text-xs text-white/50 text-center">Press Enter to send</div>
         </div>
-        <div className="mt-2 sm:mt-3 text-xs text-gray-500 text-center">
-          <span className="hidden sm:inline">Press Enter to send • Click to delete your own messages</span>
-          <span className="sm:hidden">Enter to send</span>
-        </div>
-      </div>
-
-      {/* Mobile Floating Action Button (Optional) */}
-      <div className="sm:hidden fixed bottom-20 right-4">
-        <button
-          onClick={() => bottomRef.current?.scrollIntoView({ behavior: "smooth" })}
-          className="w-12 h-12 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg flex items-center justify-center"
-          aria-label="Scroll to bottom"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-          </svg>
-        </button>
       </div>
     </div>
   );

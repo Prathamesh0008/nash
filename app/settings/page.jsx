@@ -1,11 +1,5 @@
-import PageShell from "@/components/PageShell";
+import { redirect } from "next/navigation";
 
-export default function SettingsPage() {
-  return (
-    <PageShell>
-      <div className="max-w-4xl mx-auto px-4 py-20 text-center text-white/60">
-        Account settings coming soon.
-      </div>
-    </PageShell>
-  );
+export default function LegacyDemoPage() {
+  redirect("/profile");
 }

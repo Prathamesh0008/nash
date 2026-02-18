@@ -1,10 +1,9 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
-  ChevronLeft,
   ChevronRight,
   Star,
   Sparkles,
@@ -15,18 +14,76 @@ import {
   Users,
   Globe,
 } from "lucide-react";
-import { providers } from "../data/providers";
 
-export default function HeroBanner() {
-  const featured = [...providers].sort((a, b) => a.rank - b.rank).slice(0, 8);
+function normalizeProvider(provider, idx) {
+  return {
+    id: String(provider?.id || `worker-${idx + 1}`),
+    name: provider?.name || "Worker",
+    city: provider?.city || "City unavailable",
+    rating: Number(provider?.rating || 0),
+    price: Number(provider?.ratePerHour || provider?.price || 0),
+    image: provider?.image || provider?.profilePhoto || provider?.images?.[0] || "",
+    bio: provider?.bio || "Verified worker profile.",
+    tier: provider?.tier || (provider?.boosted ? "Diamond" : "Verified"),
+    specialties: provider?.tags || provider?.categories || [],
+  };
+}
 
-  const containerRef = useRef(null);
+function CardImage({ src, alt, priority = false, className = "" }) {
+  if (src) {
+    return <Image src={src} alt={alt} fill className={`object-cover ${className}`} priority={priority} unoptimized />;
+  }
+  return <div className={`absolute inset-0 bg-gradient-to-br from-purple-700/80 to-pink-700/80 ${className}`} />;
+}
+
+export default function HeroBanner({ providers = [] }) {
+  const featured = useMemo(() => {
+    const source = Array.isArray(providers) ? providers : [];
+    const normalized = source
+      .map((item, idx) => normalizeProvider(item, idx))
+      .sort((a, b) => Number(b.rating || 0) - Number(a.rating || 0));
+
+    if (normalized.length >= 8) {
+      return normalized.slice(0, 8);
+    }
+
+    if (normalized.length === 0) return [];
+
+    const padded = [];
+    let i = 0;
+    while (padded.length < 8) {
+      padded.push(normalized[i % normalized.length]);
+      i += 1;
+    }
+    return padded;
+  }, [providers]);
+
+  const heroStats = useMemo(() => {
+    const source = Array.isArray(providers) ? providers : [];
+    const workerCount = source.length;
+    const avgRating =
+      workerCount > 0
+        ? (source.reduce((sum, row) => sum + Number(row?.rating || 0), 0) / workerCount).toFixed(1)
+        : "0.0";
+    const cityCount = new Set(source.map((row) => String(row?.city || "").trim()).filter(Boolean)).size;
+
+    return {
+      workerCount,
+      avgRating,
+      cityCount,
+    };
+  }, [providers]);
+
+  const resolveWorkerHref = useCallback((provider) => {
+    if (provider?.id && String(provider.id).trim()) return `/workers/${provider.id}`;
+    return "/workers";
+  }, []);
+
   const scrollRef = useRef(null);
   const autoPlayRef = useRef(null);
 
   const [activeIndex, setActiveIndex] = useState(0);
 
-  /* ---------------- FIXED CARD WIDTH ---------------- */
   const getCardWidth = useCallback(() => {
     if (typeof window === "undefined") return 320;
     if (window.innerWidth < 480) return 300;
@@ -35,30 +92,20 @@ export default function HeroBanner() {
     return 400;
   }, []);
 
-  /* ---------------- SNAP LOGIC ---------------- */
   const scrollToIndex = useCallback(
     (index) => {
-      if (!scrollRef.current) return;
+      if (!scrollRef.current || featured.length === 0) return;
+      const safeIndex = Math.max(0, Math.min(index, featured.length - 1));
       const width = getCardWidth() + 24;
       scrollRef.current.scrollTo({
-        left: index * width,
+        left: safeIndex * width,
         behavior: "smooth",
       });
-      setActiveIndex(index);
+      setActiveIndex(safeIndex);
     },
-    [getCardWidth]
+    [featured.length, getCardWidth]
   );
 
-  /* ---------------- ARROWS ---------------- */
-  const scrollBy = (dir) => {
-    const next =
-      dir === "left"
-        ? Math.max(0, activeIndex - 1)
-        : Math.min(featured.length - 1, activeIndex + 1);
-    scrollToIndex(next);
-  };
-
-  /* ---------------- SCROLL SNAP (NATIVE) ---------------- */
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
@@ -69,240 +116,195 @@ export default function HeroBanner() {
       timeout = setTimeout(() => {
         const width = getCardWidth() + 24;
         const index = Math.round(el.scrollLeft / width);
-        setActiveIndex(index);
+        setActiveIndex(Math.max(0, Math.min(index, featured.length - 1)));
       }, 100);
     };
 
     el.addEventListener("scroll", onScroll);
     return () => el.removeEventListener("scroll", onScroll);
-  }, [getCardWidth]);
+  }, [featured.length, getCardWidth]);
 
-  /* ---------------- AUTOPLAY (MOBILE ONLY) ---------------- */
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined" || featured.length <= 1) return;
     if (window.innerWidth >= 1024) return;
 
     autoPlayRef.current = setInterval(() => {
-      scrollToIndex((activeIndex + 1) % featured.length);
+      setActiveIndex((prev) => {
+        const next = (prev + 1) % featured.length;
+        scrollToIndex(next);
+        return next;
+      });
     }, 4000);
 
     return () => clearInterval(autoPlayRef.current);
-  }, [activeIndex, featured.length, scrollToIndex]);
+  }, [featured.length, scrollToIndex]);
 
-  /* ===================================================== */
+  if (featured.length === 0) {
+    return (
+      <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-gray-900 via-black to-gray-900 p-8 lg:p-12">
+        <div className="absolute -right-40 -top-40 h-96 w-96 rounded-full bg-purple-500/10 blur-3xl" />
+        <div className="absolute -bottom-40 -left-40 h-96 w-96 rounded-full bg-pink-500/10 blur-3xl" />
+        <div className="relative z-10 max-w-2xl space-y-4">
+          <div className="inline-flex items-center gap-2 rounded-full border border-purple-500/30 bg-gradient-to-r from-purple-600/20 to-pink-600/20 px-4 py-2">
+            <Sparkles className="h-4 w-4 text-pink-300" />
+            <span className="text-sm font-semibold text-pink-300">Trusted Home Services</span>
+          </div>
+          <h1 className="text-3xl font-bold text-white sm:text-5xl">
+            Book <span className="bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">Verified</span> Workers
+          </h1>
+          <p className="text-base text-gray-300 sm:text-lg">
+            Live profiles are not available right now. Check back shortly or browse all workers.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <Link
+              href="/workers"
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 px-6 py-3 font-bold text-white transition-all hover:from-pink-600 hover:to-purple-700"
+            >
+              Browse Workers
+              <ChevronRight className="h-4 w-4" />
+            </Link>
+            <Link
+              href="/booking/new"
+              className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-6 py-3 font-semibold text-white transition-all hover:bg-white/15"
+            >
+              Start Booking
+            </Link>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
-    <section className="relative bg-gradient-to-br from-gray-900 via-black to-gray-900 overflow-hidden">
-
-      {/* BACKGROUND */}
+    <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-gray-900 via-black to-gray-900">
       <div className="absolute inset-0">
-        <div className="absolute -top-40 -right-40 w-96 h-96 bg-purple-500/10 blur-3xl rounded-full" />
-        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-pink-500/10 blur-3xl rounded-full" />
-        
-        {/* Grid pattern */}
+        <div className="absolute -right-40 -top-40 h-96 w-96 rounded-full bg-purple-500/10 blur-3xl" />
+        <div className="absolute -bottom-40 -left-40 h-96 w-96 rounded-full bg-pink-500/10 blur-3xl" />
         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:60px_60px]" />
       </div>
 
-      {/* ---------------- MOBILE / TABLET ---------------- */}
-      <div className="lg:hidden   relative z-10">
-        <div className="lg:hidden pt-10 relative z-10 overflow-hidden">
-  {/* Gradient Background */}
-  <div className="absolute inset-x-0 top-0 h-48 bg-gradient-to-b from-pink-500/10 via-purple-500/5 to-transparent" />
-  
-  <div className="relative px-6 mb-8">
-    {/* Premium Tag */}
-    <div className="flex items-center justify-center mb-6">
-      <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/15 shadow-lg">
-        <div className="relative">
-          <Sparkles className="w-4 h-4 text-pink-300" />
-          <div className="absolute -inset-1 bg-pink-400/20 blur-sm rounded-full" />
-        </div>
-        <span className="text-sm font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-300 to-purple-300">
-          Exclusive Talent
-        </span>
-        <div className="ml-2 w-1 h-1 rounded-full bg-pink-400" />
-      </div>
-    </div>
+      <div className="relative z-10 lg:hidden">
+        <div className="relative overflow-hidden px-6 pb-2 pt-10">
+          <div className="absolute inset-x-0 top-0 h-48 bg-gradient-to-b from-pink-500/10 via-purple-500/5 to-transparent" />
 
-    {/* Main Headline */}
-    <div className="text-center space-y-4">
-      <div className="relative inline-block">
-        <h1 className="text-4xl font-black text-white">
-          Discover{" "}
-          <span className="relative">
-            <span className="relative z-10 bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">
-              Exceptional
-            </span>
-            <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full opacity-80" />
-            <span className="absolute -bottom-1.5 left-1/4 right-1/4 h-px bg-gradient-to-r from-pink-400/50 to-purple-400/50 blur-sm" />
-          </span>{" "}
-          Talent
-        </h1>
-      </div>
-
-      {/* Subtitle with Direction */}
-      <div className="pt-2">
-        <div className="inline-flex items-center gap-3 px-5 py-2.5 rounded-xl bg-white/5 backdrop-blur-sm border border-white/10">
-          <div className="flex items-center gap-2">
-            <MoveLeft className="w-4 h-4 text-gray-400" />
-            <div className="flex flex-col items-center">
-              <span className="text-sm text-gray-300 font-medium">Swipe</span>
-              <div className="w-6 h-0.5 bg-gradient-to-r from-pink-400 to-purple-400 rounded-full mt-0.5" />
-            </div>
-            <MoveRight className="w-4 h-4 text-gray-400" />
-          </div>
-          <div className="h-6 w-px bg-white/20" />
-          <p className="text-sm text-gray-300">
-            Explore top-rated professionals
-          </p>
-        </div>
-      </div>
-
-      {/* Stats Preview */}
-      <div className="pt-3 flex justify-center gap-4">
-        <div className="text-center">
-          <div className="text-lg font-bold text-white">4.9★</div>
-          <div className="text-xs text-gray-400">Avg Rating</div>
-        </div>
-        <div className="text-center">
-          <div className="text-lg font-bold text-white">24h</div>
-          <div className="text-xs text-gray-400">Response</div>
-        </div>
-        <div className="text-center">
-          <div className="text-lg font-bold text-white">500+</div>
-          <div className="text-xs text-gray-400">Talent</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  {/* Bottom Glow */}
-  <div className="absolute -bottom-4 inset-x-0 h-8 bg-gradient-to-t from-black/30 to-transparent" />
-</div>
-        {/* SLIDER */}
-        <div ref={containerRef} className="relative">
-          {/* SCROLL CONTAINER */}
-          <div
-  ref={scrollRef}
-  className="
-    flex gap-6 px-[calc(50vw-160px)] py-10
-    overflow-x-auto
-+   overflow-y-hidden
-    scroll-smooth
-    snap-x snap-mandatory
-    no-scrollbar
-  "
->
-
-            {featured.map((p) => (
-              <div
-                key={p.id}
-                style={{ width: getCardWidth() }}
-                className="
-                  snap-center
-                  shrink-0
-                  relative
-                  rounded-3xl
-                  overflow-hidden
-                  bg-black
-                  h-[460px]
-                  sm:h-[500px]
-                  md:h-[520px]
-                  group
-                "
-              >
-                {/* IMAGE WITH PROPER OBJECT FIT */}
-                <div className="absolute inset-0">
-                  <Image
-                    src={p.images?.[0] || "/placeholder.jpg"}
-                    alt={p.name}
-                    fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-500"
-                    sizes={`(max-width: 768px) ${getCardWidth()}px`}
-                    priority={featured.indexOf(p) < 2}
-                  />
-                </div>
-
-                {/* Gradient overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent" />
-                
-                {/* Content */}
-                <div className="absolute bottom-0 left-0 right-0 p-6 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-                      <span className="text-white font-bold">{p.rating}</span>
-                    </div>
-                    <span className="text-pink-400 font-bold text-lg">
-                      €{p.ratePerHour}/h
-                    </span>
-                  </div>
-                  
-                  <h3 className="text-white font-bold text-xl">{p.name}</h3>
-                  <p className="text-gray-300 text-sm line-clamp-2">
-                    {p.bio}
-                  </p>
-                  
-                  <Link
-                    href={`/providers/${p.slug}`}
-                    className="mt-3 block bg-gradient-to-r from-pink-500 to-purple-600 text-white py-3 rounded-xl text-center font-bold hover:from-pink-600 hover:to-purple-700 transition-all"
-                  >
-                    View Profile
-                  </Link>
+          <div className="relative mb-8">
+            <div className="mb-6 flex items-center justify-center">
+                <div className="flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 backdrop-blur-sm shadow-lg">
+                  <Sparkles className="h-4 w-4 text-pink-300" />
+                  <span className="bg-gradient-to-r from-pink-300 to-purple-300 bg-clip-text text-sm font-bold text-transparent">
+                    Trusted Home Services
+                  </span>
                 </div>
               </div>
+
+              <div className="space-y-4 text-center">
+                <h1 className="text-4xl font-black text-white">
+                  Book <span className="bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">Top Rated</span> Workers
+                </h1>
+
+              <div className="pt-1">
+                <div className="inline-flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-5 py-2.5 backdrop-blur-sm">
+                  <MoveLeft className="h-4 w-4 text-gray-400" />
+                  <span className="text-sm text-gray-300">Swipe to explore verified worker profiles</span>
+                  <MoveRight className="h-4 w-4 text-gray-400" />
+                </div>
+              </div>
+
+              <div className="flex justify-center gap-4 pt-2">
+                <div className="text-center">
+                  <div className="text-lg font-bold text-white">{heroStats.avgRating}</div>
+                  <div className="text-xs text-gray-400">Avg Rating</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-lg font-bold text-white">Live</div>
+                  <div className="text-xs text-gray-400">Status</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-lg font-bold text-white">{heroStats.workerCount}+</div>
+                  <div className="text-xs text-gray-400">Workers</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="relative">
+            <div
+              ref={scrollRef}
+              className="no-scrollbar flex snap-x snap-mandatory gap-6 overflow-x-auto overflow-y-hidden scroll-smooth px-[calc(50vw-160px)] py-8"
+            >
+              {featured.map((p, i) => (
+                <div
+                  key={`${p.id}-${i}`}
+                  style={{ width: getCardWidth() }}
+                  className="group relative h-[460px] shrink-0 snap-center overflow-hidden rounded-3xl bg-black sm:h-[500px] md:h-[520px]"
+                >
+                  <div className="absolute inset-0">
+                    <CardImage src={p.image} alt={p.name} className="transition-transform duration-500 group-hover:scale-105" priority={i < 2} />
+                  </div>
+
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent" />
+
+                  <div className="absolute bottom-0 left-0 right-0 space-y-3 p-6">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                        <span className="font-bold text-white">{p.rating.toFixed(1)}</span>
+                      </div>
+                      <span className="text-lg font-bold text-pink-400">INR {p.price}/hr</span>
+                    </div>
+
+                    <h3 className="text-xl font-bold text-white">{p.name}</h3>
+                    <p className="line-clamp-2 text-sm text-gray-300">{p.bio}</p>
+
+                    <Link
+                      href={resolveWorkerHref(p)}
+                      className="mt-3 block rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 py-3 text-center font-bold text-white transition-all hover:from-pink-600 hover:to-purple-700"
+                    >
+                      View Profile
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex justify-center gap-2 pb-4">
+            {featured.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => scrollToIndex(i)}
+                className={`h-2 rounded-full transition-all ${
+                  activeIndex === i ? "w-8 bg-gradient-to-r from-pink-500 to-purple-600" : "w-3 bg-white/30"
+                }`}
+              />
             ))}
           </div>
         </div>
-
-        {/* DOTS */}
-        <div className="flex justify-center gap-2 pb-6">
-          {featured.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => scrollToIndex(i)}
-              className={`h-2 rounded-full transition-all ${
-                activeIndex === i
-                  ? "w-8 bg-gradient-to-r from-pink-500 to-purple-600"
-                  : "w-3 bg-white/30"
-              }`}
-            />
-          ))}
-        </div>
-
-        <div className="flex justify-center gap-2 text-gray-400 pb-8 text-sm">
-          <MoveLeft className="w-4 h-4" /> Swipe <MoveRight className="w-4 h-4" />
-        </div>
       </div>
 
-      {/* ---------------- DESKTOP GRID ---------------- */}
-      <div className="hidden lg:block">
-        <div className="max-w-7xl mx-auto px-8 py-12 min-h-300 flex flex-col">
-          {/* Header */}
-          <div className="mb-12">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-purple-600/20 to-pink-600/20 backdrop-blur-sm border border-purple-500/30 mb-4">
+      <div className="relative z-10 hidden lg:block">
+        <div className="mx-auto max-w-7xl px-8 py-12">
+          <div className="mb-10">
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-purple-500/30 bg-gradient-to-r from-purple-600/20 to-pink-600/20 px-4 py-2 backdrop-blur-sm">
               <Sparkles className="h-4 w-4 text-pink-300" />
-              <span className="text-pink-300 text-sm font-semibold">Premium Selection</span>
+              <span className="text-sm font-semibold text-pink-300">Verified Local Pros</span>
             </div>
-            
-            <h1 className="text-6xl font-bold text-white mb-4">
-              Discover <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-purple-400">Exceptional</span> Talent
+
+            <h1 className="mb-4 text-6xl font-bold text-white">
+              Book <span className="bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">Trusted</span> Home Services
             </h1>
-            <p className="text-xl text-gray-300 max-w-2xl">
-              Handpicked professionals delivering outstanding results
-            </p>
-            
-            {/* Stats */}
-            <div className="flex gap-8 mt-8">
+            <p className="max-w-2xl text-xl text-gray-300">Find verified workers by area, rating and availability.</p>
+
+            <div className="mt-8 flex gap-8">
               {[
-                { icon: Users, value: "10K+", label: "Talent Pool" },
-                { icon: Trophy, value: "4.9★", label: "Avg Rating" },
-                { icon: Globe, value: "150+", label: "Countries" },
-                { icon: Zap, value: "24h", label: "Avg Response" },
+                { icon: Users, value: `${heroStats.workerCount}+`, label: "Verified Workers" },
+                { icon: Trophy, value: heroStats.avgRating, label: "Avg Rating" },
+                { icon: Globe, value: `${heroStats.cityCount}+`, label: "Cities" },
+                { icon: Zap, value: "Live", label: "Availability" },
               ].map((stat, idx) => (
                 <div key={idx} className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-gradient-to-r from-pink-500/20 to-purple-500/20">
-                    <stat.icon className="w-5 h-5 text-pink-400" />
+                  <div className="rounded-lg bg-gradient-to-r from-pink-500/20 to-purple-500/20 p-2">
+                    <stat.icon className="h-5 w-5 text-pink-400" />
                   </div>
                   <div>
                     <div className="text-2xl font-bold text-white">{stat.value}</div>
@@ -313,60 +315,35 @@ export default function HeroBanner() {
             </div>
           </div>
 
-          {/* Grid Container */}
-          <div className="flex-1 grid grid-cols-2 gap-8">
-            {/* Large Featured Card */}
-            <div className="relative group rounded-3xl overflow-hidden">
+          <div className="grid h-[760px] grid-cols-2 gap-8">
+            <div className="group relative h-full overflow-hidden rounded-3xl">
               <div className="absolute inset-0">
-                {featured[0]?.images?.[0] ? (
-                  <Image
-                    src={featured[0].images[0]}
-                    alt={featured[0].name}
-                    fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-700"
-                    sizes="(max-width: 1536px) 50vw, 800px"
-                    priority
-                  />
-                ) : (
-                  <div className="absolute inset-0 bg-gradient-to-br from-purple-600 to-pink-600" />
-                )}
+                <CardImage src={featured[0]?.image} alt={featured[0]?.name || "Featured"} className="transition-transform duration-700 group-hover:scale-105" priority />
               </div>
-              
-              {/* Gradient Overlay */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
-              
-              {/* Content */}
               <div className="absolute bottom-0 left-0 right-0 p-8">
-                <div className="flex items-start justify-between mb-4">
+                <div className="mb-4 flex items-start justify-between">
                   <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="px-3 py-1 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 backdrop-blur-sm">
-                        <span className="text-white text-xs font-bold">{featured[0]?.tier || "Premium"}</span>
-                      </div>
-                      <div className="flex items-center gap-1 px-3 py-1 rounded-full bg-black/60 backdrop-blur-sm">
+                    <div className="mb-2 flex items-center gap-2">
+                      <span className="rounded-full bg-gradient-to-r from-purple-600 to-pink-600 px-3 py-1 text-xs font-bold text-white">{featured[0]?.tier || "Premium"}</span>
+                      <span className="flex items-center gap-1 rounded-full bg-black/60 px-3 py-1 text-sm font-bold text-white">
                         <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
-                        <span className="text-white text-sm font-bold">{featured[0]?.rating}</span>
+                        {featured[0]?.rating?.toFixed(1)}
+                      </span>
+                    </div>
+                    <h3 className="mb-1 text-3xl font-bold text-white">{featured[0]?.name}</h3>
+                    <p className="max-w-xl line-clamp-2 text-sm text-gray-300">{featured[0]?.bio}</p>
+                  </div>
+                    <div className="text-right">
+                      <div className="bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-4xl font-bold text-transparent">
+                        INR {featured[0]?.price}
                       </div>
+                      <div className="text-sm text-gray-400">per hour</div>
                     </div>
-                    <h3 className="text-3xl font-bold text-white mb-1">
-                      {featured[0]?.name}
-                    </h3>
-                    <p className="text-gray-300 text-sm line-clamp-2 max-w-xl">
-                      {featured[0]?.bio}
-                    </p>
-                  </div>
-                  
-                  <div className="text-right">
-                    <div className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-purple-400">
-                      €{featured[0]?.ratePerHour}
-                    </div>
-                    <div className="text-gray-400 text-sm">per hour</div>
-                  </div>
                 </div>
-                
                 <Link
-                  href={`/providers/${featured[0]?.slug}`}
-                  className="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white font-bold rounded-xl hover:from-pink-600 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl hover:shadow-pink-500/20"
+                  href={resolveWorkerHref(featured[0])}
+                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 px-8 py-3 font-bold text-white transition-all hover:from-pink-600 hover:to-purple-700"
                 >
                   View Full Profile
                   <ChevronRight className="h-5 w-5" />
@@ -374,97 +351,59 @@ export default function HeroBanner() {
               </div>
             </div>
 
-            {/* Right Column - Grid */}
-            <div className="grid grid-rows-3 gap-6">
-              {/* Top Card (Row 1-2) */}
-              <div className="relative group rounded-2xl overflow-hidden row-span-2">
+            <div className="grid h-full grid-rows-3 gap-6">
+              <div className="group relative row-span-2 overflow-hidden rounded-2xl">
                 <div className="absolute inset-0">
-                  {featured[1]?.images?.[0] ? (
-                    <Image
-                      src={featured[1].images[0]}
-                      alt={featured[1].name}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-700"
-                      sizes="(max-width: 1536px) 25vw, 400px"
-                    />
-                  ) : (
-                    <div className="absolute inset-0 bg-gradient-to-br from-purple-600/90 to-pink-600/90" />
-                  )}
+                  <CardImage src={featured[1]?.image} alt={featured[1]?.name || "Featured"} className="transition-transform duration-700 group-hover:scale-105" />
                 </div>
-                
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
-                
                 <div className="absolute bottom-0 left-0 right-0 p-6">
-                  <div className="flex items-start justify-between mb-3">
+                  <div className="mb-3 flex items-start justify-between">
                     <div>
-                      <h3 className="text-xl font-bold text-white mb-1">
-                        {featured[1]?.name}
-                      </h3>
-                      <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-1">
+                      <h3 className="mb-1 text-xl font-bold text-white">{featured[1]?.name}</h3>
+                      <div className="flex items-center gap-2 text-sm text-gray-300">
+                        <span className="flex items-center gap-1 font-bold text-white">
                           <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
-                          <span className="text-white text-sm font-bold">{featured[1]?.rating}</span>
-                        </div>
-                        <span className="text-gray-300 text-sm">• {featured[1]?.specialties?.[0] || "Expert"}</span>
+                          {featured[1]?.rating?.toFixed(1)}
+                        </span>
+                        <span>• All-Rounder</span>
                       </div>
                     </div>
-                    <div className="text-lg font-bold text-pink-400">
-                      €{featured[1]?.ratePerHour}<span className="text-gray-400 text-sm">/h</span>
-                    </div>
+                    <div className="text-lg font-bold text-pink-400">INR {featured[1]?.price}/hr</div>
                   </div>
-                  
+
                   <Link
-                    href={`/providers/${featured[1]?.slug}`}
-                    className="inline-block w-full py-2.5 px-4 bg-gradient-to-r from-pink-500 to-purple-600 text-white font-bold text-center rounded-lg hover:from-pink-600 hover:to-purple-700 transition-all text-sm"
+                    href={resolveWorkerHref(featured[1])}
+                    className="inline-block w-full rounded-lg bg-gradient-to-r from-pink-500 to-purple-600 px-4 py-2.5 text-center text-sm font-bold text-white transition-all hover:from-pink-600 hover:to-purple-700"
                   >
                     View Profile
                   </Link>
                 </div>
               </div>
 
-              {/* Bottom Two Cards (Row 3) */}
               <div className="grid grid-cols-2 gap-6">
                 {[2, 3].map((index) => (
-                  <div key={index} className="relative group rounded-xl overflow-hidden">
+                  <div key={index} className="group relative overflow-hidden rounded-xl">
                     <div className="absolute inset-0">
-                      {featured[index]?.images?.[0] ? (
-                        <Image
-                          src={featured[index].images[0]}
-                          alt={featured[index].name}
-                          fill
-                          className="object-cover group-hover:scale-110 transition-transform duration-500"
-                          sizes="(max-width: 1536px) 12.5vw, 250px h-20"
-                        />
-                      ) : (
-                        <div className={`absolute inset-0 ${
-                          index === 2 
-                            ? 'bg-gradient-to-br from-purple-600/80 to-pink-600/80' 
-                            : 'bg-gradient-to-br from-pink-600/80 to-purple-600/80'
-                        }`} />
-                      )}
+                      <CardImage src={featured[index]?.image} alt={featured[index]?.name || "Featured"} className="transition-transform duration-500 group-hover:scale-110" />
                     </div>
-                    
                     <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
-                    
+
                     <div className="absolute bottom-0 left-0 right-0 p-4">
-                      <div className="flex items-start justify-between mb-2">
+                      <div className="mb-2 flex items-start justify-between">
                         <div>
-                          <h4 className="text-sm font-bold text-white line-clamp-1 mb-1">
-                            {featured[index]?.name}
-                          </h4>
-                          <div className="flex items-center gap-1">
-                            <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
-                            <span className="text-white text-xs font-bold">{featured[index]?.rating}</span>
+                          <h4 className="mb-1 line-clamp-1 text-sm font-bold text-white">{featured[index]?.name}</h4>
+                          <div className="flex items-center gap-1 text-xs font-bold text-white">
+                            <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                            {featured[index]?.rating?.toFixed(1)}
                           </div>
                         </div>
-                        <div className="text-pink-400 font-bold text-sm">
-                          €{featured[index]?.ratePerHour}
-                        </div>
+                        <div className="text-sm font-bold text-pink-400">INR {featured[index]?.price}</div>
                       </div>
-                      
+
                       <Link
-                        href={`/providers/${featured[index]?.slug}`}
-                        className="inline-block w-full py-1.5 px-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white font-bold text-center rounded-lg hover:from-pink-600 hover:to-purple-700 transition-all text-xs"
+                        href={resolveWorkerHref(featured[index])}
+                        className="inline-block w-full rounded-lg bg-gradient-to-r from-pink-500 to-purple-600 px-3 py-1.5 text-center text-xs font-bold text-white transition-all hover:from-pink-600 hover:to-purple-700"
                       >
                         View Profile
                       </Link>
@@ -475,45 +414,29 @@ export default function HeroBanner() {
             </div>
           </div>
 
-          {/* Additional Talent Cards Row */}
-          <div className="grid grid-cols-4 gap-6 mt-8">
+          <div className="mt-8 grid grid-cols-4 gap-6">
             {[4, 5, 6, 7].map((index) => (
-              <div key={index} className="relative group rounded-xl overflow-hidden">
+              <div key={index} className="group relative h-[190px] overflow-hidden rounded-xl">
                 <div className="absolute inset-0">
-                  {featured[index]?.images?.[0] ? (
-                    <Image
-                      src={featured[index].images[0]}
-                      alt={featured[index].name}
-                      fill
-                      className="object-cover group-hover:scale-110 transition-transform duration-500"
-                      sizes="(max-width: 1536px) 25vw, 300px"
-                    />
-                  ) : (
-                    <div className="absolute inset-0 bg-gradient-to-br from-purple-600/80 to-pink-600/80" />
-                  )}
+                  <CardImage src={featured[index]?.image} alt={featured[index]?.name || "Featured"} className="transition-transform duration-500 group-hover:scale-110" />
                 </div>
-                
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
-                
+
                 <div className="absolute bottom-0 left-0 right-0 p-4">
-                  <div className="flex items-start justify-between mb-2">
+                  <div className="mb-2 flex items-start justify-between">
                     <div>
-                      <h4 className="text-sm font-bold text-white line-clamp-1">
-                        {featured[index]?.name}
-                      </h4>
-                      <div className="flex items-center gap-1">
-                        <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
-                        <span className="text-white text-xs">{featured[index]?.rating}</span>
+                      <h4 className="line-clamp-1 text-sm font-bold text-white">{featured[index]?.name}</h4>
+                      <div className="flex items-center gap-1 text-xs text-white">
+                        <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                        {featured[index]?.rating?.toFixed(1)}
                       </div>
                     </div>
-                    <div className="text-pink-400 font-bold text-sm">
-                      €{featured[index]?.ratePerHour}
-                    </div>
+                    <div className="text-sm font-bold text-pink-400">INR {featured[index]?.price}</div>
                   </div>
-                  
+
                   <Link
-                    href={`/providers/${featured[index]?.slug}`}
-                    className="inline-block w-full py-1.5 px-3 bg-gradient-to-r from-pink-500/80 to-purple-600/80 text-white font-bold text-center rounded-lg hover:from-pink-600 hover:to-purple-700 transition-all text-xs border border-white/10"
+                    href={resolveWorkerHref(featured[index])}
+                    className="inline-block w-full rounded-lg border border-white/10 bg-gradient-to-r from-pink-500/80 to-purple-600/80 px-3 py-1.5 text-center text-xs font-bold text-white transition-all hover:from-pink-600 hover:to-purple-700"
                   >
                     View
                   </Link>
@@ -522,13 +445,12 @@ export default function HeroBanner() {
             ))}
           </div>
 
-          {/* View All Button */}
-          <div className="mt-12 text-center">
+          <div className="mt-10 text-center">
             <Link
-              href="/providers"
-              className="inline-flex items-center gap-2 px-10 py-4 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 text-white font-bold text-lg hover:from-pink-600 hover:to-purple-700 transition-all shadow-xl hover:shadow-2xl hover:shadow-pink-500/30"
+              href="/workers"
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 px-10 py-4 text-lg font-bold text-white transition-all hover:from-pink-600 hover:to-purple-700"
             >
-              View All {providers.length}+ Providers
+              View All {heroStats.workerCount || featured.length}+ Workers
               <ChevronRight className="h-5 w-5" />
             </Link>
           </div>

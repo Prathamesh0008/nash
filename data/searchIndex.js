@@ -1,38 +1,17 @@
-import { providers } from "./providers";
-
 export const SEARCH_INDEX = [
-  // ===== STATIC PAGES =====
-  { label: "Home", keywords: ["home"], href: "/" },
-  { label: "Women", keywords: ["women", "female", "girls"], href: "/women" },
-  { label: "Men", keywords: ["men", "male"], href: "/men" },
-  { label: "Couple", keywords: ["couple", "pairs"], href: "/couple" },
-  { label: "Videos", keywords: ["videos", "media"], href: "/videos" },
-  { label: "Support", keywords: ["help", "support"], href: "/support" },
-  { label: "Premium", keywords: ["premium", "vip"], href: "/premium" },
-
-  // ===== SERVICES =====
-  { label: "Massage", keywords: ["massage", "spa", "body"], href: "/search?q=massage" },
-  { label: "BDSM", keywords: ["bdsm", "fetish"], href: "/search?q=bdsm" },
-  { label: "Escort", keywords: ["escort"], href: "/search?q=escort" },
-  { label: "Role Play", keywords: ["roleplay", "fantasy"], href: "/search?q=role play" },
-
-  // ===== CITIES =====
-  { label: "Delhi Escorts", keywords: ["delhi"], href: "/search?q=delhi" },
-  { label: "Mumbai Escorts", keywords: ["mumbai"], href: "/search?q=mumbai" },
-  { label: "Bangalore Escorts", keywords: ["bangalore"], href: "/search?q=bangalore" },
+  { label: "Home", keywords: ["home", "worker", "featured"], href: "/" },
+  { label: "Services", keywords: ["service", "categories", "book"], href: "/services" },
+  { label: "My Orders", keywords: ["orders", "bookings", "history"], href: "/orders" },
+  { label: "Wallet", keywords: ["wallet", "balance", "transactions"], href: "/wallet" },
+  { label: "Support", keywords: ["support", "report", "help"], href: "/support" },
+  { label: "Chat", keywords: ["chat", "inbox", "messages"], href: "/chat" },
+  { label: "Worker Dashboard", keywords: ["worker", "dashboard", "jobs"], href: "/worker/dashboard" },
+  { label: "Worker Jobs", keywords: ["jobs", "requests", "assignments"], href: "/worker/jobs" },
+  { label: "Worker Boost", keywords: ["boost", "ranking", "featured"], href: "/worker/boost" },
+  { label: "Worker Payouts", keywords: ["payout", "earnings", "withdraw"], href: "/worker/payouts" },
+  { label: "Admin Dashboard", keywords: ["admin", "dashboard", "metrics"], href: "/admin/dashboard" },
+  { label: "Admin Orders", keywords: ["admin orders", "assign", "reassign"], href: "/admin/orders" },
+  { label: "Admin Reports", keywords: ["reports", "disputes", "investigation"], href: "/admin/reports" },
+  { label: "Admin Payments", keywords: ["payments", "refunds", "ledger"], href: "/admin/payments" },
+  { label: "Admin Payouts", keywords: ["payout approvals", "worker payout"], href: "/admin/payouts" },
 ];
-
-// ===== PROVIDERS (AUTO-INJECT) =====
-providers.forEach((p) => {
-  SEARCH_INDEX.push({
-    label: p.name,
-    keywords: [
-      p.name,
-      p.location,
-      ...(p.tags || []),
-      ...(p.specialties || []),
-    ],
-    href: `/providers/${p.slug}`,
-    type: "provider",
-  });
-});

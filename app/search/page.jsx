@@ -1,14 +1,10 @@
-import PageShell from "@/components/PageShell";
+import { Suspense } from "react";
 import SearchClient from "./SearchClient";
-
-export const metadata = {
-  title: "Search | Valentina's",
-};
 
 export default function SearchPage() {
   return (
-    <PageShell>
+    <Suspense fallback={<section className="mx-auto max-w-7xl px-4 py-16 text-sm text-slate-400">Loading search...</section>}>
       <SearchClient />
-    </PageShell>
+    </Suspense>
   );
 }

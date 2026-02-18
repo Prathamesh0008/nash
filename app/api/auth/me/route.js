@@ -1,37 +1,36 @@
+import { NextResponse } from "next/server";
 import dbConnect from "@/lib/dbConnect";
 import User from "@/models/User";
 import WorkerProfile from "@/models/WorkerProfile";
-import { NextResponse } from "next/server";
-import { verifyToken } from "@/lib/auth";
-import { cookies } from "next/headers";
+import { requireAuth, applyRefreshCookies } from "@/lib/apiAuth";
 
 export async function GET() {
   await dbConnect();
+  const { user, errorResponse, refreshedResponse } = await requireAuth({ roles: ["user", "worker", "admin"] });
+  if (errorResponse) return errorResponse;
 
-  const cookieStore = await cookies();
-  const token = cookieStore.get("auth")?.value;
-  if (!token) return NextResponse.json({ ok: false, user: null }, { status: 401 });
+  const dbUser = await User.findById(user.userId).lean();
+  if (!dbUser) return NextResponse.json({ ok: false, error: "User not found" }, { status: 404 });
 
-  const decoded = verifyToken(token);
-  if (!decoded) return NextResponse.json({ ok: false, user: null }, { status: 401 });
+  const payload = {
+    id: dbUser._id,
+    name: dbUser.name,
+    email: dbUser.email,
+    phone: dbUser.phone,
+    role: dbUser.role,
+    status: dbUser.status,
+    walletBalance: dbUser.walletBalance || 0,
+    addresses: dbUser.addresses || [],
+    referralCode: dbUser.referralCode || "",
+    referralStats: dbUser.referralStats || { totalReferrals: 0, totalRewards: 0 },
+    preferences: dbUser.preferences || { favoriteWorkerIds: [], savedSearchFilters: [], recentSearches: [] },
+  };
 
-  const user = await User.findById(decoded.userId).lean();
-  if (!user) return NextResponse.json({ ok: false, user: null }, { status: 401 });
-
-  let workerProfile = null;
-  if (user.role === "worker") {
-    workerProfile = await WorkerProfile.findOne({ userId: user._id }).lean();
+  if (dbUser.role === "worker") {
+    const profile = await WorkerProfile.findOne({ userId: dbUser._id }).lean();
+    payload.workerProfile = profile || null;
   }
 
-  return NextResponse.json({
-    ok: true,
-    user: {
-      id: user._id,
-      email: user.email,
-      role: user.role,
-      name: user.name || "",
-      workerStatus: workerProfile?.status || null,
-    },
-  });
+  const res = NextResponse.json({ ok: true, user: payload });
+  return applyRefreshCookies(res, refreshedResponse);
 }
-

@@ -1,18 +1,51 @@
 import { useEffect, useState } from "react";
-import api from "@/lib/api";
 
 export function useChatMessages(conversationId) {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!conversationId) return;
+    let cancelled = false;
+    const timeout = setTimeout(() => {
+      if (!conversationId) {
+        if (!cancelled) {
+          setMessages([]);
+          setError("");
+          setLoading(false);
+        }
+        return;
+      }
 
-    setLoading(true);
-    api
-  .get(`/api/chat/messages?conversationId=${conversationId}`)
-  .then((data) => setMessages(data))
-      .finally(() => setLoading(false));
+      setLoading(true);
+      setError("");
+
+      fetch(`/api/chat/messages/${conversationId}`, { credentials: "include" })
+        .then(async (res) => {
+          const data = await res.json();
+          if (!res.ok || !data.ok) {
+            throw new Error(data?.error || "Failed to load messages");
+          }
+          return data.messages || [];
+        })
+        .then((data) => {
+          if (!cancelled) setMessages(data);
+        })
+        .catch((err) => {
+          if (!cancelled) {
+            setError(err.message || "Failed to load messages");
+            setMessages([]);
+          }
+        })
+        .finally(() => {
+          if (!cancelled) setLoading(false);
+        });
+    }, 0);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timeout);
+    };
   }, [conversationId]);
 
   const addMessage = (message) => {
@@ -24,5 +57,6 @@ export function useChatMessages(conversationId) {
     setMessages,
     addMessage,
     loading,
+    error,
   };
 }

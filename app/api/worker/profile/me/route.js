@@ -1,19 +1,14 @@
+import { NextResponse } from "next/server";
 import dbConnect from "@/lib/dbConnect";
 import WorkerProfile from "@/models/WorkerProfile";
-import { NextResponse } from "next/server";
-import { verifyToken } from "@/lib/auth";
-import { cookies } from "next/headers";
+import { requireAuth, applyRefreshCookies } from "@/lib/apiAuth";
 
 export async function GET() {
   await dbConnect();
+  const { user, errorResponse, refreshedResponse } = await requireAuth({ roles: ["worker", "admin"] });
+  if (errorResponse) return errorResponse;
 
-  const cookieStore = await cookies();
-  const token = cookieStore.get("auth")?.value;
-  const decoded = token ? verifyToken(token) : null;
-
-  if (!decoded) return NextResponse.json({ ok: false }, { status: 401 });
-  if (decoded.role !== "worker") return NextResponse.json({ ok: false }, { status: 403 });
-
-  const profile = await WorkerProfile.findOne({ userId: decoded.userId }).lean();
-  return NextResponse.json({ ok: true, profile: profile || null });
+  const profile = await WorkerProfile.findOne({ userId: user.userId }).lean();
+  const res = NextResponse.json({ ok: true, profile });
+  return applyRefreshCookies(res, refreshedResponse);
 }

@@ -42,14 +42,14 @@ export default function StepDocuments({
       {/* ADDRESS PROOF */}
       <div className="space-y-2">
         <UploadImage
-          label="Address Proof"
-          onUploaded={(url) => updateDoc("addressProof", url)}
+          label="Selfie"
+          onUploaded={(url) => updateDoc("selfie", url)}
         />
 
-        {docs.addressProof && (
+        {docs.selfie && (
           <img
-            src={docs.addressProof}
-            alt="Address Proof"
+            src={docs.selfie}
+            alt="Selfie"
             className="w-32 rounded border"
           />
         )}

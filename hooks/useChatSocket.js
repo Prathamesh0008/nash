@@ -1,18 +1,18 @@
 import { useEffect } from "react";
-import socket from "@/lib/socket";
+import { getSocket } from "@/lib/socket";
 
 export function useChatSocket({ conversationId, onMessage }) {
   useEffect(() => {
     if (!conversationId) return;
 
-    socket.connect();
-    socket.emit("join-room", conversationId);
+    const socket = getSocket();
+    socket.emit("join", conversationId);
 
-    socket.on("message:new", onMessage);
+    socket.on("newMessage", onMessage);
 
     return () => {
-      socket.emit("leave-room", conversationId);
-      socket.off("message:new", onMessage);
+      socket.emit("leave", conversationId);
+      socket.off("newMessage", onMessage);
     };
-  }, [conversationId]);
+  }, [conversationId, onMessage]);
 }

@@ -1,11 +1,17 @@
 {
+  "type": "module",
   "name": "nashproject",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "node server.js",
     "build": "next build",
-    "start": "NODE_ENV=production node server.js"
+    "start": "NODE_ENV=production node server.js",
+    "migrate:gender": "node scripts/migrate-gender.mjs",
+    "smoke:chat-notifications": "node scripts/smoke-chat-notifications.mjs",
+    "smoke:e2e-critical": "node scripts/e2e-critical.mjs",
+    "smoke:gender-pages": "node scripts/smoke-gender-pages.mjs",
+    "seed": "node scripts/seed.mjs"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
@@ -20,15 +26,18 @@
     "mongoose": "^9.1.1",
     "next": "16.0.10",
     "next-cloudinary": "^6.17.5",
+    "node-cron": "^4.2.1",
     "react": "19.2.1",
     "react-dom": "19.2.1",
     "react-icons": "^5.5.0",
     "socket.io": "^4.8.3",
-    "socket.io-client": "^4.8.3"
+    "socket.io-client": "^4.8.3",
+    "zod": "^3.25.67"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "babel-plugin-react-compiler": "1.0.0",
+    "baseline-browser-mapping": "^2.9.19",
     "eslint": "^9",
     "eslint-config-next": "16.0.10",
     "tailwindcss": "^4"

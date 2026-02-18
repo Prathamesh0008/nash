@@ -21,6 +21,7 @@ export default function StepPersonal({
         <Input label="Phone" value={form.phone} onChange={(v) => update("phone", v)} />
 
         <Input label="City" value={form.city} onChange={(v) => update("city", v)} />
+        <Input label="Pincode" value={form.pincode} onChange={(v) => update("pincode", v)} />
         <Input label="Address" value={form.address} onChange={(v) => update("address", v)} />
 
         <Input type="date" label="Date of Birth" value={form.dob} onChange={(v) => update("dob", v)} />

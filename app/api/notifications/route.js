@@ -1,138 +1,71 @@
-// import dbConnect from "@/lib/dbConnect";
-// import Notification from "@/models/Notification";
-// import User from "@/models/User";
-// import { NextResponse } from "next/server";
-// import { cookies } from "next/headers";
-// import { verifyToken } from "@/lib/auth";
-
-// export async function GET() {
-//   await dbConnect();
-
-//   const token = (await cookies()).get("auth")?.value;
-//   const decoded = token ? verifyToken(token) : null;
-//   if (!decoded)
-//     return NextResponse.json({ ok: false, error: "Not authenticated" }, { status: 401 });
-
-//   // Load notifications
-//   let notifications = await Notification.find({ userId: decoded.userId })
-//     .sort({ createdAt: -1 })
-//     .lean();
-
-//   // Populate actor info directly from DB
-//   const actorIds = notifications.map((n) => n.actorId).filter(Boolean);
-//   const actors = await User.find({ _id: { $in: actorIds } }).lean();
-//   const actorMap = {};
-//   actors.forEach((a) => (actorMap[a._id.toString()] = a));
-
-//   // Attach actor info to notification
-//   notifications = notifications.map((n) => ({
-//     ...n,
-//     actor: n.actorId ? actorMap[n.actorId.toString()] : null,
-//   }));
-
-//   return NextResponse.json({ ok: true, notifications });
-// }
-
-
-
+import { NextResponse } from "next/server";
 import dbConnect from "@/lib/dbConnect";
 import Notification from "@/models/Notification";
 import User from "@/models/User";
-import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { verifyToken } from "@/lib/auth";
+import { requireAuth, applyRefreshCookies } from "@/lib/apiAuth";
+import { createNotification } from "@/lib/notify";
 
-export async function GET() {
-  try {
-    await dbConnect();
+export async function GET(req) {
+  await dbConnect();
+  const { user, errorResponse, refreshedResponse } = await requireAuth({
+    roles: ["user", "worker", "admin"],
+  });
+  if (errorResponse) return errorResponse;
 
-    const token = (await cookies()).get("auth")?.value;
-    const decoded = token ? verifyToken(token) : null;
-    
-    if (!decoded) {
-      return NextResponse.json({ 
-        ok: false, 
-        error: "Not authenticated" 
-      }, { 
-        status: 401 
-      });
-    }
+  const { searchParams } = new URL(req.url);
+  const limit = Math.min(Math.max(Number(searchParams.get("limit") || 20), 1), 100);
 
-    // Load notifications with limit
-    const notifications = await Notification.find({ 
-      userId: decoded.userId 
-    })
-    .sort({ createdAt: -1 })
-    .limit(50) // Limit to prevent too many
-    .populate({
-      path: 'actorId',
-      select: 'fullName profilePhoto username email',
-      model: 'User'
-    })
+  const [notifications, unreadCount] = await Promise.all([
+    Notification.find({ userId: user.userId }).sort({ createdAt: -1 }).limit(limit).lean(),
+    Notification.countDocuments({ userId: user.userId, read: false }),
+  ]);
+
+  const actorIds = [
+    ...new Set(
+      notifications
+        .map((notification) => notification.actorId?.toString())
+        .filter(Boolean)
+    ),
+  ];
+
+  const actors = await User.find({ _id: { $in: actorIds } })
+    .select("name email avatarUrl role")
     .lean();
+  const actorMap = new Map(actors.map((actor) => [actor._id.toString(), actor]));
 
-    // Transform the data
-    const transformedNotifications = notifications.map((n) => ({
-      ...n,
-      actor: n.actorId || null,
-      actorId: undefined // Remove duplicate
-    }));
+  const rows = notifications.map((notification) => ({
+    ...notification,
+    actor: notification.actorId ? actorMap.get(notification.actorId.toString()) || null : null,
+  }));
 
-    return NextResponse.json({ 
-      ok: true, 
-      notifications: transformedNotifications,
-      unreadCount: transformedNotifications.filter(n => !n.read).length
-    });
-
-  } catch (error) {
-    console.error("Error fetching notifications:", error);
-    return NextResponse.json({ 
-      ok: false, 
-      error: "Internal server error" 
-    }, { 
-      status: 500 
-    });
-  }
+  const res = NextResponse.json({
+    ok: true,
+    notifications: rows,
+    unreadCount,
+  });
+  return applyRefreshCookies(res, refreshedResponse);
 }
 
-// Optional: DELETE route to clear old notifications
-export async function DELETE() {
-  try {
-    await dbConnect();
+export async function POST(req) {
+  await dbConnect();
+  const { user, errorResponse, refreshedResponse } = await requireAuth({
+    roles: ["user", "worker", "admin"],
+  });
+  if (errorResponse) return errorResponse;
 
-    const token = (await cookies()).get("auth")?.value;
-    const decoded = token ? verifyToken(token) : null;
-    
-    if (!decoded) {
-      return NextResponse.json({ 
-        ok: false, 
-        error: "Not authenticated" 
-      }, { 
-        status: 401 
-      });
-    }
+  const body = await req.json().catch(() => ({}));
+  const targetUserId = user.role === "admin" && body.userId ? body.userId : user.userId;
 
-    // Delete notifications older than 30 days
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const notification = await createNotification({
+    userId: targetUserId,
+    actorId: user.userId,
+    type: body.type || "system",
+    title: body.title || "Notification",
+    body: body.body || "",
+    href: body.href || "",
+    meta: body.meta || {},
+  });
 
-    const result = await Notification.deleteMany({
-      userId: decoded.userId,
-      createdAt: { $lt: thirtyDaysAgo }
-    });
-
-    return NextResponse.json({ 
-      ok: true, 
-      deletedCount: result.deletedCount 
-    });
-
-  } catch (error) {
-    console.error("Error deleting old notifications:", error);
-    return NextResponse.json({ 
-      ok: false, 
-      error: "Internal server error" 
-    }, { 
-      status: 500 
-    });
-  }
+  const res = NextResponse.json({ ok: true, notification });
+  return applyRefreshCookies(res, refreshedResponse);
 }

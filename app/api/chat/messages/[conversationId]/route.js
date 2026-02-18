@@ -1,71 +1,61 @@
+import mongoose from "mongoose";
+import { NextResponse } from "next/server";
 import dbConnect from "@/lib/dbConnect";
 import Conversation from "@/models/Conversation";
 import Message from "@/models/Message";
-import { NextResponse } from "next/server";
-import { verifyToken } from "@/lib/auth";
-import { cookies } from "next/headers";
-import mongoose from "mongoose";
+import { requireAuth, applyRefreshCookies } from "@/lib/apiAuth";
 
 export async function GET(req, context) {
   await dbConnect();
+  const { user, errorResponse, refreshedResponse } = await requireAuth({ roles: ["user", "worker", "admin"] });
+  if (errorResponse) return errorResponse;
 
-  // ✅ cookies() async (Next 15)
-  const cookieStore = await cookies();
-  const token = cookieStore.get("auth")?.value;
-  const decoded = token ? verifyToken(token) : null;
-
-  if (!decoded) {
-    return NextResponse.json({ ok: false }, { status: 401 });
-  }
-
-  // ✅ params async (Next 15)
   const { conversationId } = await context.params;
-
-  if (!conversationId) {
-    return NextResponse.json({ ok: false, error: "Missing conversationId" }, { status: 400 });
-  }
-
   if (!mongoose.Types.ObjectId.isValid(conversationId)) {
-    return NextResponse.json({ ok: false, error: "Invalid conversationId" }, { status: 400 });
+    return NextResponse.json({ ok: false, error: "Invalid conversation id" }, { status: 400 });
   }
 
   const convo = await Conversation.findById(conversationId).lean();
-  if (!convo) {
-    return NextResponse.json({ ok: false }, { status: 404 });
+  if (!convo) return NextResponse.json({ ok: false, error: "Conversation not found" }, { status: 404 });
+
+  const canAccess =
+    user.role === "admin" ||
+    convo.userId?.toString() === user.userId ||
+    convo.workerUserId?.toString() === user.userId;
+
+  if (!canAccess) return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
+
+  const toMark = await Message.find({
+    conversationId,
+    senderId: { $ne: user.userId },
+    deleted: { $ne: true },
+    $or: [{ readBy: { $ne: user.userId } }, { deliveredTo: { $ne: user.userId } }],
+  })
+    .select("_id readBy deliveredTo")
+    .lean();
+
+  const deliveredIds = toMark
+    .filter((message) => !(message.deliveredTo || []).some((id) => id.toString() === user.userId))
+    .map((message) => message._id.toString());
+
+  const readIds = toMark
+    .filter((message) => !(message.readBy || []).some((id) => id.toString() === user.userId))
+    .map((message) => message._id.toString());
+
+  if (toMark.length > 0) {
+    await Message.updateMany(
+      { _id: { $in: toMark.map((msg) => msg._id) } },
+      { $addToSet: { deliveredTo: user.userId, readBy: user.userId } }
+    );
   }
 
-  // ✅ Authorization (user/worker/admin)
-  const isUser = convo.userId.toString() === decoded.userId;
-  const isWorker = convo.workerUserId.toString() === decoded.userId;
-  const isAdmin = decoded.role === "admin";
+  const messages = await Message.find({ conversationId, deleted: { $ne: true } }).sort({ createdAt: 1 }).lean();
 
-  if (!isUser && !isWorker && !isAdmin) {
-    return NextResponse.json({ ok: false }, { status: 403 });
-  }
-
-  // ✅ Mark messages as read for viewer (only messages not sent by them)
-  await Message.updateMany(
-    {
-      conversationId,
-      senderId: { $ne: decoded.userId },
-      readBy: { $ne: decoded.userId },
-    },
-    { $addToSet: { readBy: decoded.userId } }
-  );
-
- const messages = await Message.find({
-  conversationId,
-  deleted: { $ne: true },
-})
-  .sort({ createdAt: 1 })
-  .lean();
-
-
-  // ✅ Hide deleted message text
-  const safe = messages.map((m) => ({
-    ...m,
-    text: m.deleted ? "(deleted)" : m.text,
-  }));
-
-  return NextResponse.json({ ok: true, messages: safe });
+  const res = NextResponse.json({
+    ok: true,
+    conversation: convo,
+    messages,
+    statusUpdates: { deliveredIds, readIds },
+  });
+  return applyRefreshCookies(res, refreshedResponse);
 }

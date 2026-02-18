@@ -1,70 +1,114 @@
+import mongoose from "mongoose";
+import { NextResponse } from "next/server";
 import dbConnect from "@/lib/dbConnect";
 import Conversation from "@/models/Conversation";
 import Message from "@/models/Message";
 import User from "@/models/User";
-import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { verifyToken } from "@/lib/auth";
+import { requireAuth, applyRefreshCookies } from "@/lib/apiAuth";
 
-export async function GET() {
+export async function GET(req) {
   await dbConnect();
+  const { user, errorResponse, refreshedResponse } = await requireAuth({ roles: ["user", "worker", "admin"] });
+  if (errorResponse) return errorResponse;
 
-  const cookieStore = await cookies();
-  const token = cookieStore.get("auth")?.value;
-  const decoded = token ? verifyToken(token) : null;
+  const url = new URL(req.url);
+  const limit = Math.min(Number(url.searchParams.get("limit") || 50), 100);
 
-  if (!decoded) return NextResponse.json({ ok: false }, { status: 401 });
+  const filter =
+    user.role === "worker"
+      ? { workerUserId: user.userId }
+      : user.role === "user"
+        ? { userId: user.userId }
+        : {};
 
-  let convos = [];
-
-  if (decoded.role === "worker") {
-    convos = await Conversation.find({ workerUserId: decoded.userId }).sort({ updatedAt: -1 }).lean();
-  } else if (decoded.role === "user") {
-    convos = await Conversation.find({ userId: decoded.userId }).sort({ updatedAt: -1 }).lean();
-  } else if (decoded.role === "admin") {
-    convos = await Conversation.find({}).sort({ updatedAt: -1 }).lean();
+  const convos = await Conversation.find(filter).sort({ updatedAt: -1 }).limit(limit).lean();
+  if (convos.length === 0) {
+    const empty = NextResponse.json({ ok: true, conversations: [] });
+    return applyRefreshCookies(empty, refreshedResponse);
   }
 
-  if (!convos.length) return NextResponse.json({ ok: true, conversations: [] });
+  const convoIds = convos.map((c) => c._id);
+  const otherIds = [
+    ...new Set(
+      convos
+        .map((c) => {
+          if (user.role === "worker") return c.userId?.toString();
+          if (user.role === "user") return c.workerUserId?.toString();
+          return c.userId?.toString();
+        })
+        .filter(Boolean)
+    ),
+  ];
 
-  // "Other person" depends on role
-  const otherIds = convos.map((c) => {
-    if (decoded.role === "worker") return c.userId;
-    if (decoded.role === "user") return c.workerUserId;
-    return c.userId;
+  const [people, latestByConvo, unreadByConvo] = await Promise.all([
+    User.find({ _id: { $in: otherIds } }).select("name email").lean(),
+    Message.aggregate([
+      { $match: { conversationId: { $in: convoIds } } },
+      { $sort: { createdAt: -1 } },
+      {
+        $group: {
+          _id: "$conversationId",
+          text: { $first: "$text" },
+          createdAt: { $first: "$createdAt" },
+          deleted: { $first: "$deleted" },
+          senderId: { $first: "$senderId" },
+          deliveredTo: { $first: "$deliveredTo" },
+          readBy: { $first: "$readBy" },
+        },
+      },
+    ]),
+    Message.aggregate([
+      {
+        $match: {
+          conversationId: { $in: convoIds },
+          senderId: { $ne: new mongoose.Types.ObjectId(user.userId) },
+          readBy: { $ne: new mongoose.Types.ObjectId(user.userId) },
+          deleted: { $ne: true },
+        },
+      },
+      { $group: { _id: "$conversationId", count: { $sum: 1 } } },
+    ]),
+  ]);
+
+  const peopleMap = new Map(people.map((p) => [p._id.toString(), p]));
+  const latestMap = new Map(latestByConvo.map((row) => [row._id.toString(), row]));
+  const unreadMap = new Map(unreadByConvo.map((row) => [row._id.toString(), row.count]));
+
+  const rows = convos.map((convo) => {
+    const otherId =
+      user.role === "worker"
+        ? convo.userId?.toString()
+        : user.role === "user"
+          ? convo.workerUserId?.toString()
+          : convo.userId?.toString();
+
+    const other = peopleMap.get(otherId);
+    const latest = latestMap.get(convo._id.toString());
+    const counterpartId =
+      user.role === "worker"
+        ? convo.userId?.toString()
+        : user.role === "user"
+          ? convo.workerUserId?.toString()
+          : null;
+
+    let lastMessageStatus = "";
+    if (latest?.senderId?.toString() === user.userId && counterpartId) {
+      const delivered = (latest.deliveredTo || []).some((id) => id.toString() === counterpartId);
+      const read = (latest.readBy || []).some((id) => id.toString() === counterpartId);
+      lastMessageStatus = read ? "read" : delivered ? "delivered" : "sent";
+    }
+
+    return {
+      id: convo._id,
+      bookingId: convo.bookingId,
+      name: other?.name || other?.email || "Unknown",
+      lastMessage: latest?.deleted ? "(deleted)" : latest?.text || "",
+      lastMessageAt: latest?.createdAt || convo.lastMessageAt || convo.updatedAt,
+      unreadCount: unreadMap.get(convo._id.toString()) || 0,
+      lastMessageStatus,
+    };
   });
 
-  const people = await User.find({ _id: { $in: otherIds } }).lean();
-  const peopleMap = {};
-  people.forEach((u) => (peopleMap[u._id.toString()] = u));
-
-  const results = await Promise.all(
-    convos.map(async (c) => {
-      const otherId =
-        decoded.role === "worker" ? c.userId :
-        decoded.role === "user" ? c.workerUserId :
-        c.userId;
-
-      const other = peopleMap[otherId?.toString()];
-
-      const last = await Message.findOne({ conversationId: c._id }).sort({ createdAt: -1 }).lean();
-
-      const unreadCount = await Message.countDocuments({
-        conversationId: c._id,
-        senderId: { $ne: decoded.userId },
-        readBy: { $ne: decoded.userId },
-        deleted: { $ne: true },
-      });
-
-      return {
-        id: c._id,
-        name: other?.name?.trim() || other?.email || "Unknown",
-        lastMessage: last ? (last.deleted ? "(deleted)" : last.text) : "",
-        lastMessageAt: last?.createdAt || null,
-        unreadCount,
-      };
-    })
-  );
-
-  return NextResponse.json({ ok: true, conversations: results });
+  const res = NextResponse.json({ ok: true, conversations: rows });
+  return applyRefreshCookies(res, refreshedResponse);
 }

@@ -1,447 +1,337 @@
-import PageLayout from "@/components/PageLayout";
-import { 
-  ChatBubbleLeftRightIcon,
-  EnvelopeIcon,
-  PhoneIcon,
-  ClockIcon,
-  ShieldCheckIcon,
-  UserGroupIcon,
-  DocumentCheckIcon,
-  ArrowRightIcon,
-  CheckCircleIcon,
-  WrenchScrewdriverIcon,
-  ExclamationTriangleIcon,
-  ChartBarIcon
-} from "@heroicons/react/24/outline";
+"use client";
 
-export const generateMetadata = () => ({
-  title: "Contact Support",
-  robots: { index: false, follow: false },
-});
+import { useEffect, useState } from "react";
+import { uploadToCloudinary } from "@/lib/uploadToCloudinary";
+
+const categories = ["misbehavior", "no-show", "fraud", "payment", "safety", "other"];
+const ticketCategories = ["booking", "payment", "payout", "account", "technical", "other"];
+const ticketPriorities = ["low", "medium", "high"];
 
 export default function SupportPage() {
-  const supportChannels = [
-    {
-      icon: ChatBubbleLeftRightIcon,
-      title: "Live Chat",
-      description: "Instant support from our team",
-      availability: "24/7",
-      responseTime: "Under 2 minutes",
-      color: "from-blue-500 to-cyan-500",
-      features: ["Instant response", "Screen sharing available", "File sharing"],
-      action: "Start Chat"
-    },
-    {
-      icon: EnvelopeIcon,
-      title: "Email Support",
-      description: "Detailed support via email",
-      availability: "24/7",
-      responseTime: "Under 24 hours",
-      color: "from-purple-500 to-pink-500",
-      features: ["Detailed responses", "Attachment support", "Ticket tracking"],
-      action: "Send Email"
-    },
-    {
-      icon: PhoneIcon,
-      title: "Priority Callback",
-      description: "Schedule a call with our experts",
-      availability: "9 AM - 9 PM EST",
-      responseTime: "Under 4 hours",
-      color: "from-green-500 to-emerald-500",
-      features: ["Voice support", "Technical consultation", "Follow-up calls"],
-      action: "Request Call"
-    }
-  ];
+  const [bookings, setBookings] = useState([]);
+  const [reports, setReports] = useState([]);
+  const [tickets, setTickets] = useState([]);
+  const [form, setForm] = useState({ bookingId: "", category: "misbehavior", message: "", evidence: "" });
+  const [evidenceUrls, setEvidenceUrls] = useState([]);
+  const [ticketForm, setTicketForm] = useState({
+    bookingId: "",
+    subject: "",
+    category: "booking",
+    priority: "medium",
+    message: "",
+    attachments: "",
+  });
+  const [disputeInputs, setDisputeInputs] = useState({});
+  const [ticketReplyInputs, setTicketReplyInputs] = useState({});
+  const [disputingId, setDisputingId] = useState("");
+  const [replyingTicketId, setReplyingTicketId] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [msg, setMsg] = useState("");
 
-  const supportCategories = [
-    {
-      icon: UserGroupIcon,
-      title: "Account Issues",
-      issues: ["Login problems", "Account recovery", "Verification", "Profile updates"],
-      priority: "Medium",
-      color: "bg-blue-500/10 text-blue-400"
-    },
-    {
-      icon: ShieldCheckIcon,
-      title: "Safety & Security",
-      issues: ["Safety concerns", "Privacy issues", "Content violations", "Blocking users"],
-      priority: "High",
-      color: "bg-red-500/10 text-red-400"
-    },
-    {
-      icon: WrenchScrewdriverIcon,
-      title: "Technical Support",
-      issues: ["App issues", "Payment problems", "Connection errors", "Feature bugs"],
-      priority: "High",
-      color: "bg-amber-500/10 text-amber-400"
-    },
-    {
-      icon: DocumentCheckIcon,
-      title: "Billing & Payments",
-      issues: ["Refund requests", "Payment failures", "Invoice issues", "Subscription"],
-      priority: "Medium",
-      color: "bg-green-500/10 text-green-400"
-    }
-  ];
+  const load = async () => {
+    const [ordersRes, reportsRes, ticketsRes] = await Promise.all([
+      fetch("/api/bookings/me", { credentials: "include" }),
+      fetch("/api/reports/me", { credentials: "include" }),
+      fetch("/api/support/tickets", { credentials: "include" }),
+    ]);
+    const [ordersData, reportsData, ticketsData] = await Promise.all([
+      ordersRes.json(),
+      reportsRes.json(),
+      ticketsRes.json().catch(() => ({})),
+    ]);
+    setBookings(ordersData.bookings || []);
+    setReports(reportsData.reports || []);
+    setTickets(ticketsData.tickets || []);
+  };
 
-  const escalationLevels = [
-    {
-      level: "Level 1",
-      title: "Initial Support",
-      description: "Basic troubleshooting and information",
-      resolution: "75% of cases",
-      time: "Within 2 hours"
-    },
-    {
-      level: "Level 2",
-      title: "Technical Support",
-      description: "Advanced technical assistance",
-      resolution: "20% of cases",
-      time: "Within 4 hours"
-    },
-    {
-      level: "Level 3",
-      title: "Expert Support",
-      description: "Specialist and management escalation",
-      resolution: "5% of cases",
-      time: "Within 8 hours"
+  useEffect(() => {
+    load();
+  }, []);
+
+  const uploadEvidence = async (files) => {
+    if (!files || files.length === 0) return;
+    try {
+      setUploading(true);
+      setMsg("Uploading evidence...");
+      const urls = [];
+      for (const file of Array.from(files).slice(0, 5)) {
+        const url = await uploadToCloudinary(file, { folder: "nash/reports" });
+        urls.push(url);
+      }
+      setEvidenceUrls((prev) => [...prev, ...urls]);
+      setForm((prev) => ({
+        ...prev,
+        evidence: [...(prev.evidence ? prev.evidence.split(",").map((x) => x.trim()).filter(Boolean) : []), ...urls].join(","),
+      }));
+      setMsg("Evidence uploaded");
+    } catch (error) {
+      setMsg(error.message || "Evidence upload failed");
+    } finally {
+      setUploading(false);
     }
-  ];
+  };
+
+  const submit = async (e) => {
+    e.preventDefault();
+    const res = await fetch("/api/reports", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        bookingId: form.bookingId,
+        category: form.category,
+        message: form.message,
+        evidence: form.evidence ? form.evidence.split(",").map((s) => s.trim()).filter(Boolean) : [],
+      }),
+    });
+    const data = await res.json();
+    setMsg(data.ok ? "Report submitted" : data.error || "Report failed");
+    if (data.ok) {
+      setForm({ bookingId: "", category: "misbehavior", message: "", evidence: "" });
+      setEvidenceUrls([]);
+      load();
+    }
+  };
+
+  const raiseDispute = async (reportId) => {
+    const message = String(disputeInputs[reportId] || "").trim();
+    if (!message) {
+      setMsg("Dispute reason required");
+      return;
+    }
+    setDisputingId(reportId);
+    const res = await fetch(`/api/reports/${reportId}/dispute`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ message }),
+    });
+    const data = await res.json();
+    setMsg(data.ok ? "Dispute raised" : data.error || "Failed to raise dispute");
+    setDisputingId("");
+    if (data.ok) {
+      setDisputeInputs((prev) => ({ ...prev, [reportId]: "" }));
+      load();
+    }
+  };
+
+  const createTicket = async (e) => {
+    e.preventDefault();
+    const payload = {
+      bookingId: ticketForm.bookingId || undefined,
+      subject: ticketForm.subject,
+      category: ticketForm.category,
+      priority: ticketForm.priority,
+      message: ticketForm.message,
+      attachments: ticketForm.attachments
+        ? ticketForm.attachments.split(",").map((row) => row.trim()).filter(Boolean)
+        : [],
+    };
+    const res = await fetch("/api/support/tickets", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json().catch(() => ({}));
+    setMsg(data.ok ? "Support ticket created" : data.error || "Failed to create ticket");
+    if (data.ok) {
+      setTicketForm({
+        bookingId: "",
+        subject: "",
+        category: "booking",
+        priority: "medium",
+        message: "",
+        attachments: "",
+      });
+      load();
+    }
+  };
+
+  const replyTicket = async (ticketId) => {
+    const message = String(ticketReplyInputs[ticketId] || "").trim();
+    if (!message) {
+      setMsg("Ticket reply cannot be empty");
+      return;
+    }
+    setReplyingTicketId(ticketId);
+    const res = await fetch(`/api/support/tickets/${ticketId}/reply`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ message }),
+    });
+    const data = await res.json().catch(() => ({}));
+    setReplyingTicketId("");
+    setMsg(data.ok ? "Ticket reply sent" : data.error || "Failed to send reply");
+    if (data.ok) {
+      setTicketReplyInputs((prev) => ({ ...prev, [ticketId]: "" }));
+      load();
+    }
+  };
 
   return (
-    <PageLayout
-      title="Contact Support"
-      subtitle="24/7 confidential assistance"
-    >
-      <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-950">
-        {/* Hero Section */}
-        <div className="bg-gradient-to-r from-blue-600/10 via-cyan-600/10 to-blue-600/10 border-b border-gray-800">
-          <div className="container mx-auto px-4 py-16 max-w-4xl">
-            <div className="text-center mb-12">
-              <div className="inline-flex items-center justify-center p-4 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-2xl mb-6">
-                <ChatBubbleLeftRightIcon className="h-12 w-12 text-white" />
-              </div>
-              <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
-                We're Here to Help
-              </h1>
-              <p className="text-xl text-gray-300 max-w-2xl mx-auto">
-                Our dedicated support team provides confidential, professional assistance 
-                24/7 for all your needs.
-              </p>
-            </div>
+    <section className="space-y-4">
+      <div className="grid gap-4 lg:grid-cols-2">
+        <form onSubmit={submit} className="panel space-y-3">
+          <h1 className="text-2xl font-semibold">Support / Reports</h1>
+          <p className="text-sm text-slate-400">User and worker both can report with evidence links.</p>
 
-            {/* Stats Bar */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-              <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-green-600/20 rounded-lg">
-                    <ClockIcon className="h-6 w-6 text-green-400" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-white">24/7</p>
-                    <p className="text-gray-400 text-sm">Support Availability</p>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-blue-600/20 rounded-lg">
-                    <ChartBarIcon className="h-6 w-6 text-blue-400" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-white">98%</p>
-                    <p className="text-gray-400 text-sm">Satisfaction Rate</p>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-purple-600/20 rounded-lg">
-                    <CheckCircleIcon className="h-6 w-6 text-purple-400" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-white">Under 24h</p>
-                    <p className="text-gray-400 text-sm">Average Resolution</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+          <select className="w-full p-2.5 text-sm" value={form.bookingId} onChange={(e) => setForm({ ...form, bookingId: e.target.value })} required>
+            <option value="">Select booking</option>
+            {bookings.map((booking) => (
+              <option key={booking._id} value={booking._id}>{booking.service?.title || booking._id} ({booking.status})</option>
+            ))}
+          </select>
 
-        {/* Main Content - Single Column Layout */}
-        <div className="container mx-auto px-4 py-12 max-w-4xl">
-          {/* Contact Channels */}
-          <section className="mb-16">
-            <h2 className="text-3xl font-bold text-white mb-8 text-center">
-              Choose Your Support Channel
-            </h2>
-            <div className="space-y-6">
-              {supportChannels.map((channel, index) => (
-                <div 
-                  key={index}
-                  className="bg-gray-800/30 backdrop-blur-sm rounded-2xl border border-gray-700 p-6 hover:border-gray-600 transition-all"
-                >
-                  <div className="flex flex-col lg:flex-row items-start lg:items-center gap-6">
-                    <div className={`p-4 bg-gradient-to-r ${channel.color} rounded-xl flex-shrink-0`}>
-                      <channel.icon className="h-8 w-8 text-white" />
-                    </div>
-                    
-                    <div className="flex-1">
-                      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-4">
-                        <div>
-                          <h3 className="text-xl font-bold text-white mb-2">
-                            {channel.title}
-                          </h3>
-                          <p className="text-gray-300">{channel.description}</p>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <div className="text-center">
-                            <p className="text-sm text-gray-400">Response Time</p>
-                            <p className="text-lg font-semibold text-white">{channel.responseTime}</p>
-                          </div>
-                          <div className="text-center">
-                            <p className="text-sm text-gray-400">Availability</p>
-                            <p className="text-lg font-semibold text-white">{channel.availability}</p>
-                          </div>
-                        </div>
-                      </div>
+          <select className="w-full p-2.5 text-sm" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
+            {categories.map((item) => (
+              <option key={item} value={item}>{item}</option>
+            ))}
+          </select>
 
-                      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                        <div className="flex flex-wrap gap-2">
-                          {channel.features.map((feature, idx) => (
-                            <span 
-                              key={idx}
-                              className="px-3 py-1 bg-gray-800/50 rounded-full text-sm text-gray-300"
-                            >
-                              {feature}
-                            </span>
-                          ))}
-                        </div>
-                        <button className={`px-6 py-3 bg-gradient-to-r ${channel.color} hover:opacity-90 text-white font-semibold rounded-lg transition-all flex items-center justify-center gap-2`}>
-                          {channel.action}
-                          <ArrowRightIcon className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
+          <textarea className="w-full p-2.5 text-sm" rows={4} placeholder="Describe issue" value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} required />
+          <input className="w-full p-2.5 text-sm" placeholder="Evidence URLs comma separated" value={form.evidence} onChange={(e) => setForm({ ...form, evidence: e.target.value })} />
+          <input type="file" multiple accept="image/*,.pdf" onChange={(e) => uploadEvidence(e.target.files)} />
+          {evidenceUrls.length > 0 && (
+            <p className="text-xs text-slate-400">Uploaded: {evidenceUrls.length} file(s)</p>
+          )}
 
-          {/* Support Categories */}
-          <section className="mb-16">
-            <h2 className="text-3xl font-bold text-white mb-8 text-center">
-              Common Support Categories
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {supportCategories.map((category, index) => (
-                <div 
-                  key={index}
-                  className="bg-gray-800/30 backdrop-blur-sm rounded-xl border border-gray-700 p-6 hover:border-gray-600 transition-all"
-                >
-                  <div className="flex items-start gap-4 mb-4">
-                    <div className="p-3 rounded-lg bg-gray-800/50">
-                      <category.icon className="h-6 w-6 text-gray-300" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="text-lg font-semibold text-white">{category.title}</h3>
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${category.color}`}>
-                          {category.priority} Priority
-                        </span>
-                      </div>
-                      <ul className="space-y-2">
-                        {category.issues.map((issue, idx) => (
-                          <li key={idx} className="flex items-center gap-2">
-                            <div className="h-1.5 w-1.5 rounded-full bg-blue-500 flex-shrink-0" />
-                            <span className="text-gray-300 text-sm">{issue}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
+          <button disabled={uploading} className="app-btn-primary rounded-lg px-3 py-2 text-sm font-semibold text-white disabled:opacity-60">
+            {uploading ? "Uploading..." : "Submit Report"}
+          </button>
+          {msg && <p className="text-sm text-slate-300">{msg}</p>}
+        </form>
 
-          {/* Support Process */}
-          <section className="mb-16">
-            <h2 className="text-3xl font-bold text-white mb-8 text-center">
-              Our Support Process
-            </h2>
-            <div className="relative">
-              {/* Timeline line */}
-              <div className="absolute left-1/2 transform -translate-x-1/2 h-full w-0.5 bg-gradient-to-b from-blue-600 via-cyan-600 to-blue-600 hidden md:block" />
-              
-              <div className="space-y-8">
-                {escalationLevels.map((level, index) => (
-                  <div 
-                    key={index}
-                    className={`flex flex-col ${index % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'} items-center gap-6`}
-                  >
-                    <div className="md:w-1/2 flex justify-center md:justify-end">
-                      <div className="bg-gray-800/30 backdrop-blur-sm rounded-xl border border-gray-700 p-6 w-full max-w-md">
-                        <div className="flex items-center gap-3 mb-4">
-                          <div className="p-2 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-lg">
-                            <span className="text-white font-bold">{level.level}</span>
-                          </div>
-                          <h3 className="text-lg font-semibold text-white">{level.title}</h3>
-                        </div>
-                        <p className="text-gray-300 text-sm mb-4">{level.description}</p>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="bg-gray-800/50 rounded-lg p-3">
-                            <p className="text-sm text-gray-400">Resolution Rate</p>
-                            <p className="text-white font-semibold">{level.resolution}</p>
-                          </div>
-                          <div className="bg-gray-800/50 rounded-lg p-3">
-                            <p className="text-sm text-gray-400">Response Time</p>
-                            <p className="text-white font-semibold">{level.time}</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center justify-center md:w-8">
-                      <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-full flex items-center justify-center">
-                        <span className="text-white font-bold">{index + 1}</span>
-                      </div>
-                    </div>
-                    
-                    <div className="md:w-1/2" /> {/* Empty space for alignment */}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          {/* FAQ Section */}
-          <section className="mb-16">
-            <h2 className="text-3xl font-bold text-white mb-8 text-center">
-              Frequently Asked Questions
-            </h2>
-            <div className="space-y-4">
-              <div className="bg-gray-800/30 backdrop-blur-sm rounded-xl border border-gray-700 p-6">
-                <h4 className="text-lg font-semibold text-white mb-3">
-                  What information should I provide when contacting support?
-                </h4>
-                <p className="text-gray-300">
-                  Please include your username, email address, and a detailed description of the issue. 
-                  For technical problems, include device type, browser/app version, and any error messages.
-                </p>
-              </div>
-              <div className="bg-gray-800/30 backdrop-blur-sm rounded-xl border border-gray-700 p-6">
-                <h4 className="text-lg font-semibold text-white mb-3">
-                  How confidential is my support request?
-                </h4>
-                <p className="text-gray-300">
-                  All support communications are encrypted and confidential. Our team is trained 
-                  to handle sensitive information with discretion. Your privacy is our priority.
-                </p>
-              </div>
-              <div className="bg-gray-800/30 backdrop-blur-sm rounded-xl border border-gray-700 p-6">
-                <h4 className="text-lg font-semibold text-white mb-3">
-                  What if I need urgent assistance?
-                </h4>
-                <p className="text-gray-300">
-                  For urgent safety issues, use Live Chat and mention "URGENT" in your message. 
-                  Our team will prioritize your request and respond immediately.
-                </p>
-              </div>
-            </div>
-          </section>
-
-          {/* Contact Form */}
-          <section className="mb-16">
-            <div className="bg-gradient-to-r from-gray-800/30 to-gray-900/30 backdrop-blur-sm rounded-2xl border border-gray-700 p-8">
-              <h2 className="text-3xl font-bold text-white mb-6 text-center">
-                Send a Message
-              </h2>
-              <form className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Your Name
-                    </label>
-                    <input
-                      type="text"
-                      className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                      placeholder="Enter your name"
+        <div className="panel">
+          <h2 className="mb-2 text-lg font-semibold">My Reports</h2>
+          <div className="space-y-2">
+            {reports.map((report) => (
+              <div key={report._id} className="rounded-lg border border-white/15 bg-slate-900/30 p-2 text-sm">
+                <p>Booking: {report.bookingId?.slice(-6)} | {report.category}</p>
+                <p>Status: {report.status} | Dispute: {report.disputeStatus || "none"}</p>
+                <p className="text-slate-400">{report.message}</p>
+                {report.slaDueAt && <p className="text-xs text-amber-300">SLA Due: {new Date(report.slaDueAt).toLocaleString()}</p>}
+                {["resolved", "closed"].includes(report.status) && !["raised", "reviewing"].includes(report.disputeStatus) && (
+                  <div className="mt-2 space-y-2">
+                    <textarea
+                      className="w-full rounded border border-slate-700 bg-slate-900 p-2 text-xs"
+                      rows={2}
+                      placeholder="Why do you want to dispute this decision?"
+                      value={disputeInputs[report._id] || ""}
+                      onChange={(e) => setDisputeInputs((prev) => ({ ...prev, [report._id]: e.target.value }))}
                     />
+                    <button
+                      onClick={() => raiseDispute(report._id)}
+                      disabled={disputingId === report._id}
+                      className="rounded bg-amber-700 px-3 py-1 text-xs text-white hover:bg-amber-600 disabled:opacity-60"
+                    >
+                      {disputingId === report._id ? "Submitting..." : "Raise Dispute"}
+                    </button>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Email Address
-                    </label>
-                    <input
-                      type="email"
-                      className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                      placeholder="your@email.com"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Category
-                  </label>
-                  <select className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
-                    <option value="">Select a category</option>
-                    <option value="account">Account Issues</option>
-                    <option value="safety">Safety & Security</option>
-                    <option value="technical">Technical Support</option>
-                    <option value="billing">Billing & Payments</option>
-                    <option value="other">Other</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Message
-                  </label>
-                  <textarea
-                    rows={4}
-                    className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                    placeholder="Describe your issue in detail..."
-                  />
-                </div>
-                <div className="flex items-center gap-3">
-                  <input type="checkbox" id="urgent" className="rounded border-gray-700 bg-gray-800 text-blue-500" />
-                  <label htmlFor="urgent" className="text-sm text-gray-300">
-                    Mark as urgent (for safety or critical issues)
-                  </label>
-                </div>
-                <button
-                  type="submit"
-                  className="w-full px-6 py-4 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-semibold rounded-lg transition-all"
-                >
-                  Send Message
-                </button>
-              </form>
-            </div>
-          </section>
-
-          {/* Emergency Contact */}
-          <div className="bg-gradient-to-r from-red-900/20 to-orange-900/20 rounded-2xl border border-red-800/30 p-8">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-red-600/20 rounded-xl">
-                  <ExclamationTriangleIcon className="h-8 w-8 text-red-400" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-white mb-2">Emergency Safety Concern?</h3>
-                  <p className="text-gray-300">
-                    For immediate safety emergencies, contact local authorities first.
-                  </p>
-                </div>
+                )}
               </div>
-              <button className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-colors whitespace-nowrap">
-                Emergency Contact
-              </button>
-            </div>
+            ))}
           </div>
         </div>
       </div>
-    </PageLayout>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <form onSubmit={createTicket} className="panel space-y-3">
+          <h2 className="text-lg font-semibold">Create Support Ticket</h2>
+          <input
+            className="w-full rounded border border-slate-700 bg-slate-900 p-2 text-sm"
+            placeholder="Subject"
+            value={ticketForm.subject}
+            onChange={(e) => setTicketForm((prev) => ({ ...prev, subject: e.target.value }))}
+            required
+          />
+          <select
+            className="w-full rounded border border-slate-700 bg-slate-900 p-2 text-sm"
+            value={ticketForm.bookingId}
+            onChange={(e) => setTicketForm((prev) => ({ ...prev, bookingId: e.target.value }))}
+          >
+            <option value="">No booking attached</option>
+            {bookings.map((booking) => (
+              <option key={`ticket_${booking._id}`} value={booking._id}>
+                {booking.service?.title || booking._id} ({booking.status})
+              </option>
+            ))}
+          </select>
+          <div className="grid gap-2 md:grid-cols-2">
+            <select
+              className="w-full rounded border border-slate-700 bg-slate-900 p-2 text-sm"
+              value={ticketForm.category}
+              onChange={(e) => setTicketForm((prev) => ({ ...prev, category: e.target.value }))}
+            >
+              {ticketCategories.map((row) => (
+                <option key={row} value={row}>{row}</option>
+              ))}
+            </select>
+            <select
+              className="w-full rounded border border-slate-700 bg-slate-900 p-2 text-sm"
+              value={ticketForm.priority}
+              onChange={(e) => setTicketForm((prev) => ({ ...prev, priority: e.target.value }))}
+            >
+              {ticketPriorities.map((row) => (
+                <option key={row} value={row}>{row}</option>
+              ))}
+            </select>
+          </div>
+          <textarea
+            className="w-full rounded border border-slate-700 bg-slate-900 p-2 text-sm"
+            rows={4}
+            placeholder="Describe your issue in detail"
+            value={ticketForm.message}
+            onChange={(e) => setTicketForm((prev) => ({ ...prev, message: e.target.value }))}
+            required
+          />
+          <input
+            className="w-full rounded border border-slate-700 bg-slate-900 p-2 text-sm"
+            placeholder="Attachment URLs comma separated"
+            value={ticketForm.attachments}
+            onChange={(e) => setTicketForm((prev) => ({ ...prev, attachments: e.target.value }))}
+          />
+          <button className="rounded bg-sky-700 px-3 py-2 text-white hover:bg-sky-600">Create Ticket</button>
+        </form>
+
+        <div className="panel">
+          <h2 className="mb-2 text-lg font-semibold">My Support Tickets</h2>
+          <div className="space-y-2">
+            {tickets.map((ticket) => (
+              <div key={ticket._id} className="rounded-lg border border-white/15 bg-slate-900/30 p-2 text-sm">
+                <p className="font-semibold">{ticket.ticketNo} | {ticket.subject}</p>
+                <p>Status: {ticket.status} | Priority: {ticket.priority}</p>
+                <p className="text-slate-400">{ticket.message}</p>
+                <div className="mt-2 space-y-1 rounded border border-slate-700 bg-slate-900/40 p-2">
+                  {(ticket.replies || []).length === 0 && <p className="text-xs text-slate-500">No replies yet.</p>}
+                  {(ticket.replies || []).map((reply, index) => (
+                    <p key={`${ticket._id}_reply_${index}`} className="text-xs">
+                      <span className="font-semibold uppercase">{reply.actorRole}</span>: {reply.message}
+                    </p>
+                  ))}
+                </div>
+                <div className="mt-2 space-y-2">
+                  <textarea
+                    className="w-full rounded border border-slate-700 bg-slate-900 p-2 text-xs"
+                    rows={2}
+                    placeholder="Reply on ticket"
+                    value={ticketReplyInputs[ticket._id] || ""}
+                    onChange={(e) => setTicketReplyInputs((prev) => ({ ...prev, [ticket._id]: e.target.value }))}
+                  />
+                  <button
+                    onClick={() => replyTicket(ticket._id)}
+                    disabled={replyingTicketId === ticket._id}
+                    className="rounded bg-slate-800 px-3 py-1 text-xs hover:bg-slate-700 disabled:opacity-60"
+                  >
+                    {replyingTicketId === ticket._id ? "Sending..." : "Send Reply"}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }

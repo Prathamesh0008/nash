@@ -1,51 +1,23 @@
 import "./globals.css";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
-import AgeGateWrapper from "@/components/AgeGateWrapper";
 import { AuthProvider } from "@/contexts/AuthContext";
+import MainNav from "@/components/MainNav";
+import Footer from "@/components/Footer";
 
 export const metadata = {
-  title: {
-    default: "Elite Companions – Premium Adult Platform",
-    template: "%s | Elite Companions",
-  },
-  description:
-    "Elite Companions is a premium adults-only platform connecting verified models with users worldwide. 18+ only.",
-  metadataBase: new URL("https://elitecompanions.com"),
-  robots: {
-    index: true,
-    follow: true,
-  },
-  openGraph: {
-    type: "website",
-    siteName: "Elite Companions",
-    title: "Elite Companions – Adults Only Platform",
-    description:
-      "Verified models, private interactions, and secure access. Strictly 18+.",
-  },
+  title: "Nash Workforce",
+  description: "Home services booking platform",
 };
-
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className="bg-black text-white">
+      <body className="min-h-screen bg-slate-950 text-slate-100">
         <AuthProvider>
-        <Navbar />
-
-        <main
-          className="
-            pt-[95px]
-            md:pt-[180px]
-            transition-all duration-300
-          "
-        >
-          <AgeGateWrapper>
-            {children}
-          </AgeGateWrapper>
-        </main>
-
-        <Footer />
+          <div className="flex min-h-screen flex-col">
+            <MainNav />
+            <main className="page w-full flex-1">{children}</main>
+            <Footer />
+          </div>
         </AuthProvider>
       </body>
     </html>

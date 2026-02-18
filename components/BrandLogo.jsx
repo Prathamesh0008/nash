@@ -13,7 +13,7 @@ export default function BrandLogo({ compact = false }) {
       {/* Text - ALWAYS SHOW on all screens */}
       <div className="flex flex-col">
         <span className="text-xl md:text-2xl font-bold bg-gradient-to-r from-pink-300 via-purple-300 to-pink-300 bg-clip-text text-transparent">
-          Valentina's
+          Valentina&apos;s
         </span>
         <span className="text-xs text-white/60 tracking-[0.2em] uppercase">
           Premium Companions

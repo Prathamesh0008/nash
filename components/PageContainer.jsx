@@ -7,7 +7,7 @@ export default function PageContainer({ children }) {
         pb-24
       "
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+      <div className="mx-auto max-w-[92rem] px-4 sm:px-6">
         {children}
       </div>
     </main>

@@ -1,76 +1,43 @@
+import mongoose from "mongoose";
+import { NextResponse } from "next/server";
 import dbConnect from "@/lib/dbConnect";
 import Message from "@/models/Message";
 import Conversation from "@/models/Conversation";
-import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { verifyToken } from "@/lib/auth";
-import mongoose from "mongoose";
+import { requireAuth, applyRefreshCookies } from "@/lib/apiAuth";
 
 export async function DELETE(req, context) {
   await dbConnect();
-
-  const cookieStore = await cookies();
-  const token = cookieStore.get("auth")?.value;
-  const decoded = token ? verifyToken(token) : null;
-
-  if (!decoded) {
-    return NextResponse.json({ ok: false }, { status: 401 });
-  }
+  const { user, errorResponse, refreshedResponse } = await requireAuth({ roles: ["user", "worker", "admin"] });
+  if (errorResponse) return errorResponse;
 
   const { messageId } = await context.params;
-
   if (!mongoose.Types.ObjectId.isValid(messageId)) {
-    return NextResponse.json(
-      { ok: false, error: "Invalid messageId" },
-      { status: 400 }
-    );
+    return NextResponse.json({ ok: false, error: "Invalid message id" }, { status: 400 });
   }
 
-  // ✅ fetch message FIRST
-  const msg = await Message.findById(messageId);
+  const message = await Message.findById(messageId);
+  if (!message) return NextResponse.json({ ok: false, error: "Message not found" }, { status: 404 });
 
-  if (!msg) {
-    return NextResponse.json(
-      { ok: false, error: "Message not found" },
-      { status: 404 }
-    );
+  if (user.role !== "admin" && message.senderId?.toString() !== user.userId) {
+    return NextResponse.json({ ok: false, error: "Only sender can delete message" }, { status: 403 });
   }
 
-  // ✅ only sender can delete
-  if (msg.senderId.toString() !== decoded.userId) {
-    return NextResponse.json(
-      { ok: false, error: "Forbidden" },
-      { status: 403 }
-    );
+  const conversation = await Conversation.findById(message.conversationId).lean();
+  if (!conversation) {
+    return NextResponse.json({ ok: false, error: "Conversation not found" }, { status: 404 });
   }
 
-  // ✅ ensure user belongs to conversation
-  const convo = await Conversation.findById(msg.conversationId).lean();
-  if (!convo) {
-    return NextResponse.json({ ok: false }, { status: 404 });
-  }
+  const canAccess =
+    user.role === "admin" ||
+    conversation.userId?.toString() === user.userId ||
+    conversation.workerUserId?.toString() === user.userId;
 
-  const isUser = convo.userId.toString() === decoded.userId;
-  const isWorker = convo.workerUserId.toString() === decoded.userId;
-  const isAdmin = decoded.role === "admin";
+  if (!canAccess) return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
 
-  if (!isUser && !isWorker && !isAdmin) {
-    return NextResponse.json({ ok: false }, { status: 403 });
-  }
+  message.deleted = true;
+  message.deletedAt = new Date();
+  await message.save();
 
-  // 🔥 ACTUAL DELETE (THIS MUST RUN)
-  msg.deleted = true;
-  msg.deletedAt = new Date();
-
-  await msg.save(); // 🔥 THIS IS THE CRITICAL LINE
-  console.log("🔥 DELETE API HIT 🔥");
-  console.log("🟢 SAVED MESSAGE:", {
-  id: msg._id.toString(),
-  deleted: msg.deleted,
-  deletedAt: msg.deletedAt,
-  db: msg.collection.name,
-});
-
-
-  return NextResponse.json({ ok: true, messageId });
+  const res = NextResponse.json({ ok: true, messageId });
+  return applyRefreshCookies(res, refreshedResponse);
 }

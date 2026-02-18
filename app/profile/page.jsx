@@ -1,70 +1,62 @@
 "use client";
 
-import { useState } from "react";
-import Image from "next/image";
-import BookingModal from "../../components/BookingModal";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 
 export default function ProfilePage() {
-  // ✅ REQUIRED STATE
-  const [bookingOpen, setBookingOpen] = useState(false);
+  const [form, setForm] = useState({ name: "", phone: "", email: "", role: "" });
+  const [msg, setMsg] = useState("");
 
-  // ✅ DEMO PROVIDER DATA (later replace with real user)
-  const creator = {
-    name: "John Doe",
-    rate: 50,
+  useEffect(() => {
+    const load = async () => {
+      const res = await fetch("/api/users/me", { credentials: "include" });
+      const data = await res.json();
+      if (data.ok && data.user) {
+        setForm({
+          name: data.user.name || "",
+          phone: data.user.phone || "",
+          email: data.user.email || "",
+          role: data.user.role || "",
+        });
+      }
+    };
+    load();
+  }, []);
+
+  const save = async (e) => {
+    e.preventDefault();
+    const res = await fetch("/api/users/me", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ name: form.name, phone: form.phone }),
+    });
+    const data = await res.json();
+    setMsg(data.ok ? "Profile updated" : data.error || "Update failed");
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-[#0b0214] to-black text-white">
-      <div className="max-w-5xl mx-auto px-6 py-12">
-        <h1 className="text-3xl font-semibold mb-6">My Profile</h1>
-
-        <div className="rounded-3xl bg-white/5 backdrop-blur border border-white/10 p-8 flex flex-col md:flex-row gap-6">
-          {/* AVATAR */}
-          <div className="h-24 w-24 rounded-2xl overflow-hidden border border-white/10 shrink-0">
-            <Image
-              src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80"
-              alt="Profile"
-              width={96}
-              height={96}
-              className="object-cover"
-            />
-          </div>
-
-          {/* INFO */}
-          <div className="flex-1">
-            <h2 className="text-xl font-semibold">{creator.name}</h2>
-            <p className="text-white/60 text-sm mt-1">
-              Professional service provider
-            </p>
-
-            {/* ACTIONS */}
-            <div className="mt-4 flex flex-wrap gap-3">
-              <button className="px-5 py-2 rounded-xl bg-gradient-to-r from-pink-600 to-purple-600 font-semibold">
-                Edit Profile
-              </button>
-
-              <button className="px-5 py-2 rounded-xl bg-white/10 hover:bg-white/20 transition">
-                View Public Profile
-              </button>
-
-              <button
-                onClick={() => setBookingOpen(true)}
-                className="px-5 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 text-black font-semibold"
-              >
-                Book Service
-              </button>
-            </div>
-          </div>
+    <section className="mx-auto max-w-xl panel">
+      <h1 className="text-2xl font-semibold">Profile</h1>
+      {msg && <p className="mt-2 text-sm text-slate-300">{msg}</p>}
+      <form onSubmit={save} className="mt-4 space-y-3">
+        <input className="w-full rounded border border-slate-700 bg-slate-900 p-2" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+        <input className="w-full rounded border border-slate-700 bg-slate-900 p-2" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+        <input className="w-full rounded border border-slate-700 bg-slate-900 p-2" value={form.email} disabled />
+        <input className="w-full rounded border border-slate-700 bg-slate-900 p-2" value={form.role} disabled />
+        <div className="flex flex-wrap gap-2">
+          <button className="rounded bg-sky-700 px-3 py-2 text-white hover:bg-sky-600">Save</button>
+          <Link href="/chat" className="rounded bg-emerald-700 px-3 py-2 text-white hover:bg-emerald-600">
+            Open Chat
+          </Link>
+          <Link href="/referrals" className="rounded bg-fuchsia-700 px-3 py-2 text-white hover:bg-fuchsia-600">
+            Referrals
+          </Link>
+          <Link href="/membership" className="rounded bg-amber-700 px-3 py-2 text-white hover:bg-amber-600">
+            Membership
+          </Link>
         </div>
-      </div>
-
-      {/* ✅ BOOKING MODAL */}
-      <BookingModal
-        open={bookingOpen}
-        onClose={() => setBookingOpen(false)}
-        provider={creator}
-      />
-    </main>
+      </form>
+    </section>
   );
 }

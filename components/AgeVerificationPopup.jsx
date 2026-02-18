@@ -1,10 +1,10 @@
 // components/AgeVerificationPopup.jsx
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from "react";
 import { X, Shield, AlertCircle, Check, Lock, ChevronDown } from 'lucide-react';
 
-export default function AgeVerificationPopup() {
+export default function AgeVerificationPopup({ onVerified }) {
   const [isVisible, setIsVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isExiting, setIsExiting] = useState(false);
@@ -24,7 +24,10 @@ export default function AgeVerificationPopup() {
       
       return () => clearTimeout(timer);
     } else {
-      setIsLoading(false);
+      const timer = setTimeout(() => {
+        setIsLoading(false);
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, []);
 
@@ -41,6 +44,7 @@ const handleConfirmEnter = () => {
     setIsExiting(true);
     setTimeout(() => {
       localStorage.setItem('age-verified', 'true');
+      onVerified?.();
       setIsVisible(false);
       document.body.style.overflow = 'auto';
       
@@ -155,7 +159,7 @@ const handleConfirmEnter = () => {
                     {isAccepted && <Check className="w-3 h-3 text-white" />}
                   </button>
                   <span className="text-sm text-white/80">
-                    I confirm I'm 18+ and accept the <button className="text-pink-400 hover:text-pink-300">Terms</button> & <button className="text-pink-400 hover:text-pink-300">Privacy Policy</button>
+                    I confirm I&apos;m 18+ and accept the <button className="text-pink-400 hover:text-pink-300">Terms</button> & <button className="text-pink-400 hover:text-pink-300">Privacy Policy</button>
                   </span>
                 </div>
               </div>

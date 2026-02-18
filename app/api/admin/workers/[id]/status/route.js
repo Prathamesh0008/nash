@@ -1,64 +1,83 @@
+import mongoose from "mongoose";
+import { NextResponse } from "next/server";
 import dbConnect from "@/lib/dbConnect";
 import WorkerProfile from "@/models/WorkerProfile";
-import { NextResponse } from "next/server";
-import { verifyToken } from "@/lib/auth";
-import { cookies } from "next/headers";
+import { requireAuth, applyRefreshCookies } from "@/lib/apiAuth";
+
+const MAP = {
+  active: "APPROVED",
+  pending: "PENDING_REVIEW",
+  rejected: "REJECTED",
+};
 
 export async function PATCH(req, context) {
   await dbConnect();
+  const { user, errorResponse, refreshedResponse } = await requireAuth({ roles: ["admin"] });
+  if (errorResponse) return errorResponse;
 
-  /* ================= AUTH ================= */
-  const cookieStore = await cookies();
-  const token = cookieStore.get("auth")?.value;
-
-  if (!token) {
-    return NextResponse.json(
-      { ok: false, error: "Not authenticated" },
-      { status: 401 }
-    );
+  const { id } = await context.params;
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return NextResponse.json({ ok: false, error: "Invalid worker id" }, { status: 400 });
   }
 
-  const decoded = verifyToken(token);
-  if (!decoded || decoded.role !== "admin") {
-    return NextResponse.json(
-      { ok: false, error: "Forbidden" },
-      { status: 403 }
-    );
+  const body = await req.json().catch(() => ({}));
+  const status = body.status;
+  const reason = String(body.reason || "").trim();
+  if (!MAP[status]) {
+    return NextResponse.json({ ok: false, error: "Invalid status" }, { status: 400 });
   }
 
-  /* ================= PARAMS (NEXT 15 FIX) ================= */
-  const { id: workerUserId } = await context.params;
+  const now = new Date();
+  const update = {
+    verificationStatus: MAP[status],
+    ...(reason ? { verificationNote: reason } : {}),
+    ...(MAP[status] === "APPROVED" ? { accountStatus: "LIVE" } : {}),
+    ...(MAP[status] !== "APPROVED" ? { accountStatus: "ONBOARDED" } : {}),
+    ...(MAP[status] !== "APPROVED" ? { isOnline: false } : {}),
+    ...(MAP[status] === "APPROVED"
+      ? {
+          "kyc.queueStatus": "approved",
+          "kyc.reviewedAt": now,
+          "kyc.reviewedBy": user.userId,
+          "kyc.rejectionReason": "",
+          "kyc.reuploadRequestedAt": null,
+          "kyc.reviewSlaDueAt": null,
+        }
+      : MAP[status] === "PENDING_REVIEW"
+        ? {
+          "kyc.queueStatus": "pending_review",
+          "kyc.submittedAt": now,
+          "kyc.reviewedAt": null,
+          "kyc.reviewedBy": null,
+          "kyc.rejectionReason": "",
+          "kyc.reviewSlaDueAt": new Date(now.getTime() + 48 * 60 * 60 * 1000),
+          }
+        : {
+            "kyc.queueStatus": "rejected",
+            "kyc.reviewedAt": now,
+            "kyc.reviewedBy": user.userId,
+            "kyc.rejectionReason": reason || "Rejected by admin",
+            "kyc.reviewSlaDueAt": null,
+          }),
+  };
 
-  if (!workerUserId) {
-    return NextResponse.json(
-      { ok: false, error: "Missing worker id" },
-      { status: 400 }
-    );
-  }
-
-  /* ================= BODY ================= */
-  const { status } = await req.json();
-
-  if (!["active", "pending", "rejected"].includes(status)) {
-    return NextResponse.json(
-      { ok: false, error: "Invalid status" },
-      { status: 400 }
-    );
-  }
-
-  /* ================= UPDATE ================= */
-  const updated = await WorkerProfile.findOneAndUpdate(
-    { userId: workerUserId },
-    { status },
+  const worker = await WorkerProfile.findOneAndUpdate(
+    { userId: id },
+    {
+      $set: update,
+      $push: {
+        "kyc.history": {
+          action: MAP[status] === "APPROVED" ? "approved" : MAP[status] === "PENDING_REVIEW" ? "in_review" : "rejected",
+          reason: reason || "",
+          actorId: user.userId,
+          at: now,
+        },
+      },
+    },
     { new: true }
   ).lean();
+  if (!worker) return NextResponse.json({ ok: false, error: "Worker not found" }, { status: 404 });
 
-  if (!updated) {
-    return NextResponse.json(
-      { ok: false, error: "Worker not found" },
-      { status: 404 }
-    );
-  }
-
-  return NextResponse.json({ ok: true, profile: updated });
+  const res = NextResponse.json({ ok: true, worker });
+  return applyRefreshCookies(res, refreshedResponse);
 }

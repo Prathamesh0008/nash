@@ -6,13 +6,15 @@ import AgeVerificationPopup from './AgeVerificationPopup';
 
 export default function AgeGateWrapper({ children }) {
   const [isVerified, setIsVerified] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {
-    // Check localStorage on component mount
-    const hasAccepted = localStorage.getItem('age-verified');
-    setIsVerified(!!hasAccepted);
-    setIsLoading(false);
+    const timer = setTimeout(() => {
+      const hasAccepted = localStorage.getItem('age-verified');
+      setIsVerified(!!hasAccepted);
+      setIsHydrated(true);
+    }, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   const handleVerified = () => {
@@ -20,7 +22,7 @@ export default function AgeGateWrapper({ children }) {
   };
 
   // Show loading state
-  if (isLoading) {
+  if (!isHydrated) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-pink-500"></div>
