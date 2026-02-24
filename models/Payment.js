@@ -16,7 +16,7 @@ const PaymentSchema = new mongoose.Schema(
     status: { type: String, enum: ["created", "paid", "failed", "refunded"], default: "created", index: true },
     providerOrderId: { type: String, default: "" },
     providerPaymentId: { type: String, default: "" },
-    idempotencyKey: { type: String, default: "", index: true },
+    idempotencyKey: { type: String, default: undefined, index: true },
     metadata: { type: Object, default: {} },
     verifiedAt: { type: Date, default: null },
     refundedAt: { type: Date, default: null },

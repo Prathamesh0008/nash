@@ -198,7 +198,14 @@ export default function WorkerProfilePage() {
                   Close
                 </button>
               </div>
-              <img src={selectedImage} alt="Gallery" className="max-h-[80vh] w-full rounded object-contain" />
+              <Image
+                src={selectedImage}
+                alt="Gallery preview"
+                width={1440}
+                height={1080}
+                unoptimized
+                className="max-h-[80vh] w-full rounded object-contain"
+              />
             </div>
           </div>
         )}
@@ -210,10 +217,13 @@ export default function WorkerProfilePage() {
               {/* Profile Photo */}
               <div className="relative h-20 w-20 overflow-hidden rounded-xl border border-white/10 bg-slate-900 sm:h-24 sm:w-24">
                 {worker.profilePhoto ? (
-                  <img
+                  <Image
                     src={worker.profilePhoto}
                     alt={worker.user?.name}
-                    className="h-full w-full object-cover"
+                    fill
+                    sizes="96px"
+                    unoptimized
+                    className="object-cover"
                   />
                 ) : (
                   <div className="flex h-full items-center justify-center">
@@ -429,10 +439,13 @@ export default function WorkerProfilePage() {
                         onClick={() => setSelectedImage(photo)}
                         className="group relative aspect-square overflow-hidden rounded-lg border border-white/10 bg-slate-900 transition hover:border-fuchsia-500/30"
                       >
-                        <img
+                        <Image
                           src={photo}
                           alt={`Gallery ${idx + 1}`}
-                          className="h-full w-full object-cover transition group-hover:scale-110"
+                          fill
+                          sizes="(max-width: 768px) 50vw, 25vw"
+                          unoptimized
+                          className="object-cover transition group-hover:scale-110"
                         />
                       </button>
                     ))}

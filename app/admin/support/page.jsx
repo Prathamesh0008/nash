@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Ticket,
   MessageSquare,
@@ -35,16 +35,19 @@ export default function AdminSupportPage() {
   const [statusDraft, setStatusDraft] = useState({});
   const [expandedTickets, setExpandedTickets] = useState({});
 
-  const load = async (statusFilter = status) => {
+  const load = useCallback(async (statusFilter = status) => {
     const qs = statusFilter ? `?status=${statusFilter}` : "";
     const res = await fetch(`/api/support/tickets${qs}`, { credentials: "include" });
     const data = await res.json().catch(() => ({}));
     setTickets(data.tickets || []);
-  };
+  }, [status]);
 
   useEffect(() => {
-    load();
-  }, [status]);
+    const timeout = setTimeout(() => {
+      load();
+    }, 0);
+    return () => clearTimeout(timeout);
+  }, [load]);
 
   const reply = async (ticket) => {
     const message = String(replyDraft[ticket._id] || "").trim();

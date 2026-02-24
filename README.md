@@ -62,5 +62,7 @@ npm run dev
 ## Notes
 
 - Payment is in demo mode for now (`PAYMENT_PROVIDER=demo`)
+- Rate limiter store can be switched to Mongo for multi-instance deployments (`RATE_LIMIT_STORE=mongo`)
 - Evidence/docs are URL-based for now; cloudinary signed upload can be plugged in next
 - Critical E2E smoke: `npm run smoke:e2e-critical`
+- Socket security smoke: `npm run smoke:socket-security`

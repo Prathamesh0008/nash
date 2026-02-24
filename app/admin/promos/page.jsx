@@ -51,7 +51,10 @@ export default function AdminPromosPage() {
   };
 
   useEffect(() => {
-    load();
+    const timeout = setTimeout(() => {
+      load();
+    }, 0);
+    return () => clearTimeout(timeout);
   }, []);
 
   const save = async (e) => {

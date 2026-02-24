@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Wallet,
   DollarSign,
@@ -23,6 +23,31 @@ import {
   Building,
 } from "lucide-react";
 
+const PAYOUT_STAT_COLORS = {
+  amber: { bg: "bg-amber-500/20", text: "text-amber-400" },
+  blue: { bg: "bg-blue-500/20", text: "text-blue-400" },
+  emerald: { bg: "bg-emerald-500/20", text: "text-emerald-400" },
+  rose: { bg: "bg-rose-500/20", text: "text-rose-400" },
+};
+
+function StatCard({ icon: Icon, label, value, color = "amber" }) {
+  const palette = PAYOUT_STAT_COLORS[color] || PAYOUT_STAT_COLORS.amber;
+
+  return (
+    <div className="group rounded-xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02] p-4 transition hover:border-fuchsia-500/30 sm:p-5">
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-xs text-slate-400 sm:text-sm">{label}</p>
+          <p className="mt-1 text-xl font-bold text-white sm:text-2xl">{value}</p>
+        </div>
+        <div className={`rounded-lg p-2 sm:p-2.5 ${palette.bg}`}>
+          <Icon className={`h-4 w-4 sm:h-5 sm:w-5 ${palette.text}`} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AdminPayoutsPage() {
   const [payouts, setPayouts] = useState([]);
   const [summary, setSummary] = useState(null);
@@ -32,7 +57,7 @@ export default function AdminPayoutsPage() {
   const [savingId, setSavingId] = useState("");
   const [inputs, setInputs] = useState({});
 
-  const load = async () => {
+  const load = useCallback(async () => {
     const sp = new URLSearchParams();
     if (statusFilter) sp.set("status", statusFilter);
 
@@ -52,11 +77,14 @@ export default function AdminPayoutsPage() {
       }
       return next;
     });
-  };
+  }, [statusFilter]);
 
   useEffect(() => {
-    load();
-  }, [statusFilter]);
+    const timeout = setTimeout(() => {
+      load();
+    }, 0);
+    return () => clearTimeout(timeout);
+  }, [load]);
 
   const update = async (id, status) => {
     setSavingId(id);
@@ -101,20 +129,6 @@ export default function AdminPayoutsPage() {
       default: return 'bg-slate-500/20 text-slate-400 border-slate-500/30';
     }
   };
-
-  const StatCard = ({ icon: Icon, label, value, color = "fuchsia" }) => (
-    <div className="group rounded-xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02] p-4 transition hover:border-fuchsia-500/30 sm:p-5">
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-xs text-slate-400 sm:text-sm">{label}</p>
-          <p className="mt-1 text-xl font-bold text-white sm:text-2xl">{value}</p>
-        </div>
-        <div className={`rounded-lg bg-${color}-500/20 p-2 sm:p-2.5`}>
-          <Icon className={`h-4 w-4 text-${color}-400 sm:h-5 sm:w-5`} />
-        </div>
-      </div>
-    </div>
-  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">

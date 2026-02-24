@@ -1,103 +1,48 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Crown, Flame, ArrowRight } from "lucide-react";
-import RankBadge from "./RankBadge";
+import { ArrowRight, Crown, Star } from "lucide-react";
 
-export default function TopRanked({ providers }) {
-  const top = [...providers].sort((a, b) => a.rank - b.rank).slice(0, 5);
+export default function TopRanked({ providers = [] }) {
+  const top = [...providers]
+    .sort((a, b) => Number(b.rating || 0) - Number(a.rating || 0))
+    .slice(0, 5);
+
+  if (!top.length) return null;
 
   return (
-    <section className="max-w-7xl mx-auto px-4  relative z-10">
-      <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-md overflow-hidden">
-        
-        {/* HEADER */}
-        <div className="p-6 md:p-8 flex items-start justify-between gap-6">
+    <section className="mx-auto max-w-7xl px-4">
+      <div className="overflow-hidden rounded-3xl border border-white/10 bg-slate-950/60">
+        <div className="flex items-start justify-between gap-4 p-5">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-black/40 border border-white/10 text-white/80 text-xs">
-              <Crown className="h-4 w-4 text-amber-300" />
-              Top Ranked This Week (Demo)
-              <Flame className="h-4 w-4 text-orange-300" />
-            </div>
-
-            <h3 className="text-white text-xl md:text-2xl font-semibold mt-3">
-              Featured creators on the leaderboard
-            </h3>
-
-            <p className="text-white/60 text-sm mt-1 max-w-xl">
-              These profiles appear higher via performance + optional boosts (demo logic).
+            <p className="inline-flex items-center gap-1 rounded-full border border-amber-400/30 bg-amber-500/10 px-2 py-0.5 text-xs text-amber-200">
+              <Crown className="h-3.5 w-3.5" />
+              Top Rated
             </p>
+            <h3 className="mt-2 text-lg font-semibold text-white">Top wellness therapists</h3>
+            <p className="text-sm text-slate-400">Sorted by rating and recent service performance.</p>
           </div>
-
-          <Link
-            href="/creators"
-            className="hidden md:inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white text-black text-sm font-semibold hover:bg-white/90 transition"
-          >
-            View all <ArrowRight className="h-4 w-4" />
+          <Link href="/workers" className="hidden items-center gap-1 text-sm text-sky-300 hover:text-sky-200 md:inline-flex">
+            View all
+            <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
 
-        {/* LIST */}
-        <div className="grid grid-cols-1 md:grid-cols-5 border-t border-white/10">
-          {top.map((c, idx) => {
-            const img = c.images?.[0]; // ✅ SAFE IMAGE
-
-            return (
-              <Link
-                key={c.id}
-                href={`/creators/${c.slug}`}
-                className="group relative p-5 md:p-4 border-b md:border-b-0 md:border-r border-white/10 last:border-b-0 md:last:border-r-0 hover:bg-white/5 transition"
-              >
-                <div className="flex items-center gap-4">
-                  
-                  {/* IMAGE */}
-                  <div className="relative h-14 w-14 rounded-2xl overflow-hidden border border-white/10 bg-black">
-                    {img ? (
-                      <Image
-                        src={img}
-                        alt={c.name}
-                        fill
-                        sizes="56px"
-                        priority={idx < 2}
-                        className="object-cover group-hover:scale-[1.05] transition"
-                      />
-                    ) : (
-                      <div className="absolute inset-0 bg-gradient-to-br from-purple-600 to-pink-600" />
-                    )}
-                  </div>
-
-                  {/* INFO */}
-                  <div className="min-w-0">
-                    <div className="text-white font-semibold truncate">
-                      {c.name}
-                    </div>
-                    <div className="text-white/60 text-xs truncate">
-                      Rank #{c.rank} • €{c.ratePerHour}/hour
-                    </div>
-                    <div className="mt-2">
-                      <RankBadge tier={c.tier} />
-                    </div>
-                  </div>
-                </div>
-
-                {/* #1 BADGE */}
-                {c.rank === 1 && (
-                  <div className="absolute top-3 right-3 px-3 py-1 rounded-full bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400 text-black text-xs font-bold flex items-center">
-                    <Crown className="h-4 w-4 mr-1" /> #1
-                  </div>
-                )}
-              </Link>
-            );
-          })}
-        </div>
-
-        {/* MOBILE CTA */}
-        <div className="p-5 md:hidden">
-          <Link
-            href="/providers"
-            className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-white text-black text-sm font-semibold hover:bg-white/90 transition"
-          >
-            View all creators <ArrowRight className="h-4 w-4" />
-          </Link>
+        <div className="grid grid-cols-1 border-t border-white/10 md:grid-cols-5">
+          {top.map((row, idx) => (
+            <Link key={`${row.id}-${idx}`} href={`/workers/${row.id}`} className="border-b border-white/10 p-4 hover:bg-white/5 md:border-b-0 md:border-r md:last:border-r-0">
+              <div className="relative mb-2 h-16 w-16 overflow-hidden rounded-xl border border-white/10 bg-slate-900">
+                {row.images?.[0] ? (
+                  <Image src={row.images[0]} alt={row.name} fill sizes="64px" className="object-cover" />
+                ) : null}
+              </div>
+              <p className="truncate text-sm font-semibold text-white">{row.name}</p>
+              <p className="mt-1 flex items-center gap-1 text-xs text-slate-300">
+                <Star className="h-3.5 w-3.5 text-amber-300" />
+                {Number(row.rating || 0).toFixed(1)}
+              </p>
+              <p className="mt-1 text-xs text-slate-400">INR {row.ratePerHour || 0}/hr</p>
+            </Link>
+          ))}
         </div>
       </div>
     </section>

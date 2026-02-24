@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { MapPin, RefreshCw, Search, Star, Zap } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -15,7 +16,14 @@ function WorkerCard({ worker }) {
     <article className="panel flex h-full flex-col gap-3 p-4">
       <div className="flex items-start gap-3">
         {photo ? (
-          <img src={photo} alt={worker.name || "Worker"} className="h-16 w-16 rounded-xl border border-white/15 object-cover" />
+          <Image
+            src={photo}
+            alt={worker.name || "Worker"}
+            width={64}
+            height={64}
+            unoptimized
+            className="h-16 w-16 rounded-xl border border-white/15 object-cover"
+          />
         ) : (
           <div className="grid h-16 w-16 place-items-center rounded-xl border border-white/15 bg-slate-900/70 text-lg font-semibold text-slate-200">
             {(worker.name || "W").slice(0, 1).toUpperCase()}

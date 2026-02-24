@@ -90,6 +90,8 @@ function getRoleConfig(role) {
         { href: "/admin/reschedule-policy", label: "Reschedule Policy" },
         { href: "/admin/crm-templates", label: "CRM" },
         { href: "/admin/support", label: "Support Desk" },
+        { href: "/contact-us", label: "Contact Us" },
+        { href: "/faq", label: "FAQ" },
         { href: "/admin/fraud", label: "Fraud Queue" },
       ],
       showSearch: false,
@@ -121,6 +123,8 @@ function getRoleConfig(role) {
       quickTags: [
         { href: "/worker/onboarding", label: "Onboarding" },
         { href: "/worker/dashboard/reviews", label: "Reviews" },
+        { href: "/contact-us", label: "Contact Us" },
+        { href: "/faq", label: "FAQ" },
         { href: "/worker/inbox", label: "Legacy Inbox" },
       ],
       showSearch: false,
@@ -134,28 +138,30 @@ function getRoleConfig(role) {
   return {
     brandHref: "/",
     badge: "Premium",
-    topLinks: [{ href: "/workers", label: "Workers" }],
+    topLinks: [{ href: "/workers", label: "Therapists" }],
     tabs: [
       { href: "/", label: "Home", icon: Home },
       { href: "/womens", label: "Womens", icon: Venus },
       { href: "/mens", label: "Mens", icon: Mars },
-      { href: "/services", label: "Services", icon: BriefcaseBusiness },
-      { href: "/workers", label: "Workers", icon: Users },
+      { href: "/services", label: "Wellness", icon: BriefcaseBusiness },
+      { href: "/workers", label: "Therapists", icon: Users },
       { href: "/orders", label: "Orders", icon: Wrench },
       { href: "/chat", label: "Chat", icon: Video },
     ],
-    quickTags: [
-      { href: "/workers", label: "All-Rounder" },
-      { href: "/workers?sort=rating", label: "Top Rated" },
-      { href: "/booking/new", label: "Quick Booking" },
-      { href: "/membership", label: "Membership" },
-      { href: "/family-pass", label: "Family Pass" },
-      { href: "/favorites", label: "Favorites" },
-      { href: "/landing", label: "City Pages" },
-      { href: "/search", label: "More..." },
-    ],
+      quickTags: [
+        { href: "/workers", label: "Massage Pros" },
+        { href: "/workers?sort=rating", label: "Top Rated" },
+        { href: "/booking/new", label: "Quick Booking" },
+        { href: "/membership", label: "Membership" },
+        { href: "/family-pass", label: "Family Pass" },
+        { href: "/favorites", label: "Favorites" },
+        { href: "/contact-us", label: "Contact Us" },
+        { href: "/faq", label: "FAQ" },
+        { href: "/landing", label: "City Pages" },
+        { href: "/search", label: "More..." },
+      ],
     showSearch: true,
-    searchHint: "Search workers, locations, services...",
+    searchHint: "Search therapists, spa services, locations...",
     regionsHref: "/workers",
     filtersHref: "/services",
     showSupport: true,
@@ -251,8 +257,8 @@ export default function MainNav() {
                 N
               </span>
               <div>
-                <p className="text-xl font-bold tracking-tight text-fuchsia-300 md:text-3xl">Nash Workforce</p>
-                <p className="text-xs tracking-[0.4em] text-slate-400">{user?.role === "admin" ? "ADMIN OPERATIONS" : user?.role === "worker" ? "WORKER OPERATIONS" : "PREMIUM HOME SERVICES"}</p>
+                <p className="text-xl font-bold tracking-tight text-fuchsia-300 md:text-3xl">Nash Wellness</p>
+                <p className="text-xs tracking-[0.4em] text-slate-400">{user?.role === "admin" ? "ADMIN OPERATIONS" : user?.role === "worker" ? "THERAPIST OPERATIONS" : "SPA HOME SERVICES"}</p>
               </div>
             </Link>
             <span className="ml-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-pink-500 px-4 py-1 text-[11px] font-semibold text-white">
@@ -267,6 +273,7 @@ export default function MainNav() {
 
             <div className="hidden lg:flex items-center gap-2">
               {roleConfig.showSupport && <TopPillLink href="/support" label="Support" />}
+              {roleConfig.showSupport && <TopPillLink href="/contact-us" label="Contact Us" />}
               {roleConfig.topLinks.map((item) => (
                 <TopPillLink key={item.href} href={item.href} label={item.label} />
               ))}
@@ -420,7 +427,7 @@ export default function MainNav() {
                   Verified workers
                 </span>
                 <span className="inline-flex items-center gap-1 rounded-full border border-white/10 px-2 py-1">
-                  Demo payments enabled
+                  Secure online payments
                 </span>
               </div>
             </>
@@ -496,6 +503,9 @@ export default function MainNav() {
             <div className="flex flex-wrap gap-2">
               {roleConfig.showSupport && (
                 <TopPillLink href="/support" label="Support" />
+              )}
+              {roleConfig.showSupport && (
+                <TopPillLink href="/contact-us" label="Contact Us" />
               )}
               {roleConfig.topLinks.map((item) => (
                 <TopPillLink key={item.href} href={item.href} label={item.label} />

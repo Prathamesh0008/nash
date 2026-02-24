@@ -30,6 +30,7 @@ export default function SearchClient() {
         if (query.trim()) sp.set("q", query.trim());
         if (city.trim()) sp.set("city", city.trim());
         if (category.trim()) sp.set("category", category.trim());
+
         const res = await fetch(`/api/workers?${sp.toString()}`, { credentials: "include" });
         const data = await res.json();
         if (!data.ok) {
@@ -38,24 +39,27 @@ export default function SearchClient() {
           return;
         }
 
-        const mapped = (data.workers || []).map((worker, idx) => ({
+        const mapped = (data.workers || []).map((worker) => ({
           id: String(worker.id),
-          name: worker.name || "Worker",
+          name: worker.name || "Therapist",
           location: worker.serviceAreas?.[0]?.city || "Unknown location",
           rating: Number(worker.ratingAvg || 0),
           reviewsCount: Number(worker.jobsCompleted || 0),
-          ratePerHour: 90 + (idx % 6) * 10,
+          ratePerHour: Number(worker.basePrice || 0),
+          currency: worker.currency || "INR",
           images: [worker.profilePhoto, ...(worker.galleryPhotos || [])].filter(Boolean),
           bio:
-            worker.skills?.length > 0
-              ? `All-rounder worker with strengths in ${worker.skills.slice(0, 2).join(", ")}`
-              : "Verified all-rounder worker profile",
-          tags: ["All-Rounder", "Verified", "Home Visit"],
+            worker.bio ||
+            (worker.skills?.length > 0
+              ? worker.skills.slice(0, 3).join(", ")
+              : "Verified wellness therapist profile"),
+          tags: worker.categories?.length ? worker.categories.slice(0, 3) : worker.skills?.slice(0, 3) || [],
           specialties: [],
           verified: worker.verificationStatus === "APPROVED",
           available: worker.isOnline !== false,
           profileHref: `/workers/${worker.id}`,
         }));
+
         setProviders(mapped);
       } catch {
         setError("Search failed due to network error");
@@ -174,7 +178,7 @@ export default function SearchClient() {
     if (query) parts.push(`"${query}"`);
     if (city) parts.push(city);
     if (category) parts.push(category);
-    return parts.length ? `Search Results for ${parts.join(" • ")}` : "Search Results";
+    return parts.length ? `Search Results for ${parts.join(" | ")}` : "Search Results";
   }, [query, city, category]);
 
   const providersWithFav = useMemo(() => {
@@ -186,8 +190,8 @@ export default function SearchClient() {
   }, [providers, prefs.favoriteWorkerIds]);
 
   return (
-    <section className="max-w-7xl mx-auto px-4 py-16">
-      <h1 className="text-3xl font-semibold mb-6">{title}</h1>
+    <section className="mx-auto max-w-7xl px-4 py-16">
+      <h1 className="mb-6 text-3xl font-semibold">{title}</h1>
       <div className="mb-6 grid gap-3 lg:grid-cols-2">
         <div className="rounded-xl border border-white/10 bg-white/5 p-4">
           <div className="mb-2 flex items-center justify-between">

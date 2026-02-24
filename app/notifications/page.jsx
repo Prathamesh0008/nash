@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Bell, CheckCheck, RefreshCw, ChevronRight } from "lucide-react";
 
 function timeAgo(dateValue) {
@@ -24,10 +24,9 @@ export default function NotificationsPage() {
   const [markingAll, setMarkingAll] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  const load = async () => {
-    const firstLoad = notifications.length === 0;
-    if (firstLoad) setLoading(true);
-    else setRefreshing(true);
+  const load = useCallback(async ({ silent = false } = {}) => {
+    if (silent) setRefreshing(true);
+    else setLoading(true);
     setError("");
     try {
       const res = await fetch("/api/notifications?limit=100", {
@@ -47,11 +46,11 @@ export default function NotificationsPage() {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     load();
-  }, []);
+  }, [load]);
 
   const markAsRead = async (id) => {
     const res = await fetch(`/api/notifications/${id}/read`, {
@@ -106,7 +105,7 @@ export default function NotificationsPage() {
             {/* Action Buttons */}
             <div className="flex gap-2">
               <button
-                onClick={load}
+                onClick={() => load({ silent: true })}
                 disabled={loading || refreshing}
                 className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-200 transition hover:border-fuchsia-400/50 hover:text-white disabled:opacity-60 sm:rounded-xl sm:px-4"
               >

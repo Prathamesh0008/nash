@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Users,
   MapPin,
@@ -41,6 +41,7 @@ function toLocalInput(date) {
 }
 
 export default function FamilyPassPage() {
+  const defaultSlotLocal = useMemo(() => toLocalInput(new Date(new Date().getTime() + 60 * 60 * 1000)), []);
   const [loading, setLoading] = useState(true);
   const [findingWorkers, setFindingWorkers] = useState(false);
   const [savingLocation, setSavingLocation] = useState(false);
@@ -58,11 +59,12 @@ export default function FamilyPassPage() {
   const [services, setServices] = useState([]);
   const [workerFilters, setWorkerFilters] = useState({
     serviceId: "",
-    slotLocal: toLocalInput(new Date(Date.now() + 60 * 60 * 1000)),
+    slotLocal: defaultSlotLocal,
   });
   const [nearestWorkers, setNearestWorkers] = useState([]);
   const [workerNote, setWorkerNote] = useState("");
   const [workerMode, setWorkerMode] = useState("");
+  const [workerFallbackReason, setWorkerFallbackReason] = useState("");
   const [priorityQueueVisible, setPriorityQueueVisible] = useState(false);
   const [fasterRecommendations, setFasterRecommendations] = useState([]);
 
@@ -83,6 +85,7 @@ export default function FamilyPassPage() {
       setNearestWorkers([]);
       setWorkerNote(json.error || "Failed to find nearest workers.");
       setWorkerMode("");
+      setWorkerFallbackReason("");
       setPriorityQueueVisible(false);
       setFasterRecommendations([]);
       return;
@@ -90,16 +93,34 @@ export default function FamilyPassPage() {
     setNearestWorkers(json.workers || []);
     setWorkerNote(json.note || "");
     setWorkerMode(json.mode || "");
+    setWorkerFallbackReason(json.fallbackReason || "");
     setPriorityQueueVisible(Boolean(json.priorityQueueVisible));
     setFasterRecommendations(json.fasterRecommendations || []);
   };
 
   const useCurrentLocation = async () => {
-    if (!navigator?.geolocation || savingLocation) {
+    if (savingLocation) return;
+    if (typeof window !== "undefined" && !window.isSecureContext) {
+      setWorkerNote("Current location needs HTTPS (or localhost). Open this site with HTTPS instead of local IP over HTTP.");
+      return;
+    }
+    if (!navigator?.geolocation) {
       setWorkerNote("Geolocation is not supported in this browser.");
       return;
     }
     setSavingLocation(true);
+    if (navigator.permissions?.query) {
+      try {
+        const permission = await navigator.permissions.query({ name: "geolocation" });
+        if (permission.state === "denied") {
+          setSavingLocation(false);
+          setWorkerNote("Location permission is blocked. Allow location in browser site settings and retry.");
+          return;
+        }
+      } catch {
+        // Ignore permission API issues and continue with geolocation request.
+      }
+    }
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const lat = Number(position.coords?.latitude);
@@ -121,6 +142,18 @@ export default function FamilyPassPage() {
       },
       (err) => {
         setSavingLocation(false);
+        if (err?.code === 1) {
+          setWorkerNote("Location permission denied. Allow permission in browser settings and retry.");
+          return;
+        }
+        if (err?.code === 2) {
+          setWorkerNote("Location unavailable. Move to open area / enable GPS and retry.");
+          return;
+        }
+        if (err?.code === 3) {
+          setWorkerNote("Location request timed out. Check internet/GPS and retry.");
+          return;
+        }
         setWorkerNote(err?.message || "Unable to access current location.");
       },
       { enableHighAccuracy: true, timeout: 10000 }
@@ -162,12 +195,12 @@ export default function FamilyPassPage() {
       });
       await loadNearestWorkers({
         serviceId: "",
-        slotLocal: workerFilters.slotLocal,
+        slotLocal: defaultSlotLocal,
       });
       setLoading(false);
     };
     load();
-  }, []);
+  }, [defaultSlotLocal]);
 
   if (loading) {
     return (
@@ -300,7 +333,12 @@ export default function FamilyPassPage() {
             </button>
             {workerMode && (
               <span className="rounded-full bg-slate-800 px-3 py-1 text-xs text-slate-300">
-                Mode: {workerMode === "geo" ? "True Map Distance" : "Fallback"}
+                Mode: {workerMode === "geo" ? "True Map Distance" : "Area Fallback"}
+              </span>
+            )}
+            {workerMode === "fallback" && workerFallbackReason === "user_geo_missing" && (
+              <span className="rounded-full bg-amber-500/15 px-3 py-1 text-xs text-amber-300">
+                Tip: Save current location for map-distance ranking
               </span>
             )}
           </div>
@@ -397,12 +435,12 @@ export default function FamilyPassPage() {
                   
                   <p className="flex items-center gap-1 text-slate-400">
                     <Star className="h-3 w-3" />
-                    Rating {worker.ratingAvg} • {worker.jobsCompleted} jobs
+                    Rating {worker.ratingAvg} | {worker.jobsCompleted} jobs
                   </p>
                   
                   <p className="flex items-center gap-1 text-amber-400">
                     <Clock className="h-3 w-3" />
-                    Response {worker.responseTimeAvg} min • ETA {worker.estimatedArrivalMinutes} min
+                    Response {worker.responseTimeAvg} min | ETA {worker.estimatedArrivalMinutes} min
                   </p>
                   
                   <p className="text-xs text-fuchsia-400">Priority score: {worker.score}</p>
@@ -474,3 +512,4 @@ export default function FamilyPassPage() {
     </div>
   );
 }
+

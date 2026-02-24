@@ -14,7 +14,10 @@ export default function WalletPage() {
   };
 
   useEffect(() => {
-    load();
+    const timeout = setTimeout(() => {
+      load();
+    }, 0);
+    return () => clearTimeout(timeout);
   }, []);
 
   const topup = async () => {
@@ -25,7 +28,7 @@ export default function WalletPage() {
       body: JSON.stringify({ amount: Number(amount) }),
     });
     const data = await res.json();
-    setMsg(data.ok ? "Wallet topped up" : data.error || "Top-up failed");
+    setMsg(data.ok ? "Wallet updated successfully" : data.error || "Top-up failed");
     if (data.ok) load();
   };
 
@@ -38,7 +41,7 @@ export default function WalletPage() {
 
       <div className="panel flex flex-wrap items-center gap-2">
         <input className="rounded border border-slate-700 bg-slate-900 p-2" value={amount} onChange={(e) => setAmount(e.target.value)} />
-        <button onClick={topup} className="rounded bg-sky-700 px-3 py-2 text-white hover:bg-sky-600">Demo Top-up</button>
+        <button onClick={topup} className="rounded bg-sky-700 px-3 py-2 text-white hover:bg-sky-600">Add Funds</button>
         {msg && <p className="text-sm text-slate-300">{msg}</p>}
       </div>
 

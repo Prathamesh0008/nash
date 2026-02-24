@@ -10,7 +10,7 @@ import { enforceRateLimit, getRateLimitKey } from "@/lib/rateLimit";
 import { generateUniqueReferralCode } from "@/lib/referral";
 
 export async function POST(req) {
-  const rl = enforceRateLimit({
+  const rl = await enforceRateLimit({
     key: getRateLimitKey(req, "signup"),
     limit: 20,
     windowMs: 15 * 60 * 1000,

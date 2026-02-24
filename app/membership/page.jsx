@@ -37,7 +37,10 @@ export default function MembershipPage() {
   };
 
   useEffect(() => {
-    load();
+    const timeout = setTimeout(() => {
+      load();
+    }, 0);
+    return () => clearTimeout(timeout);
   }, []);
 
   const active = data.activeMembership;

@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 export default function WorkerBoostPage() {
   const [plans, setPlans] = useState([]);
   const [active, setActive] = useState([]);
-  const [form, setForm] = useState({ planId: "", area: "Nerul", category: "All-Rounder", paymentMethod: "online" });
+  const [form, setForm] = useState({ planId: "", area: "Nerul", category: "Massage", paymentMethod: "online" });
   const [msg, setMsg] = useState("");
 
   const load = async () => {
@@ -19,7 +19,10 @@ export default function WorkerBoostPage() {
   };
 
   useEffect(() => {
-    load();
+    const timeout = setTimeout(() => {
+      load();
+    }, 0);
+    return () => clearTimeout(timeout);
   }, []);
 
   const buy = async (e) => {
@@ -49,7 +52,7 @@ export default function WorkerBoostPage() {
         </select>
 
         <input className="w-full rounded border border-slate-700 bg-slate-900 p-2" placeholder="Area (Nerul)" value={form.area} onChange={(e) => setForm({ ...form, area: e.target.value })} />
-        <input className="w-full rounded border border-slate-700 bg-slate-900 p-2" placeholder="Category (All-Rounder)" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} />
+        <input className="w-full rounded border border-slate-700 bg-slate-900 p-2" placeholder="Category (Massage, Spa, Wellness)" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} />
         <select className="w-full rounded border border-slate-700 bg-slate-900 p-2" value={form.paymentMethod} onChange={(e) => setForm({ ...form, paymentMethod: e.target.value })}>
           <option value="online">Online</option>
           <option value="wallet">Wallet</option>

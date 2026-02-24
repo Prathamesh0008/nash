@@ -13,7 +13,7 @@ import { enforceRateLimit, getRateLimitKey } from "@/lib/rateLimit";
 const CANCELLABLE_STATUSES = ["confirmed", "assigned", "onway"];
 
 export async function POST(req, context) {
-  const rl = enforceRateLimit({
+  const rl = await enforceRateLimit({
     key: getRateLimitKey(req, "booking_cancel"),
     limit: 8,
     windowMs: 60 * 60 * 1000,

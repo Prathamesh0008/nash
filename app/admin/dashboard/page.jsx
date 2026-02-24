@@ -1,358 +1,340 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
-  LayoutDashboard,
-  Users,
-  Briefcase,
-  Calendar,
-  TrendingUp,
-  AlertCircle,
-  Ticket,
-  Star,
-  DollarSign,
-  CreditCard,
-  PieChart,
+  AlertTriangle,
   BarChart3,
-  MapPin,
-  Layers,
-  ArrowUp,
-  ArrowDown,
-  Shield,
-  Settings,
-  FileText,
-  Gift,
-  MessageSquare,
-  Database,
-  Clock,
+  Briefcase,
   CheckCircle,
+  Clock3,
+  CreditCard,
+  Database,
+  DollarSign,
+  Gift,
+  LayoutDashboard,
+  Layers,
+  MapPin,
+  RefreshCw,
+  ShieldAlert,
+  Ticket,
+  TrendingUp,
+  Users,
   XCircle,
 } from "lucide-react";
 
-const COLOR_STYLE_MAP = {
-  blue: { bg: "bg-blue-500/20", text: "text-blue-400" },
-  purple: { bg: "bg-purple-500/20", text: "text-purple-400" },
-  fuchsia: { bg: "bg-fuchsia-500/20", text: "text-fuchsia-400" },
-  emerald: { bg: "bg-emerald-500/20", text: "text-emerald-400" },
-  amber: { bg: "bg-amber-500/20", text: "text-amber-400" },
-  rose: { bg: "bg-rose-500/20", text: "text-rose-400" },
-  yellow: { bg: "bg-yellow-500/20", text: "text-yellow-400" },
-  green: { bg: "bg-green-500/20", text: "text-green-400" },
-  cyan: { bg: "bg-cyan-500/20", text: "text-cyan-400" },
-  violet: { bg: "bg-violet-500/20", text: "text-violet-400" },
-  indigo: { bg: "bg-indigo-500/20", text: "text-indigo-400" },
-  orange: { bg: "bg-orange-500/20", text: "text-orange-400" },
-};
+const STATUS_KEYS = ["confirmed", "assigned", "onway", "working", "completed", "cancelled"];
 
-function StatCard({ icon: Icon, label, value, subValue, trend, color = "fuchsia" }) {
-  const palette = COLOR_STYLE_MAP[color] || COLOR_STYLE_MAP.fuchsia;
+function StatCard({ icon: Icon, label, value, tone = "slate" }) {
+  const tones = {
+    slate: "bg-slate-500/20 text-slate-300",
+    blue: "bg-blue-500/20 text-blue-300",
+    purple: "bg-purple-500/20 text-purple-300",
+    emerald: "bg-emerald-500/20 text-emerald-300",
+    amber: "bg-amber-500/20 text-amber-300",
+    rose: "bg-rose-500/20 text-rose-300",
+  };
 
   return (
-    <div className="group rounded-xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02] p-4 transition hover:border-fuchsia-500/30 sm:p-5">
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-xs text-slate-400 sm:text-sm">{label}</p>
-          <p className="mt-1 text-xl font-bold text-white sm:text-2xl">{value}</p>
-          {subValue && <p className="mt-1 text-xs text-slate-500">{subValue}</p>}
-        </div>
-        <div className={`rounded-lg p-2 sm:p-2.5 ${palette.bg}`}>
-          <Icon className={`h-4 w-4 sm:h-5 sm:w-5 ${palette.text}`} />
-        </div>
+    <article className="rounded-xl border border-white/10 bg-slate-900/50 p-4">
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-slate-400">{label}</p>
+        <span className={`rounded-lg p-2 ${tones[tone] || tones.slate}`}>
+          <Icon className="h-4 w-4" />
+        </span>
       </div>
-      {trend && (
-        <div className="mt-2 flex items-center gap-1 text-xs">
-          {trend > 0 ? (
-            <ArrowUp className="h-3 w-3 text-emerald-400" />
-          ) : (
-            <ArrowDown className="h-3 w-3 text-rose-400" />
-          )}
-          <span className={trend > 0 ? "text-emerald-400" : "text-rose-400"}>
-            {Math.abs(trend)}%
-          </span>
-          <span className="text-slate-500">vs last month</span>
-        </div>
-      )}
-    </div>
+      <p className="mt-1 text-2xl font-semibold text-white">{value}</p>
+    </article>
   );
 }
 
-function SectionHeader({ icon: Icon, title }) {
+function ListPanel({ title, icon: Icon, rows = [], emptyLabel = "No data" }) {
   return (
-    <div className="mb-3 flex items-center gap-2">
-      <Icon className="h-5 w-5 text-fuchsia-400" />
-      <h2 className="text-base font-semibold text-white sm:text-lg">{title}</h2>
-    </div>
+    <section className="rounded-xl border border-white/10 bg-slate-900/50 p-4">
+      <div className="mb-3 flex items-center gap-2">
+        <Icon className="h-4 w-4 text-fuchsia-300" />
+        <h3 className="text-sm font-semibold text-white">{title}</h3>
+      </div>
+      {rows.length === 0 ? (
+        <p className="text-xs text-slate-500">{emptyLabel}</p>
+      ) : (
+        <div className="space-y-2">
+          {rows.map((row) => (
+            <div key={row.label} className="flex items-center justify-between text-sm">
+              <span className="text-slate-400">{row.label}</span>
+              <span className="font-semibold text-white">{row.value}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
   );
 }
 
 export default function AdminDashboardPage() {
   const [metrics, setMetrics] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState("");
+
+  const load = async ({ silent = false } = {}) => {
+    try {
+      if (silent) setRefreshing(true);
+      else setLoading(true);
+      setError("");
+
+      const res = await fetch("/api/admin/dashboard", {
+        credentials: "include",
+        cache: "no-store",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) {
+        setError(data.error || "Failed to load dashboard metrics.");
+        setMetrics(null);
+        return;
+      }
+
+      setMetrics(data.metrics || null);
+    } catch {
+      setError("Network error while loading dashboard.");
+      setMetrics(null);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
 
   useEffect(() => {
-    const load = async () => {
-      const res = await fetch("/api/admin/dashboard", { credentials: "include" });
-      const data = await res.json();
-      setMetrics(data.metrics || null);
-    };
     load();
   }, []);
+
+  const safe = useMemo(() => {
+    const row = metrics || {};
+    return {
+      usersCount: Number(row.usersCount || 0),
+      workersCount: Number(row.workersCount || 0),
+      bookingsCount: Number(row.bookingsCount || 0),
+      bookingsLast7Days: Number(row.bookingsLast7Days || 0),
+      openReports: Number(row.openReports || 0),
+      openSupportTickets: Number(row.openSupportTickets || 0),
+      pendingWorkerReviews: Number(row.pendingWorkerReviews || 0),
+      revenue: Number(row.revenue || 0),
+      avgTicketSize: Number(row.avgTicketSize || 0),
+      paidBookingRate: Number(row.paidBookingRate || 0),
+      completionRate: Number(row.completionRate || 0),
+      cancelRate: Number(row.cancelRate || 0),
+      promosCount: Number(row.promosCount || 0),
+      referralsCount: Number(row.referralsCount || 0),
+      bookingByStatus: row.bookingByStatus || {},
+      dailyBookings: row.dailyBookings || [],
+      topAreas: row.topAreas || [],
+      topCategories: row.topCategories || [],
+      onboardingFunnel: row.onboardingFunnel || {},
+      dataConsistency: row.dataConsistency || {},
+    };
+  }, [metrics]);
+
+  const alerts = useMemo(() => {
+    const rows = [];
+    if (safe.openReports > 0) rows.push({ level: "high", label: `Open reports: ${safe.openReports}` });
+    if (safe.openSupportTickets > 0) rows.push({ level: "high", label: `Open support tickets: ${safe.openSupportTickets}` });
+    if (safe.pendingWorkerReviews > 0) rows.push({ level: "medium", label: `Pending worker reviews: ${safe.pendingWorkerReviews}` });
+
+    const categoryMismatch = Number(safe.dataConsistency.workerCategoryMismatchCount || 0);
+    const duplicatePhones = Number(safe.dataConsistency.duplicateWorkerPhonesCount || 0);
+    const duplicateEmails = Number(safe.dataConsistency.duplicateWorkerEmailsCount || 0);
+
+    if (categoryMismatch > 0) rows.push({ level: "medium", label: `Worker category mismatches: ${categoryMismatch}` });
+    if (duplicatePhones > 0) rows.push({ level: "high", label: `Duplicate worker phones: ${duplicatePhones}` });
+    if (duplicateEmails > 0) rows.push({ level: "high", label: `Duplicate worker emails: ${duplicateEmails}` });
+
+    return rows;
+  }, [safe]);
+
+  const onboardingRows = [
+    { label: "Registered", value: Number(safe.onboardingFunnel.registeredWorkers || 0) },
+    { label: "Onboarded", value: Number(safe.onboardingFunnel.onboardedWorkers || 0) },
+    { label: "Submitted", value: Number(safe.onboardingFunnel.submittedWorkers || 0) },
+    { label: "Pending Review", value: Number(safe.onboardingFunnel.pendingReviewWorkers || 0) },
+    { label: "Approved", value: Number(safe.onboardingFunnel.approvedWorkers || 0) },
+    { label: "Live", value: Number(safe.onboardingFunnel.liveWorkers || 0) },
+  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
       <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
-        
-        {/* Header */}
-        <div className="mb-6 rounded-xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02] p-4 sm:mb-8 sm:p-6">
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-fuchsia-600 to-violet-600 sm:h-14 sm:w-14">
-              <LayoutDashboard className="h-6 w-6 text-white sm:h-7 sm:w-7" />
+        <div className="mb-6 rounded-xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02] p-4 sm:p-6">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-fuchsia-600 to-violet-600">
+                <LayoutDashboard className="h-6 w-6 text-white" />
+              </span>
+              <div>
+                <h1 className="text-xl font-bold text-white sm:text-2xl">Admin Dashboard</h1>
+                <p className="text-xs text-slate-400 sm:text-sm">Operations, quality, risk, and growth overview</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-xl font-bold text-white sm:text-2xl">Admin Dashboard</h1>
-              <p className="text-xs text-slate-400 sm:text-sm">
-                Control users, workers, reports, promos, CRM templates, pricing, boosts and payouts
-              </p>
-            </div>
+
+            <button
+              onClick={() => load({ silent: true })}
+              disabled={refreshing}
+              className="inline-flex items-center gap-2 self-start rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-100 disabled:opacity-60"
+            >
+              <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
+              Refresh
+            </button>
           </div>
         </div>
 
-        {/* Key Metrics Grid */}
-        <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-6">
-          <StatCard icon={Users} label="Users" value={metrics?.usersCount || 0} color="blue" />
-          <StatCard icon={Briefcase} label="Workers" value={metrics?.workersCount || 0} color="purple" />
-          <StatCard icon={Calendar} label="Bookings" value={metrics?.bookingsCount || 0} color="fuchsia" />
-          <StatCard icon={TrendingUp} label="Bookings (7d)" value={metrics?.bookingsLast7Days || 0} color="emerald" />
-          <StatCard icon={AlertCircle} label="Open Reports" value={metrics?.openReports || 0} color="amber" />
-          <StatCard icon={Ticket} label="Support Tickets" value={metrics?.openSupportTickets || 0} color="rose" />
-          <StatCard icon={Star} label="Pending Reviews" value={metrics?.pendingWorkerReviews || 0} color="yellow" />
-          <StatCard icon={DollarSign} label="Revenue" value={`₹${metrics?.revenue || 0}`} color="green" />
-          <StatCard icon={CreditCard} label="Avg Ticket" value={`₹${metrics?.avgTicketSize || 0}`} color="cyan" />
-          <StatCard icon={CheckCircle} label="Paid Bookings" value={metrics?.paidBookingsCount || 0} color="emerald" />
-          <StatCard icon={PieChart} label="Paid Rate" value={`${metrics?.paidBookingRate || 0}%`} color="violet" />
-          <StatCard icon={BarChart3} label="Completion" value={`${metrics?.completionRate || 0}%`} color="indigo" />
-          <StatCard icon={XCircle} label="Cancel Rate" value={`${metrics?.cancelRate || 0}%`} color="rose" />
-          <StatCard icon={Gift} label="Promos" value={metrics?.promosCount || 0} color="pink" />
-          <StatCard icon={Users} label="Referrals" value={metrics?.referralsCount || 0} color="orange" />
-        </div>
+        {error ? (
+          <div className="mb-4 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-sm text-rose-300">
+            {error}
+          </div>
+        ) : null}
 
-        {/* Booking Status Breakdown */}
-        <div className="mb-6 rounded-xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02] p-4 sm:mb-8 sm:p-6">
-          <SectionHeader icon={PieChart} title="Booking Status Breakdown" />
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-6">
-            {["confirmed", "assigned", "onway", "working", "completed", "cancelled"].map((status) => (
-              <div key={status} className="rounded-lg border border-white/10 bg-slate-900/40 p-3 text-center">
-                <p className="text-[10px] uppercase tracking-wider text-slate-400 sm:text-xs">{status}</p>
-                <p className="mt-1 text-base font-semibold text-white sm:text-lg">
-                  {metrics?.bookingByStatus?.[status] || 0}
-                </p>
-              </div>
+        {loading ? (
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {Array.from({ length: 8 }).map((_, idx) => (
+              <div key={idx} className="h-24 animate-pulse rounded-xl border border-white/10 bg-slate-900/40" />
             ))}
           </div>
-        </div>
+        ) : (
+          <>
+            <div className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <StatCard icon={Users} label="Users" value={safe.usersCount} tone="blue" />
+              <StatCard icon={Briefcase} label="Workers" value={safe.workersCount} tone="purple" />
+              <StatCard icon={TrendingUp} label="Bookings (7d)" value={safe.bookingsLast7Days} tone="emerald" />
+              <StatCard icon={DollarSign} label="Revenue" value={`INR ${safe.revenue}`} tone="amber" />
+              <StatCard icon={CreditCard} label="Avg Ticket" value={`INR ${safe.avgTicketSize}`} tone="blue" />
+              <StatCard icon={CheckCircle} label="Completion Rate" value={`${safe.completionRate}%`} tone="emerald" />
+              <StatCard icon={XCircle} label="Cancel Rate" value={`${safe.cancelRate}%`} tone="rose" />
+              <StatCard icon={Gift} label="Promos / Referrals" value={`${safe.promosCount} / ${safe.referralsCount}`} tone="purple" />
+            </div>
 
-        {/* Charts Row */}
-        <div className="mb-6 grid gap-4 sm:gap-6 lg:grid-cols-3">
-          {/* Daily Bookings */}
-          <div className="rounded-xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02] p-4 sm:p-6">
-            <SectionHeader icon={BarChart3} title="Daily Bookings (14d)" />
-            {(metrics?.dailyBookings || []).length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-4 text-center">
-                <BarChart3 className="h-8 w-8 text-slate-600" />
-                <p className="mt-2 text-xs text-slate-400">No data available</p>
+            <div className="mb-6 rounded-xl border border-white/10 bg-slate-900/50 p-4">
+              <div className="mb-3 flex items-center gap-2">
+                <BarChart3 className="h-4 w-4 text-fuchsia-300" />
+                <h2 className="text-sm font-semibold text-white">Booking Status Breakdown</h2>
               </div>
-            ) : (
-              <div className="space-y-2">
-                {(metrics?.dailyBookings || []).map((row) => (
-                  <div key={row.date} className="flex items-center justify-between text-sm">
-                    <span className="text-slate-400">{row.date}</span>
-                    <span className="font-semibold text-white">{row.count}</span>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+                {STATUS_KEYS.map((key) => (
+                  <div key={key} className="rounded-lg border border-white/10 bg-slate-950/60 p-3 text-center">
+                    <p className="text-[10px] uppercase tracking-wide text-slate-400">{key}</p>
+                    <p className="mt-1 text-lg font-semibold text-white">{Number(safe.bookingByStatus[key] || 0)}</p>
                   </div>
                 ))}
-              </div>
-            )}
-          </div>
-
-          {/* Top Areas */}
-          <div className="rounded-xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02] p-4 sm:p-6">
-            <SectionHeader icon={MapPin} title="Top Areas" />
-            {(metrics?.topAreas || []).length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-4 text-center">
-                <MapPin className="h-8 w-8 text-slate-600" />
-                <p className="mt-2 text-xs text-slate-400">No area data</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {(metrics?.topAreas || []).map((row) => (
-                  <div key={row.city} className="flex items-center justify-between text-sm">
-                    <span className="text-slate-400">{row.city}</span>
-                    <span className="font-semibold text-white">{row.count}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Top Categories */}
-          <div className="rounded-xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02] p-4 sm:p-6">
-            <SectionHeader icon={Layers} title="Top Categories" />
-            {(metrics?.topCategories || []).length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-4 text-center">
-                <Layers className="h-8 w-8 text-slate-600" />
-                <p className="mt-2 text-xs text-slate-400">No category data</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {(metrics?.topCategories || []).map((row) => (
-                  <div key={row.category} className="flex items-center justify-between text-sm">
-                    <span className="text-slate-400">{row.category}</span>
-                    <span className="font-semibold text-white">{row.count}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Funnel & Data Consistency Row */}
-        <div className="mb-6 grid gap-4 sm:gap-6 lg:grid-cols-2">
-          {/* Worker Onboarding Funnel */}
-          <div className="rounded-xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02] p-4 sm:p-6">
-            <SectionHeader icon={TrendingUp} title="Worker Onboarding Funnel" />
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-lg bg-slate-900/40 p-3">
-                  <p className="text-xs text-slate-400">Registered</p>
-                  <p className="text-lg font-semibold text-white">{metrics?.onboardingFunnel?.registeredWorkers || 0}</p>
-                </div>
-                <div className="rounded-lg bg-slate-900/40 p-3">
-                  <p className="text-xs text-slate-400">Onboarded</p>
-                  <p className="text-lg font-semibold text-white">{metrics?.onboardingFunnel?.onboardedWorkers || 0}</p>
-                </div>
-                <div className="rounded-lg bg-slate-900/40 p-3">
-                  <p className="text-xs text-slate-400">Submitted</p>
-                  <p className="text-lg font-semibold text-white">{metrics?.onboardingFunnel?.submittedWorkers || 0}</p>
-                </div>
-                <div className="rounded-lg bg-slate-900/40 p-3">
-                  <p className="text-xs text-slate-400">Pending Review</p>
-                  <p className="text-lg font-semibold text-white">{metrics?.onboardingFunnel?.pendingReviewWorkers || 0}</p>
-                </div>
-                <div className="rounded-lg bg-slate-900/40 p-3">
-                  <p className="text-xs text-slate-400">Approved</p>
-                  <p className="text-lg font-semibold text-white">{metrics?.onboardingFunnel?.approvedWorkers || 0}</p>
-                </div>
-                <div className="rounded-lg bg-slate-900/40 p-3">
-                  <p className="text-xs text-slate-400">Live</p>
-                  <p className="text-lg font-semibold text-white">{metrics?.onboardingFunnel?.liveWorkers || 0}</p>
-                </div>
-              </div>
-              
-              {/* Drop-off Rates */}
-              <div className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3">
-                <p className="text-xs font-medium text-amber-400">Drop-off Analysis</p>
-                <div className="mt-2 space-y-1 text-xs">
-                  <p className="flex justify-between text-slate-300">
-                    <span>Registered no onboarding:</span>
-                    <span className="font-medium text-amber-400">{metrics?.onboardingFunnel?.dropOff?.registeredNoOnboarding || 0}</span>
-                  </p>
-                  <p className="flex justify-between text-slate-300">
-                    <span>Onboarded no submission:</span>
-                    <span className="font-medium text-amber-400">{metrics?.onboardingFunnel?.dropOff?.onboardedNoSubmission || 0}</span>
-                  </p>
-                  <p className="flex justify-between text-slate-300">
-                    <span>Submitted not approved:</span>
-                    <span className="font-medium text-amber-400">{metrics?.onboardingFunnel?.dropOff?.submittedNotApproved || 0}</span>
-                  </p>
-                </div>
               </div>
             </div>
-          </div>
 
-          {/* Data Consistency */}
-          <div className="rounded-xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02] p-4 sm:p-6">
-            <SectionHeader icon={Database} title="Data Consistency" />
-            <div className="space-y-3">
-              <div className="grid gap-3">
-                <div className="rounded-lg bg-slate-900/40 p-3">
-                  <p className="text-xs text-slate-400">Worker category mismatches</p>
-                  <p className="text-lg font-semibold text-amber-400">{metrics?.dataConsistency?.workerCategoryMismatchCount || 0}</p>
-                </div>
-                <div className="rounded-lg bg-slate-900/40 p-3">
-                  <p className="text-xs text-slate-400">Duplicate worker phones</p>
-                  <p className="text-lg font-semibold text-rose-400">{metrics?.dataConsistency?.duplicateWorkerPhonesCount || 0}</p>
-                </div>
-                <div className="rounded-lg bg-slate-900/40 p-3">
-                  <p className="text-xs text-slate-400">Duplicate worker emails</p>
-                  <p className="text-lg font-semibold text-rose-400">{metrics?.dataConsistency?.duplicateWorkerEmailsCount || 0}</p>
-                </div>
-              </div>
+            <div className="mb-6 grid gap-3 lg:grid-cols-3">
+              <ListPanel
+                title="Daily Bookings (14d)"
+                icon={Clock3}
+                rows={safe.dailyBookings.map((row) => ({ label: row.date, value: row.count }))}
+                emptyLabel="No daily booking trend yet"
+              />
+              <ListPanel
+                title="Top Areas"
+                icon={MapPin}
+                rows={safe.topAreas.map((row) => ({ label: row.city, value: row.count }))}
+                emptyLabel="No area data"
+              />
+              <ListPanel
+                title="Top Categories"
+                icon={Layers}
+                rows={safe.topCategories.map((row) => ({ label: row.category, value: row.count }))}
+                emptyLabel="No category data"
+              />
+            </div>
 
-              {/* Unknown Worker Categories */}
-              {(metrics?.dataConsistency?.unknownWorkerCategories || []).length > 0 && (
-                <div className="rounded-lg border border-white/10 bg-slate-900/40 p-3">
-                  <p className="text-xs font-medium text-slate-400 mb-2">Unknown worker categories</p>
-                  <div className="space-y-1">
-                    {(metrics?.dataConsistency?.unknownWorkerCategories || []).map((row) => (
-                      <p key={row.category} className="flex justify-between text-xs">
-                        <span className="text-slate-300">{row.category}:</span>
-                        <span className="font-medium text-white">{row.count}</span>
-                      </p>
+            <div className="mb-6 grid gap-3 lg:grid-cols-2">
+              <section className="rounded-xl border border-white/10 bg-slate-900/50 p-4">
+                <div className="mb-3 flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4 text-fuchsia-300" />
+                  <h2 className="text-sm font-semibold text-white">Worker Onboarding Funnel</h2>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {onboardingRows.map((row) => (
+                    <div key={row.label} className="rounded-lg border border-white/10 bg-slate-950/60 p-3">
+                      <p className="text-xs text-slate-400">{row.label}</p>
+                      <p className="mt-1 text-lg font-semibold text-white">{row.value}</p>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              <section className="rounded-xl border border-white/10 bg-slate-900/50 p-4">
+                <div className="mb-3 flex items-center gap-2">
+                  <ShieldAlert className="h-4 w-4 text-fuchsia-300" />
+                  <h2 className="text-sm font-semibold text-white">Operational Alerts</h2>
+                </div>
+
+                {alerts.length === 0 ? (
+                  <p className="text-xs text-slate-500">No active alerts</p>
+                ) : (
+                  <div className="space-y-2">
+                    {alerts.map((row) => (
+                      <div
+                        key={row.label}
+                        className={`rounded-lg border p-2 text-sm ${
+                          row.level === "high"
+                            ? "border-rose-500/30 bg-rose-500/10 text-rose-300"
+                            : "border-amber-500/30 bg-amber-500/10 text-amber-300"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <AlertTriangle className="h-4 w-4" />
+                          {row.label}
+                        </div>
+                      </div>
                     ))}
                   </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+                )}
 
-        {/* Quick Actions */}
-        <div className="rounded-xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02] p-4 sm:p-6">
-          <SectionHeader icon={Settings} title="Quick Actions" />
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7">
-            <Link href="/admin/users" className="rounded-lg bg-slate-800/80 px-3 py-2.5 text-center text-xs text-slate-200 transition hover:bg-slate-700 hover:text-white sm:text-sm">
-              Users
-            </Link>
-            <Link href="/admin/workers" className="rounded-lg bg-slate-800/80 px-3 py-2.5 text-center text-xs text-slate-200 transition hover:bg-slate-700 hover:text-white sm:text-sm">
-              Workers
-            </Link>
-            <Link href="/admin/orders" className="rounded-lg bg-slate-800/80 px-3 py-2.5 text-center text-xs text-slate-200 transition hover:bg-slate-700 hover:text-white sm:text-sm">
-              Orders
-            </Link>
-            <Link href="/admin/reports" className="rounded-lg bg-slate-800/80 px-3 py-2.5 text-center text-xs text-slate-200 transition hover:bg-slate-700 hover:text-white sm:text-sm">
-              Reports
-            </Link>
-            <Link href="/admin/fraud" className="rounded-lg bg-slate-800/80 px-3 py-2.5 text-center text-xs text-slate-200 transition hover:bg-slate-700 hover:text-white sm:text-sm">
-              Fraud
-            </Link>
-            <Link href="/admin/support" className="rounded-lg bg-slate-800/80 px-3 py-2.5 text-center text-xs text-slate-200 transition hover:bg-slate-700 hover:text-white sm:text-sm">
-              Support
-            </Link>
-            <Link href="/admin/boost-plans" className="rounded-lg bg-slate-800/80 px-3 py-2.5 text-center text-xs text-slate-200 transition hover:bg-slate-700 hover:text-white sm:text-sm">
-              Boost Plans
-            </Link>
-            <Link href="/admin/reschedule-policy" className="rounded-lg bg-slate-800/80 px-3 py-2.5 text-center text-xs text-slate-200 transition hover:bg-slate-700 hover:text-white sm:text-sm">
-              Reschedule
-            </Link>
-            <Link href="/admin/payments" className="rounded-lg bg-slate-800/80 px-3 py-2.5 text-center text-xs text-slate-200 transition hover:bg-slate-700 hover:text-white sm:text-sm">
-              Payments
-            </Link>
-            <Link href="/admin/payouts" className="rounded-lg bg-slate-800/80 px-3 py-2.5 text-center text-xs text-slate-200 transition hover:bg-slate-700 hover:text-white sm:text-sm">
-              Payouts
-            </Link>
-            <Link href="/admin/cms" className="rounded-lg bg-slate-800/80 px-3 py-2.5 text-center text-xs text-slate-200 transition hover:bg-slate-700 hover:text-white sm:text-sm">
-              CMS
-            </Link>
-            <Link href="/admin/promos" className="rounded-lg bg-slate-800/80 px-3 py-2.5 text-center text-xs text-slate-200 transition hover:bg-slate-700 hover:text-white sm:text-sm">
-              Promos
-            </Link>
-            <Link href="/admin/crm-templates" className="rounded-lg bg-slate-800/80 px-3 py-2.5 text-center text-xs text-slate-200 transition hover:bg-slate-700 hover:text-white sm:text-sm">
-              CRM
-            </Link>
-            <Link href="/admin/data-consistency" className="rounded-lg bg-slate-800/80 px-3 py-2.5 text-center text-xs text-slate-200 transition hover:bg-slate-700 hover:text-white sm:text-sm">
-              Data
-            </Link>
-          </div>
-        </div>
+                <div className="mt-4 rounded-lg border border-white/10 bg-slate-950/60 p-3">
+                  <p className="text-xs text-slate-400">Data consistency snapshot</p>
+                  <div className="mt-2 grid grid-cols-3 gap-2 text-xs">
+                    <div className="rounded bg-slate-900/60 p-2 text-center">
+                      <p className="text-slate-500">Category mismatch</p>
+                      <p className="font-semibold text-white">{Number(safe.dataConsistency.workerCategoryMismatchCount || 0)}</p>
+                    </div>
+                    <div className="rounded bg-slate-900/60 p-2 text-center">
+                      <p className="text-slate-500">Dup phones</p>
+                      <p className="font-semibold text-white">{Number(safe.dataConsistency.duplicateWorkerPhonesCount || 0)}</p>
+                    </div>
+                    <div className="rounded bg-slate-900/60 p-2 text-center">
+                      <p className="text-slate-500">Dup emails</p>
+                      <p className="font-semibold text-white">{Number(safe.dataConsistency.duplicateWorkerEmailsCount || 0)}</p>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </div>
+
+            <section className="rounded-xl border border-white/10 bg-slate-900/50 p-4">
+              <div className="mb-3 flex items-center gap-2">
+                <Database className="h-4 w-4 text-fuchsia-300" />
+                <h2 className="text-sm font-semibold text-white">Quick Actions</h2>
+              </div>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-7">
+                <Link href="/admin/orders" className="rounded bg-slate-800 px-3 py-2 text-sm hover:bg-slate-700">Orders</Link>
+                <Link href="/admin/workers" className="rounded bg-slate-800 px-3 py-2 text-sm hover:bg-slate-700">Workers</Link>
+                <Link href="/admin/users" className="rounded bg-slate-800 px-3 py-2 text-sm hover:bg-slate-700">Users</Link>
+                <Link href="/admin/payments" className="rounded bg-slate-800 px-3 py-2 text-sm hover:bg-slate-700">Payments</Link>
+                <Link href="/admin/payouts" className="rounded bg-slate-800 px-3 py-2 text-sm hover:bg-slate-700">Payouts</Link>
+                <Link href="/admin/reports" className="rounded bg-slate-800 px-3 py-2 text-sm hover:bg-slate-700">Reports</Link>
+                <Link href="/admin/support" className="rounded bg-slate-800 px-3 py-2 text-sm hover:bg-slate-700">Support</Link>
+                <Link href="/admin/fraud" className="rounded bg-slate-800 px-3 py-2 text-sm hover:bg-slate-700">Fraud</Link>
+                <Link href="/admin/promos" className="rounded bg-slate-800 px-3 py-2 text-sm hover:bg-slate-700">Promos</Link>
+                <Link href="/admin/boost-plans" className="rounded bg-slate-800 px-3 py-2 text-sm hover:bg-slate-700">Boost Plans</Link>
+                <Link href="/admin/cms" className="rounded bg-slate-800 px-3 py-2 text-sm hover:bg-slate-700">CMS</Link>
+                <Link href="/admin/crm-templates" className="rounded bg-slate-800 px-3 py-2 text-sm hover:bg-slate-700">CRM</Link>
+                <Link href="/admin/reschedule-policy" className="rounded bg-slate-800 px-3 py-2 text-sm hover:bg-slate-700">Reschedule</Link>
+                <Link href="/admin/data-consistency" className="rounded bg-slate-800 px-3 py-2 text-sm hover:bg-slate-700">Data</Link>
+              </div>
+            </section>
+          </>
+        )}
       </div>
     </div>
   );

@@ -28,7 +28,10 @@ export default function WorkerJobsPage() {
   };
 
   useEffect(() => {
-    load();
+    const timeout = setTimeout(() => {
+      load();
+    }, 0);
+    return () => clearTimeout(timeout);
   }, []);
 
   const updateStatus = async (job, nextStatus) => {

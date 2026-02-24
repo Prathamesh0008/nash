@@ -7,7 +7,7 @@ import { createSessionResponse } from "@/lib/session";
 import { enforceRateLimit, getRateLimitKey } from "@/lib/rateLimit";
 
 export async function POST(req) {
-  const rl = enforceRateLimit({
+  const rl = await enforceRateLimit({
     key: getRateLimitKey(req, "signin"),
     limit: 10,
     windowMs: 10 * 60 * 1000,

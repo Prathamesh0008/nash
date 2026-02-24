@@ -37,19 +37,25 @@ export default function AdminCmsPage() {
         }
       }
     };
-    load();
+    const timeout = setTimeout(() => {
+      load();
+    }, 0);
+    return () => clearTimeout(timeout);
   }, []);
 
   // Validate JSON on change
   useEffect(() => {
-    try {
-      const parsed = JSON.parse(jsonText);
-      setIsValid(true);
-      setParsedJson(parsed);
-    } catch {
-      setIsValid(false);
-      setParsedJson(null);
-    }
+    const timeout = setTimeout(() => {
+      try {
+        const parsed = JSON.parse(jsonText);
+        setIsValid(true);
+        setParsedJson(parsed);
+      } catch {
+        setIsValid(false);
+        setParsedJson(null);
+      }
+    }, 0);
+    return () => clearTimeout(timeout);
   }, [jsonText]);
 
   const save = async () => {

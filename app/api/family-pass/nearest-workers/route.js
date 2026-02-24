@@ -79,6 +79,19 @@ function estimateArrivalMinutes({ distanceKm, responseTimeAvg }) {
   return Math.round((distancePart + responsePart) / 2);
 }
 
+function buildPriorityNote({ mode, fallbackReason }) {
+  if (mode === "geo") {
+    return "Family Pass priority queue active. Ranked by true map distance (km), availability, and performance.";
+  }
+  if (fallbackReason === "user_geo_missing") {
+    return "Family Pass priority queue active. Your geo coordinates are missing. Use current location for true map ranking.";
+  }
+  if (fallbackReason === "worker_geo_missing") {
+    return "Family Pass priority queue active. Some workers do not have geo coordinates yet, so area fallback ranking is used.";
+  }
+  return "Family Pass priority queue active. No geo-distance match found for selected filters, fallback ranking used.";
+}
+
 export async function GET(req) {
   await dbConnect();
   const { user, errorResponse, refreshedResponse } = await requireAuth({ roles: ["user"] });
@@ -161,10 +174,21 @@ export async function GET(req) {
   };
 
   const myLatLng = pickLatLngFromValue(myAddress);
+  const hasUserGeo = Boolean(myLatLng);
+  const userAddressWithCoords = hasUserGeo
+    ? {
+        ...myAddress,
+        lat: myLatLng.lat,
+        lng: myLatLng.lng,
+        location: toGeoPoint(myLatLng.lat, myLatLng.lng),
+      }
+    : myAddress;
   let candidates = [];
   let mode = "fallback";
+  let fallbackReason = hasUserGeo ? "no_geo_match" : "user_geo_missing";
+  let geoCandidatePool = 0;
 
-  if (myLatLng) {
+  if (hasUserGeo) {
     const geoPoint = toGeoPoint(myLatLng.lat, myLatLng.lng);
     const geoRows = await WorkerProfile.aggregate([
       {
@@ -186,6 +210,38 @@ export async function GET(req) {
         ...row,
         distanceKm: Number((Number(row.distanceMeters || 0) / 1000).toFixed(2)),
       }));
+    } else {
+      const geoCoordinateRows = await WorkerProfile.find({
+        ...baseQuery,
+        serviceAreas: {
+          $elemMatch: {
+            lat: { $ne: null },
+            lng: { $ne: null },
+          },
+        },
+      })
+        .limit(Math.max(limit * 8, 80))
+        .lean();
+
+      geoCandidatePool = geoCoordinateRows.length;
+      const geoCandidates = geoCoordinateRows
+        .map((row) => {
+          const areaMeta = getWorkerAreaByBestDistance(row, userAddressWithCoords);
+          return {
+            ...row,
+            distanceKm: areaMeta.distanceKm == null ? null : Number(areaMeta.distanceKm.toFixed(2)),
+          };
+        })
+        .filter((row) => row.distanceKm != null && row.distanceKm <= maxKm)
+        .sort((a, b) => Number(a.distanceKm || 999) - Number(b.distanceKm || 999))
+        .slice(0, Math.max(limit * 4, 30));
+
+      if (geoCandidates.length > 0) {
+        mode = "geo";
+        candidates = geoCandidates;
+      } else {
+        fallbackReason = geoCandidatePool === 0 ? "worker_geo_missing" : "no_geo_match";
+      }
     }
   }
 
@@ -209,9 +265,10 @@ export async function GET(req) {
       ok: true,
       workers: [],
       mode,
+      fallbackReason,
       slotTime: slotTime.toISOString(),
       slotLocal: toLocalIsoForInput(slotTime),
-      note: "No workers found near your location for this service.",
+      note: buildPriorityNote({ mode, fallbackReason }),
     });
     return applyRefreshCookies(res, refreshedResponse);
   }
@@ -222,6 +279,7 @@ export async function GET(req) {
       ok: true,
       workers: [],
       mode,
+      fallbackReason,
       slotTime: slotTime.toISOString(),
       slotLocal: toLocalIsoForInput(slotTime),
       note: "Nearby workers exist but are not available at the selected slot.",
@@ -245,6 +303,7 @@ export async function GET(req) {
       ok: true,
       workers: [],
       mode,
+      fallbackReason,
       slotTime: slotTime.toISOString(),
       slotLocal: toLocalIsoForInput(slotTime),
       note: "Nearby workers are currently busy at this slot.",
@@ -302,6 +361,9 @@ export async function GET(req) {
     ok: true,
     priorityQueueVisible: true,
     mode,
+    fallbackReason,
+    userGeoAvailable: hasUserGeo,
+    workerGeoCandidatePool: geoCandidatePool,
     slotTime: slotTime.toISOString(),
     slotLocal: toLocalIsoForInput(slotTime),
     service: service
@@ -313,10 +375,7 @@ export async function GET(req) {
       : null,
     workers: ranked,
     fasterRecommendations,
-    note:
-      mode === "geo"
-        ? "Family Pass priority queue active. Ranked by true map distance (km), availability, and performance."
-        : "Family Pass priority queue active. Geo coordinates missing for some users/workers, fallback ranking used.",
+    note: buildPriorityNote({ mode, fallbackReason }),
   });
   return applyRefreshCookies(res, refreshedResponse);
 }

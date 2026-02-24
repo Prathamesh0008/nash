@@ -31,8 +31,10 @@ export default function ServiceDetailPage() {
   return (
     <section className="space-y-4">
       <div className="panel">
-        <h1 className="text-2xl font-semibold">All-Rounder Worker Visit</h1>
-        <p className="text-sm text-slate-400">Choose worker by area, rating and availability for flexible support.</p>
+        <h1 className="text-2xl font-semibold">{data.service?.title || "Service Details"}</h1>
+        <p className="text-sm text-slate-400">
+          {data.service?.description || "Choose therapists by area, rating, and availability for home service."}
+        </p>
 
         <div className="mt-4 grid gap-3 md:grid-cols-3">
           <input className="rounded border border-slate-700 bg-slate-900 p-2" placeholder="City" value={city} onChange={(e) => setCity(e.target.value)} />
@@ -62,7 +64,7 @@ export default function ServiceDetailPage() {
             </div>
             <div className="flex gap-2">
               <Link href={`/booking/new?serviceId=${data.service?._id}&workerId=${worker.id}`} className="rounded bg-sky-700 px-3 py-2 text-sm text-white hover:bg-sky-600">
-                Book This Worker
+                Book This Therapist
               </Link>
               <Link href={`/workers/${worker.id}`} className="rounded bg-slate-800 px-3 py-2 text-sm hover:bg-slate-700">
                 Profile

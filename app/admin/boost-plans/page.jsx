@@ -39,7 +39,10 @@ export default function AdminBoostPlansPage() {
   };
 
   useEffect(() => {
-    load();
+    const timeout = setTimeout(() => {
+      load();
+    }, 0);
+    return () => clearTimeout(timeout);
   }, []);
 
   const submit = async (e) => {

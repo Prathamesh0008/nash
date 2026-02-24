@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Calendar, Clock, MessageCircle, Repeat, Eye, CreditCard, AlertCircle } from "lucide-react";
+import RebookOptionsModal from "@/components/RebookOptionsModal";
 
 const STATUS_STEPS = ["confirmed", "assigned", "onway", "working", "completed"];
 
@@ -18,19 +20,139 @@ function getStatusColor(status) {
   return colors[status] || "bg-slate-500/20 text-slate-400 border-slate-500/30";
 }
 
+function emitRebookUiEvent(event, payload = {}) {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(
+    new CustomEvent("nash:rebook", {
+      detail: {
+        event,
+        payload,
+        at: new Date().toISOString(),
+      },
+    })
+  );
+}
+
 export default function OrdersPage() {
+  const router = useRouter();
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [actionMsg, setActionMsg] = useState("");
+  const [rebookLoadingById, setRebookLoadingById] = useState({});
+  const [rebookModal, setRebookModal] = useState({
+    open: false,
+    booking: null,
+    preview: null,
+    submitting: false,
+    error: "",
+  });
 
   useEffect(() => {
     const load = async () => {
-      const res = await fetch("/api/bookings/me", { credentials: "include" });
-      const data = await res.json();
-      setBookings(data.bookings || []);
-      setLoading(false);
+      try {
+        const res = await fetch("/api/bookings/me", { credentials: "include" });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data?.ok) {
+          setError(data?.error || "Failed to load orders");
+          setBookings([]);
+          return;
+        }
+        setBookings(data.bookings || []);
+      } catch {
+        setError("Failed to load orders");
+        setBookings([]);
+      } finally {
+        setLoading(false);
+      }
     };
     load();
   }, []);
+
+  const openRebookOptions = async (booking) => {
+    const bookingId = String(booking?._id || "");
+    if (!bookingId || rebookLoadingById[bookingId]) return;
+
+    setRebookLoadingById((prev) => ({ ...prev, [bookingId]: true }));
+    setError("");
+    setActionMsg("");
+
+    try {
+      const previewRes = await fetch(`/api/bookings/${bookingId}/rebook-preview`, {
+        credentials: "include",
+        cache: "no-store",
+      });
+      const previewData = await previewRes.json().catch(() => ({}));
+      if (!previewRes.ok || !previewData.ok) {
+        setError(previewData.error || "Unable to prepare rebook");
+        emitRebookUiEvent("preview_failed", { bookingId, reason: previewData.error || "preview_failed" });
+        return;
+      }
+      setRebookModal({
+        open: true,
+        booking,
+        preview: previewData.preview || null,
+        submitting: false,
+        error: "",
+      });
+      emitRebookUiEvent("preview_loaded", {
+        bookingId,
+        eligible: Boolean(previewData?.preview?.eligibility?.eligible),
+        recommendedWorkerPreference: previewData?.preview?.recommendedWorkerPreference || "auto",
+      });
+    } finally {
+      setRebookLoadingById((prev) => ({ ...prev, [bookingId]: false }));
+    }
+  };
+
+  const closeRebookModal = () => {
+    if (rebookModal.submitting) return;
+    setRebookModal((prev) => ({ ...prev, open: false, submitting: false, error: "" }));
+  };
+
+  const submitRebook = async ({ workerPreference, strictSameWorker }) => {
+    const booking = rebookModal.booking;
+    const bookingId = String(booking?._id || "");
+    if (!bookingId || rebookModal.submitting) return;
+
+    setRebookModal((prev) => ({ ...prev, submitting: true, error: "" }));
+    setRebookLoadingById((prev) => ({ ...prev, [bookingId]: true }));
+    emitRebookUiEvent("submit_started", { bookingId, workerPreference, strictSameWorker });
+
+    try {
+      const rebookRes = await fetch(`/api/bookings/${bookingId}/rebook`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          slotTime: rebookModal?.preview?.suggestedSlotTime || undefined,
+          workerPreference,
+          strictSameWorker,
+          paymentMethod: booking?.paymentMethod || "online",
+        }),
+      });
+      const rebookData = await rebookRes.json().catch(() => ({}));
+      if (!rebookRes.ok || !rebookData.ok || !rebookData?.booking?._id) {
+        const message = rebookData.error || "Rebook failed";
+        setRebookModal((prev) => ({ ...prev, submitting: false, error: message }));
+        emitRebookUiEvent("submit_failed", { bookingId, reason: message });
+        return;
+      }
+
+      setRebookModal({ open: false, booking: null, preview: null, submitting: false, error: "" });
+      setActionMsg("Rebook created successfully. Redirecting...");
+      emitRebookUiEvent("submit_success", {
+        bookingId,
+        newBookingId: String(rebookData.booking._id),
+      });
+      router.push(`/orders/${rebookData.booking._id}`);
+    } catch {
+      setRebookModal((prev) => ({ ...prev, submitting: false, error: "Rebook failed" }));
+      emitRebookUiEvent("submit_failed", { bookingId, reason: "network_error" });
+    } finally {
+      setRebookLoadingById((prev) => ({ ...prev, [bookingId]: false }));
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
@@ -53,6 +175,18 @@ export default function OrdersPage() {
             </Link>
           </div>
         </div>
+
+        {error && (
+          <div className="mb-4 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-sm text-rose-300">
+            {error}
+          </div>
+        )}
+
+        {actionMsg && (
+          <div className="mb-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-300">
+            {actionMsg}
+          </div>
+        )}
 
         {/* Loading State */}
         {loading && (
@@ -107,6 +241,11 @@ export default function OrdersPage() {
                         <span className={`inline-flex w-fit items-center rounded-full border px-2 py-0.5 text-xs font-medium sm:px-3 sm:py-1 ${getStatusColor(booking.status)}`}>
                           {booking.status}
                         </span>
+                        {booking.isRebook && (
+                          <span className="inline-flex w-fit items-center rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-300 sm:px-3 sm:py-1">
+                            Rebook
+                          </span>
+                        )}
                       </div>
                       
                       {/* Time Slot */}
@@ -120,6 +259,17 @@ export default function OrdersPage() {
                           minute: '2-digit'
                         })}</span>
                       </div>
+
+                      {booking.isRebook && booking.sourceBooking && (
+                        <p className="mt-2 text-xs text-emerald-300/90">
+                          Rebooked from order #{String(booking.sourceBooking._id).slice(-6)} on{" "}
+                          {new Date(booking.sourceBooking.slotTime).toLocaleString("en-IN", {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                          })}
+                        </p>
+                      )}
                     </div>
 
                     {/* Right Side - Price */}
@@ -203,6 +353,16 @@ export default function OrdersPage() {
                       <span className="hidden sm:inline">Book</span> Again
                     </Link>
 
+                    <button
+                      type="button"
+                      onClick={() => openRebookOptions(booking)}
+                      disabled={Boolean(rebookLoadingById[String(booking._id)])}
+                      className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-emerald-600 to-cyan-600 px-3 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60 sm:rounded-xl sm:px-4 sm:py-2.5"
+                    >
+                      <Repeat className="h-4 w-4" />
+                      {rebookLoadingById[String(booking._id)] ? "Preparing..." : "One-Tap Rebook"}
+                    </button>
+
                     {booking.conversationId && (
                       <Link
                         href={`/chat/${booking.conversationId}`}
@@ -218,6 +378,17 @@ export default function OrdersPage() {
             ))}
           </div>
         )}
+
+        <RebookOptionsModal
+          key={`${String(rebookModal.booking?._id || "none")}:${String(rebookModal.preview?.suggestedSlotTime || "")}`}
+          open={rebookModal.open}
+          sourceBooking={rebookModal.booking}
+          preview={rebookModal.preview}
+          submitting={rebookModal.submitting}
+          error={rebookModal.error}
+          onClose={closeRebookModal}
+          onConfirm={submitRebook}
+        />
       </div>
     </div>
   );

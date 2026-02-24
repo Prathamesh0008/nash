@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 
-const secret = new TextEncoder().encode(process.env.JWT_SECRET || "dev_access_secret");
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error("Missing JWT_SECRET in environment");
+}
+const secret = new TextEncoder().encode(JWT_SECRET);
 
 const authPages = ["/auth/login", "/auth/signup", "/admin/login", "/login", "/register"];
 

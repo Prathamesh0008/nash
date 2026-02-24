@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getSocket } from "@/lib/socket";
+import RebookOptionsModal from "@/components/RebookOptionsModal";
 import {
   Calendar,
   Clock,
@@ -72,7 +73,56 @@ function getStatusColor(status) {
   return colors[status] || "bg-slate-500/20 text-slate-400 border-slate-500/30";
 }
 
+function toHeadingText(heading) {
+  const value = Number(heading);
+  if (!Number.isFinite(value) || value < 0 || value > 360) return "-";
+  const segments = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+  const normalized = ((value % 360) + 360) % 360;
+  const index = Math.round(normalized / 45) % segments.length;
+  return segments[index];
+}
+
+function formatTrackingAge(ageSec) {
+  const value = Number(ageSec);
+  if (!Number.isFinite(value)) return "-";
+  if (value < 60) return `${value}s ago`;
+  const minutes = Math.floor(value / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  return `${hours}h ago`;
+}
+
+function formatDistanceKm(distanceKm) {
+  const value = Number(distanceKm);
+  if (!Number.isFinite(value)) return "-";
+  if (value < 1) return `${Math.round(value * 1000)} m`;
+  return `${value.toFixed(2)} km`;
+}
+
+function formatEta(etaMinutes) {
+  const value = Number(etaMinutes);
+  if (!Number.isFinite(value) || value < 1) return "-";
+  if (value < 60) return `${value} min`;
+  const hours = Math.floor(value / 60);
+  const minutes = value % 60;
+  return minutes ? `${hours}h ${minutes}m` : `${hours}h`;
+}
+
+function emitRebookUiEvent(event, payload = {}) {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(
+    new CustomEvent("nash:rebook", {
+      detail: {
+        event,
+        payload,
+        at: new Date().toISOString(),
+      },
+    })
+  );
+}
+
 export default function OrderDetailPage() {
+  const router = useRouter();
   const params = useParams();
   const bookingId = Array.isArray(params?.id) ? params.id[0] : params?.id;
   const [booking, setBooking] = useState(null);
@@ -87,6 +137,11 @@ export default function OrderDetailPage() {
   const [tracking, setTracking] = useState(null);
   const [trackingLoading, setTrackingLoading] = useState(false);
   const [trackingError, setTrackingError] = useState("");
+  const [rebookLoading, setRebookLoading] = useState(false);
+  const [rebookPreview, setRebookPreview] = useState(null);
+  const [rebookModalOpen, setRebookModalOpen] = useState(false);
+  const [rebookSubmitting, setRebookSubmitting] = useState(false);
+  const [rebookModalError, setRebookModalError] = useState("");
 
   const socketRef = useRef(null);
   const trackingTokenRef = useRef("");
@@ -98,7 +153,7 @@ export default function OrderDetailPage() {
     return socketRef.current;
   }, []);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     if (!bookingId) return;
     const [bookingRes, policyRes] = await Promise.all([
       fetch(`/api/bookings/${bookingId}`, { credentials: "include" }),
@@ -114,11 +169,11 @@ export default function OrderDetailPage() {
     }
     setBooking(bookingData.booking);
     if (policyRes.ok && policyData.ok) setPolicy(policyData.policy || null);
-  };
+  }, [bookingId]);
 
   useEffect(() => {
     load();
-  }, [bookingId]);
+  }, [load]);
 
   const loadTracking = useCallback(
     async ({ silent = false } = {}) => {
@@ -155,6 +210,15 @@ export default function OrderDetailPage() {
         updatedAt: payload?.sentAt || new Date().toISOString(),
         lastLocation: liveLocation,
         trail: [...(prev?.trail || []).slice(-39), liveLocation].filter(Boolean),
+        summary: {
+          ...(prev?.summary || {}),
+          isStale: false,
+          lastUpdateAgeSec: 0,
+          speedKmph: Number.isFinite(Number(liveLocation?.speed))
+            ? Number((Number(liveLocation.speed) * 3.6).toFixed(1))
+            : prev?.summary?.speedKmph || null,
+          headingText: toHeadingText(liveLocation?.heading),
+        },
       }));
     };
 
@@ -253,6 +317,86 @@ export default function OrderDetailPage() {
     await load();
   };
 
+  const openRebookOptions = async () => {
+    if (!bookingId || rebookLoading) return;
+
+    setRebookLoading(true);
+    setRebookModalError("");
+    setError("");
+    setActionMsg("");
+
+    try {
+      const previewRes = await fetch(`/api/bookings/${bookingId}/rebook-preview`, {
+        credentials: "include",
+        cache: "no-store",
+      });
+      const previewData = await previewRes.json().catch(() => ({}));
+      if (!previewRes.ok || !previewData.ok) {
+        setError(previewData.error || "Unable to prepare rebook");
+        emitRebookUiEvent("preview_failed", { bookingId, reason: previewData.error || "preview_failed" });
+        return;
+      }
+      setRebookPreview(previewData.preview || null);
+      setRebookModalOpen(true);
+      emitRebookUiEvent("preview_loaded", {
+        bookingId,
+        eligible: Boolean(previewData?.preview?.eligibility?.eligible),
+        recommendedWorkerPreference: previewData?.preview?.recommendedWorkerPreference || "auto",
+      });
+    } finally {
+      setRebookLoading(false);
+    }
+  };
+
+  const closeRebookModal = () => {
+    if (rebookSubmitting) return;
+    setRebookModalOpen(false);
+    setRebookModalError("");
+  };
+
+  const submitRebook = async ({ workerPreference, strictSameWorker }) => {
+    if (!bookingId || rebookSubmitting) return;
+
+    setRebookSubmitting(true);
+    setRebookModalError("");
+    emitRebookUiEvent("submit_started", { bookingId, workerPreference, strictSameWorker });
+
+    try {
+      const rebookRes = await fetch(`/api/bookings/${bookingId}/rebook`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          slotTime: rebookPreview?.suggestedSlotTime || undefined,
+          workerPreference,
+          strictSameWorker,
+          paymentMethod: booking?.paymentMethod || "online",
+        }),
+      });
+      const rebookData = await rebookRes.json().catch(() => ({}));
+      if (!rebookRes.ok || !rebookData.ok || !rebookData?.booking?._id) {
+        const message = rebookData.error || "Rebook failed";
+        setRebookModalError(message);
+        emitRebookUiEvent("submit_failed", { bookingId, reason: message });
+        return;
+      }
+
+      setRebookModalOpen(false);
+      setRebookPreview(null);
+      setActionMsg("Rebook created successfully. Redirecting...");
+      emitRebookUiEvent("submit_success", {
+        bookingId,
+        newBookingId: String(rebookData.booking._id),
+      });
+      router.push(`/orders/${rebookData.booking._id}`);
+    } catch {
+      setRebookModalError("Rebook failed");
+      emitRebookUiEvent("submit_failed", { bookingId, reason: "network_error" });
+    } finally {
+      setRebookSubmitting(false);
+    }
+  };
+
   if (!booking) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
@@ -277,11 +421,29 @@ export default function OrderDetailPage() {
   const canRequestReassign = ["assigned", "onway"].includes(booking.status) && Boolean(booking.workerId);
   const feePreview = estimatePolicyFee(policy, booking.status, booking.slotTime);
   const trackingPoint = tracking?.lastLocation || null;
+  const trackingSummary = tracking?.summary || {};
+  const lastUpdateAgeSec = Number(trackingSummary?.lastUpdateAgeSec);
+  const trackingIsStale = Boolean(trackingSummary?.isStale);
+  const trackingSpeedKmph = trackingSummary?.speedKmph ?? null;
+  const trackingHeadingText = trackingSummary?.headingText || toHeadingText(trackingPoint?.heading);
+  const trackingTrailPoints = Number(trackingSummary?.trailPoints || tracking?.trail?.length || 0);
+  const distanceToDestinationKm = trackingSummary?.distanceToDestinationKm ?? null;
+  const etaMinutes = trackingSummary?.etaMinutes ?? null;
+  const destination = trackingSummary?.destination || null;
   const canShowTracking = TRACKABLE_STATUSES.has(String(booking.status || "")) || Boolean(trackingPoint);
   const trackingLastUpdate = trackingPoint?.recordedAt || tracking?.updatedAt || null;
   const mapsUrl = trackingPoint
-    ? `https://www.google.com/maps?q=${trackingPoint.lat},${trackingPoint.lng}`
+    ? destination?.lat != null && destination?.lng != null
+      ? `https://www.google.com/maps/dir/?api=1&origin=${trackingPoint.lat},${trackingPoint.lng}&destination=${destination.lat},${destination.lng}&travelmode=driving`
+      : `https://www.google.com/maps?q=${trackingPoint.lat},${trackingPoint.lng}`
     : "";
+  const trackingHealthLabel = !canShowTracking ? "IDLE" : !tracking?.isLive ? "OFFLINE" : trackingIsStale ? "DELAYED" : "LIVE";
+  const trackingHealthTone =
+    trackingHealthLabel === "LIVE"
+      ? "bg-emerald-500/20 text-emerald-400"
+      : trackingHealthLabel === "DELAYED"
+        ? "bg-amber-500/20 text-amber-400"
+        : "bg-slate-700/70 text-slate-300";
   const StatusIcon = getStatusIcon(booking.status);
 
   return (
@@ -313,6 +475,15 @@ export default function OrderDetailPage() {
             </div>
           </div>
           <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={openRebookOptions}
+              disabled={rebookLoading || rebookSubmitting}
+              className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-emerald-600 to-cyan-600 px-3 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60 sm:rounded-xl sm:px-4"
+            >
+              <Repeat className="h-4 w-4" />
+              {rebookLoading ? "Preparing..." : rebookSubmitting ? "Rebooking..." : "One-Tap Rebook"}
+            </button>
             <Link
               href={`/booking/new?serviceId=${booking.serviceId}${booking.workerId ? `&workerId=${booking.workerId}` : ""}`}
               className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-200 transition hover:border-fuchsia-400/50 hover:text-white sm:rounded-xl sm:px-4"
@@ -329,6 +500,13 @@ export default function OrderDetailPage() {
             </Link>
           </div>
         </div>
+
+        {booking.isRebook && booking.sourceBooking && (
+          <div className="mb-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-200 sm:mb-6">
+            Rebooked from order #{String(booking.sourceBooking._id).slice(-6)} ({String(booking.sourceBooking.status || "").toUpperCase()}) on{" "}
+            {new Date(booking.sourceBooking.slotTime).toLocaleString()}
+          </div>
+        )}
 
         {/* Main Grid */}
         <div className="grid gap-4 lg:grid-cols-3 lg:gap-6">
@@ -403,17 +581,31 @@ export default function OrderDetailPage() {
             <div className="rounded-xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02] p-4 sm:rounded-2xl sm:p-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-white">Live Worker Tracking</h2>
-                {tracking?.isLive && (
-                  <span className="flex items-center gap-1 rounded-full bg-emerald-500/20 px-2 py-1 text-xs text-emerald-400">
-                    <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400"></span>
-                    LIVE
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => loadTracking()}
+                    className="rounded border border-white/10 bg-white/5 p-1.5 text-slate-300 transition hover:border-fuchsia-400/50 hover:text-white"
+                    aria-label="Refresh live tracking"
+                  >
+                    <RefreshCw className={`h-3.5 w-3.5 ${trackingLoading ? "animate-spin" : ""}`} />
+                  </button>
+                  <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs ${trackingHealthTone}`}>
+                    <span className={`h-2 w-2 rounded-full ${trackingHealthLabel === "LIVE" ? "animate-pulse bg-emerald-400" : "bg-slate-400"}`}></span>
+                    {trackingHealthLabel}
                   </span>
-                )}
+                </div>
               </div>
               
               {trackingError && (
                 <div className="mt-3 rounded-lg bg-rose-500/10 p-3 text-xs text-rose-400">
                   {trackingError}
+                </div>
+              )}
+
+              {tracking?.isLive && trackingIsStale && (
+                <div className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-300">
+                  Location feed is delayed. Last ping {formatTrackingAge(lastUpdateAgeSec)}.
                 </div>
               )}
               
@@ -432,6 +624,25 @@ export default function OrderDetailPage() {
               
               {trackingPoint && (
                 <div className="mt-4 space-y-3">
+                  <div className="grid gap-2 sm:grid-cols-4">
+                    <div className="rounded-lg border border-white/10 bg-slate-900/50 p-2">
+                      <p className="text-[11px] text-slate-500">Speed</p>
+                      <p className="text-sm font-semibold text-white">{trackingSpeedKmph != null ? `${trackingSpeedKmph} km/h` : "-"}</p>
+                    </div>
+                    <div className="rounded-lg border border-white/10 bg-slate-900/50 p-2">
+                      <p className="text-[11px] text-slate-500">Heading</p>
+                      <p className="text-sm font-semibold text-white">{trackingHeadingText || "-"}</p>
+                    </div>
+                    <div className="rounded-lg border border-white/10 bg-slate-900/50 p-2">
+                      <p className="text-[11px] text-slate-500">Distance</p>
+                      <p className="text-sm font-semibold text-white">{formatDistanceKm(distanceToDestinationKm)}</p>
+                    </div>
+                    <div className="rounded-lg border border-white/10 bg-slate-900/50 p-2">
+                      <p className="text-[11px] text-slate-500">ETA</p>
+                      <p className="text-sm font-semibold text-white">{formatEta(etaMinutes)}</p>
+                    </div>
+                  </div>
+
                   <div className="rounded-lg bg-slate-800/50 p-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
@@ -450,7 +661,7 @@ export default function OrderDetailPage() {
                       )}
                     </div>
                     <p className="mt-2 text-xs text-slate-500">
-                      Last update: {trackingLastUpdate ? new Date(trackingLastUpdate).toLocaleString() : "-"}
+                      Last update: {trackingLastUpdate ? new Date(trackingLastUpdate).toLocaleString() : "-"} ({formatTrackingAge(lastUpdateAgeSec)}) | Trail points: {trackingTrailPoints}
                     </p>
                   </div>
                   
@@ -637,6 +848,17 @@ export default function OrderDetailPage() {
             )}
           </div>
         </div>
+
+        <RebookOptionsModal
+          key={`${String(booking?._id || "none")}:${String(rebookPreview?.suggestedSlotTime || "")}`}
+          open={rebookModalOpen}
+          sourceBooking={booking}
+          preview={rebookPreview}
+          submitting={rebookSubmitting}
+          error={rebookModalError}
+          onClose={closeRebookModal}
+          onConfirm={submitRebook}
+        />
       </div>
     </div>
   );

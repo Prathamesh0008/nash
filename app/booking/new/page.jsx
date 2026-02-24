@@ -103,20 +103,26 @@ export default function BookingNewPage() {
   const [strictWorkerOnly, setStrictWorkerOnly] = useState(true);
   const [manualAssist, setManualAssist] = useState(null);
   const [callbackLoading, setCallbackLoading] = useState(false);
+  const [availability, setAvailability] = useState(null);
+  const [availabilityLoading, setAvailabilityLoading] = useState(false);
+  const [availabilityError, setAvailabilityError] = useState("");
   const requestKeyRef = useRef("");
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const params = new URLSearchParams(window.location.search);
-    const next = {
-      serviceId: params.get("serviceId") || "",
-      workerId: params.get("workerId") || "",
-    };
-    setQuery(next);
-    setStrictWorkerOnly(Boolean(next.workerId));
-    if (next.serviceId) {
-      setForm((prev) => ({ ...prev, serviceId: next.serviceId }));
-    }
+    const timeout = setTimeout(() => {
+      const params = new URLSearchParams(window.location.search);
+      const next = {
+        serviceId: params.get("serviceId") || "",
+        workerId: params.get("workerId") || "",
+      };
+      setQuery(next);
+      setStrictWorkerOnly(Boolean(next.workerId));
+      if (next.serviceId) {
+        setForm((prev) => ({ ...prev, serviceId: next.serviceId }));
+      }
+    }, 0);
+    return () => clearTimeout(timeout);
   }, []);
 
   useEffect(() => {
@@ -186,12 +192,83 @@ export default function BookingNewPage() {
     () => (Array.isArray(workerPreview?.areas) && workerPreview.areas.length > 0 ? workerPreview.areas[0] : null),
     [workerPreview]
   );
+  const selectedSlotTime = useMemo(() => {
+    if (!form.date || !form.time) return null;
+    const dt = new Date(`${form.date}T${form.time}:00`);
+    return Number.isNaN(dt.getTime()) ? null : dt.getTime();
+  }, [form.date, form.time]);
+  const slotRows = useMemo(() => (Array.isArray(availability?.slots) ? availability.slots : []), [availability]);
+  const selectedSlotAvailability = useMemo(() => {
+    if (!selectedSlotTime) return null;
+    return slotRows.find((slot) => new Date(slot.iso).getTime() === selectedSlotTime) || null;
+  }, [slotRows, selectedSlotTime]);
 
-  const addons = selectedService?.addons || [];
+  const addons = useMemo(
+    () => (Array.isArray(selectedService?.addons) ? selectedService.addons : []),
+    [selectedService]
+  );
   const [selectedAddons, setSelectedAddons] = useState([]);
   useEffect(() => {
-    setSelectedAddons([]);
+    const timeout = setTimeout(() => {
+      setSelectedAddons([]);
+    }, 0);
+    return () => clearTimeout(timeout);
   }, [query.workerId, form.serviceId]);
+
+  useEffect(() => {
+    if (!form.date) {
+      setAvailability(null);
+      setAvailabilityError("");
+      setAvailabilityLoading(false);
+      return;
+    }
+
+    const hasSource = Boolean(query.workerId || form.serviceId);
+    if (!hasSource) {
+      setAvailability(null);
+      setAvailabilityError("");
+      setAvailabilityLoading(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    const timeout = setTimeout(async () => {
+      try {
+        setAvailabilityLoading(true);
+        setAvailabilityError("");
+        const params = new URLSearchParams({ date: form.date });
+        if (query.workerId) params.set("workerId", query.workerId);
+        if (form.serviceId) params.set("serviceId", form.serviceId);
+        if (String(form.city || "").trim()) params.set("city", String(form.city).trim());
+        if (String(form.pincode || "").trim()) params.set("pincode", String(form.pincode).trim());
+
+        const res = await fetch(`/api/bookings/availability?${params.toString()}`, {
+          credentials: "include",
+          cache: "no-store",
+          signal: controller.signal,
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data?.ok) {
+          setAvailability(null);
+          setAvailabilityError(data?.error || "Unable to load live slots");
+          return;
+        }
+        setAvailability(data.availability || null);
+      } catch (error) {
+        if (error?.name !== "AbortError") {
+          setAvailability(null);
+          setAvailabilityError("Unable to load live slots");
+        }
+      } finally {
+        setAvailabilityLoading(false);
+      }
+    }, 250);
+
+    return () => {
+      controller.abort();
+      clearTimeout(timeout);
+    };
+  }, [form.date, form.serviceId, form.city, form.pincode, query.workerId]);
   const nowDate = useMemo(() => new Date(), []);
   const minDate = useMemo(() => toDateInput(nowDate), [nowDate]);
   const minTime = useMemo(() => {
@@ -321,6 +398,19 @@ export default function BookingNewPage() {
     }));
     setManualAssist(null);
     setStatus("Nearest available slot selected. Click Confirm Booking.");
+    setError("");
+  };
+
+  const applyAvailabilitySlot = (isoSlot) => {
+    const dt = new Date(isoSlot);
+    if (Number.isNaN(dt.getTime())) return;
+    setForm((prev) => ({
+      ...prev,
+      date: toDateInput(dt),
+      time: toTimeInput(dt),
+    }));
+    setManualAssist(null);
+    setStatus("Live available slot selected. Click Confirm Booking.");
     setError("");
   };
 
@@ -811,6 +901,85 @@ export default function BookingNewPage() {
                     required
                   />
                 </div>
+              </div>
+
+              <div className="mt-4 rounded-lg border border-white/10 bg-slate-900/40 p-3">
+                <div className="mb-2 flex items-center justify-between">
+                  <p className="text-xs font-medium text-slate-300">Live Slot Availability</p>
+                  {availability?.summary && !availabilityLoading && (
+                    <p className="text-[11px] text-slate-400">
+                      {availability.summary.available}/{availability.summary.total} slots available
+                    </p>
+                  )}
+                </div>
+
+                {availabilityLoading && (
+                  <p className="text-xs text-slate-400">Checking slots...</p>
+                )}
+
+                {!availabilityLoading && availabilityError && (
+                  <p className="text-xs text-rose-400">{availabilityError}</p>
+                )}
+
+                {!availabilityLoading && !availabilityError && !form.date && (
+                  <p className="text-xs text-slate-500">Select a date to view available slots.</p>
+                )}
+
+                {!availabilityLoading &&
+                  !availabilityError &&
+                  form.date &&
+                  Array.isArray(availability?.requirementsMissing) &&
+                  availability.requirementsMissing.length > 0 && (
+                    <p className="text-xs text-amber-400">{availability.requirementsMissing[0]}</p>
+                  )}
+
+                {!availabilityLoading &&
+                  !availabilityError &&
+                  form.date &&
+                  slotRows.length > 0 &&
+                  (!availability?.requirementsMissing || availability.requirementsMissing.length === 0) && (
+                    <div className="space-y-2">
+                      <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
+                        {slotRows.map((slot) => {
+                          const slotTs = new Date(slot.iso).getTime();
+                          const isSelected = selectedSlotTime != null && slotTs === selectedSlotTime;
+                          const isAvailable = Boolean(slot.available);
+                          return (
+                            <button
+                              key={slot.iso}
+                              type="button"
+                              title={isAvailable ? "Available" : slot.reason || "Unavailable"}
+                              onClick={() => applyAvailabilitySlot(slot.iso)}
+                              disabled={!isAvailable}
+                              className={`rounded-md border px-2 py-1 text-[11px] transition ${
+                                isSelected && isAvailable
+                                  ? "border-fuchsia-400 bg-fuchsia-500/20 text-fuchsia-200"
+                                  : isAvailable
+                                    ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20"
+                                    : "cursor-not-allowed border-white/10 bg-white/5 text-slate-500"
+                              }`}
+                            >
+                              {slot.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {selectedSlotAvailability && !selectedSlotAvailability.available && (
+                        <p className="text-xs text-amber-400">
+                          Selected time is unavailable: {selectedSlotAvailability.reason || "Choose another slot"}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                {!availabilityLoading &&
+                  !availabilityError &&
+                  form.date &&
+                  slotRows.length === 0 &&
+                  (!availability?.requirementsMissing || availability.requirementsMissing.length === 0) && (
+                    <p className="text-xs text-slate-500">No slots found for selected date.</p>
+                  )}
               </div>
             </div>
 

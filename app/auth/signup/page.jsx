@@ -253,11 +253,11 @@ export default function SignupPage() {
               />
               <span className="text-xs text-slate-300">
                 I agree to the{" "}
-                <Link href="/terms" className="text-fuchsia-400 hover:text-fuchsia-300">
+                <Link href="/legal/terms" className="text-fuchsia-400 hover:text-fuchsia-300">
                   Terms of Service
                 </Link>{" "}
                 and{" "}
-                <Link href="/privacy" className="text-fuchsia-400 hover:text-fuchsia-300">
+                <Link href="/legal/privacy" className="text-fuchsia-400 hover:text-fuchsia-300">
                   Privacy Policy
                 </Link>
               </span>
@@ -293,7 +293,7 @@ export default function SignupPage() {
                 <span className="font-medium">Worker Account</span>
               </p>
               <p className="mt-1 text-slate-300">
-                You'll need to complete onboarding with KYC documents after signup.
+                You&apos;ll need to complete onboarding with KYC documents after signup.
               </p>
             </div>
           )}
@@ -327,7 +327,6 @@ export default function SignupPage() {
           </div>
         </div>
 
-        {/* Demo Info */}
         <div className="mt-4 rounded-lg border border-white/10 bg-white/5 p-3 text-xs">
           <p className="text-center text-slate-400">
             By signing up, you agree to receive service updates via email/SMS

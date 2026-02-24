@@ -150,7 +150,7 @@ async function findNearestAvailableSlotsForWorker({ workerProfile, fromTime, max
 }
 
 export async function POST(req) {
-  const ipRl = enforceRateLimit({
+  const ipRl = await enforceRateLimit({
     key: getRateLimitKey(req, "booking:create:ip"),
     limit: BOOKING_IP_LIMIT,
     windowMs: BOOKING_IP_WINDOW_MS,
@@ -173,7 +173,7 @@ export async function POST(req) {
   const { user, errorResponse, refreshedResponse } = await requireAuth({ roles: ["user", "admin"] });
   if (errorResponse) return errorResponse;
 
-  const userRl = enforceRateLimit({
+  const userRl = await enforceRateLimit({
     key: `booking:create:user:${user.userId}`,
     limit: BOOKING_USER_LIMIT,
     windowMs: BOOKING_USER_WINDOW_MS,
@@ -200,9 +200,11 @@ export async function POST(req) {
     return res;
   }
 
+  let idempotencyKey = "";
+
   try {
     const data = parseOrThrow(bookingCreateSchema, await req.json());
-    const idempotencyKey = (req.headers.get("x-idempotency-key") || data.idempotencyKey || "").trim().slice(0, 128);
+    idempotencyKey = (req.headers.get("x-idempotency-key") || data.idempotencyKey || "").trim().slice(0, 128);
     const requestedServiceId = String(data.serviceId || "").trim();
     const isManualAssignment = data.assignmentMode === "manual";
     const workerPricingMode = isManualAssignment && !requestedServiceId;
@@ -751,7 +753,7 @@ export async function POST(req) {
       paymentMethod: data.paymentMethod,
       paymentStatus,
       paymentId,
-      idempotencyKey,
+      idempotencyKey: idempotencyKey || undefined,
       promoCode,
       promoDiscount,
       referralCode,
@@ -901,11 +903,14 @@ export async function POST(req) {
   } catch (error) {
     await logError("api.bookings.create", error, { userId: user?.userId || "" });
     if (error?.code === 11000) {
-      const retryBooking = await Booking.findOne({ userId: user.userId }).sort({ createdAt: -1 }).lean();
-      if (retryBooking) {
-        const res = NextResponse.json({ ok: true, booking: retryBooking, idempotent: true });
-        return applyRefreshCookies(res, refreshedResponse);
+      if (idempotencyKey) {
+        const retryBooking = await Booking.findOne({ userId: user.userId, idempotencyKey }).lean();
+        if (retryBooking) {
+          const res = NextResponse.json({ ok: true, booking: retryBooking, idempotent: true });
+          return applyRefreshCookies(res, refreshedResponse);
+        }
       }
+      return NextResponse.json({ ok: false, error: "Duplicate booking request" }, { status: 409 });
     }
     return NextResponse.json({ ok: false, error: error.message || "Booking failed" }, { status: error.status || 400 });
   }

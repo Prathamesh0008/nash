@@ -366,7 +366,7 @@ export default function HeroBanner({ providers = [] }) {
                           <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
                           {featured[1]?.rating?.toFixed(1)}
                         </span>
-                        <span>• All-Rounder</span>
+                        <span>| Wellness Pro</span>
                       </div>
                     </div>
                     <div className="text-lg font-bold text-pink-400">INR {featured[1]?.price}/hr</div>

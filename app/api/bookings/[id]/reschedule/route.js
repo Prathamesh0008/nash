@@ -15,7 +15,7 @@ import { createNotification } from "@/lib/notify";
 import { isWorkerAvailableForSlot } from "@/lib/availability";
 
 export async function POST(req, context) {
-  const rl = enforceRateLimit({
+  const rl = await enforceRateLimit({
     key: getRateLimitKey(req, "reschedule"),
     limit: 8,
     windowMs: 60 * 60 * 1000,

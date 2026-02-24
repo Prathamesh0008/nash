@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Bell } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -28,7 +28,7 @@ export default function NotificationBell() {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  const loadNotifications = async () => {
+  const loadNotifications = useCallback(async () => {
     if (!user) return;
     try {
       const res = await fetch("/api/notifications?limit=20", {
@@ -43,7 +43,7 @@ export default function NotificationBell() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
     if (!user) {
@@ -57,7 +57,7 @@ export default function NotificationBell() {
     loadNotifications();
     const timer = setInterval(loadNotifications, 25000);
     return () => clearInterval(timer);
-  }, [user]);
+  }, [user, loadNotifications]);
 
   useEffect(() => {
     const onClickOutside = (event) => {

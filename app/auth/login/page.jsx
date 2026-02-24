@@ -204,7 +204,7 @@ export default function LoginPage() {
 
           {/* Sign Up Link */}
           <p className="mt-6 text-center text-sm text-slate-400">
-            Don't have an account?{" "}
+            Don&apos;t have an account?{" "}
             <Link
               href="/auth/signup"
               className="font-medium text-fuchsia-400 hover:text-fuchsia-300 transition"
@@ -231,12 +231,6 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Demo Credentials */}
-        <div className="mt-4 rounded-lg border border-white/10 bg-white/5 p-3 text-xs">
-          <p className="text-center text-slate-400">
-            Demo credentials: user@example.com / password123
-          </p>
-        </div>
       </div>
     </div>
   );

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from 'react';
 
 export default function AdminWorkerRow({ w, onChangeStatus }) {
@@ -50,9 +51,12 @@ export default function AdminWorkerRow({ w, onChangeStatus }) {
               ✕
             </button>
             <div className="text-white mb-2 text-center">{previewTitle}</div>
-            <img
+            <Image
               src={previewImage}
               alt="Preview"
+              width={1440}
+              height={1080}
+              unoptimized
               className="w-full h-auto max-h-[70vh] object-contain rounded-lg"
             />
           </div>
@@ -63,9 +67,12 @@ export default function AdminWorkerRow({ w, onChangeStatus }) {
         {/* ================= BASIC INFO ================= */}
         <div className="flex gap-4 items-start">
           <div className="relative group">
-            <img
+            <Image
               src={w.profilePhoto || "/avatar.png"}
               alt="Profile"
+              width={96}
+              height={96}
+              unoptimized
               className="w-24 h-24 rounded-xl object-cover border-2 border-white/20 cursor-pointer hover:opacity-90 transition-opacity"
               onClick={() => openPreview(w.profilePhoto || "/avatar.png", "Profile Photo")}
             />
@@ -196,8 +203,11 @@ export default function AdminWorkerRow({ w, onChangeStatus }) {
                   className="relative group cursor-pointer"
                   onClick={() => openPreview(w.documents.idProof, "ID Proof")}
                 >
-                  <img
+                  <Image
                     src={w.documents.idProof}
+                    width={192}
+                    height={144}
+                    unoptimized
                     className="w-48 h-36 object-cover rounded-lg border-2 border-white/20 shadow-sm hover:shadow-md transition-all group-hover:opacity-90"
                     alt="ID Proof"
                   />
@@ -215,8 +225,11 @@ export default function AdminWorkerRow({ w, onChangeStatus }) {
                   className="relative group cursor-pointer"
                   onClick={() => openPreview(w.documents.addressProof, "Address Proof")}
                 >
-                  <img
+                  <Image
                     src={w.documents.addressProof}
+                    width={192}
+                    height={144}
+                    unoptimized
                     className="w-48 h-36 object-cover rounded-lg border-2 border-white/20 shadow-sm hover:shadow-md transition-all group-hover:opacity-90"
                     alt="Address Proof"
                   />
@@ -246,9 +259,12 @@ export default function AdminWorkerRow({ w, onChangeStatus }) {
                   className="relative group aspect-square cursor-pointer"
                   onClick={() => openPreview(url, `Gallery Photo ${i + 1}`)}
                 >
-                  <img
+                  <Image
                     src={url}
-                    className="w-full h-full object-cover rounded-lg border border-white/15 shadow-sm hover:shadow-md transition-all group-hover:opacity-90"
+                    fill
+                    sizes="(max-width: 768px) 50vw, 25vw"
+                    unoptimized
+                    className="object-cover rounded-lg border border-white/15 shadow-sm hover:shadow-md transition-all group-hover:opacity-90"
                     alt={`Gallery ${i + 1}`}
                   />
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 rounded-lg transition-opacity flex items-center justify-center">

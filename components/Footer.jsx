@@ -30,6 +30,7 @@ const userLinkSections = [
       { href: "/services", label: "All Services", badge: "Hot" },
       { href: "/workers", label: "Find Workers" },
       { href: "/search", label: "Search Providers", badge: "New" },
+      { href: "/faq", label: "FAQ" },
       { href: "/booking/new", label: "Book a Service" },
     ],
   },
@@ -52,7 +53,9 @@ const userLinkSections = [
     links: [
       { href: "/worker/onboarding", label: "Become a Worker" },
       { href: "/worker/jobs", label: "Worker Jobs" },
+      { href: "/contact-us", label: "Contact Us" },
       { href: "/support", label: "Support" },
+      { href: "/faq", label: "FAQ" },
       { href: "/admin/dashboard", label: "Admin Dashboard" },
     ],
   },
@@ -118,7 +121,9 @@ const adminLinkSections = [
       { href: "/legal/terms", label: "Terms of Use" },
       { href: "/legal/privacy", label: "Privacy Policy" },
       { href: "/legal/cookies", label: "Cookie Policy" },
+      { href: "/contact-us", label: "Contact Us" },
       { href: "/support", label: "Support" },
+      { href: "/faq", label: "FAQ" },
     ],
   },
 ];
@@ -150,7 +155,9 @@ const workerLinkSections = [
     links: [
       { href: "/worker/onboarding", label: "Onboarding" },
       { href: "/worker/reports", label: "Reports" },
+      { href: "/contact-us", label: "Contact Us" },
       { href: "/support", label: "Support" },
+      { href: "/faq", label: "FAQ" },
       { href: "/notifications", label: "Notifications" },
     ],
   },
@@ -234,9 +241,11 @@ export default function Footer() {
     return (
       <footer className="mt-8 border-t border-white/10 bg-slate-950/80">
         <div className="mx-auto flex w-full max-w-[92rem] flex-col items-center justify-between gap-3 px-4 py-4 text-center text-xs text-slate-400 sm:flex-row sm:text-left">
-          <p>{"\u00A9"} {year} Nash Workforce</p>
+          <p>{"\u00A9"} {year} Nash Wellness</p>
           <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 sm:justify-end">
+            <Link href="/contact-us" className="hover:text-slate-200">Contact Us</Link>
             <Link href="/support" className="hover:text-slate-200">Support</Link>
+            <Link href="/faq" className="hover:text-slate-200">FAQ</Link>
             <Link href="/referrals" className="hover:text-slate-200">Referrals</Link>
             <Link href="/legal/privacy" className="hover:text-slate-200">Privacy</Link>
             <Link href="/legal/terms" className="hover:text-slate-200">Terms</Link>
@@ -275,7 +284,7 @@ export default function Footer() {
 
             <div>
               <h2 className="mb-2 bg-gradient-to-r from-white to-white/70 bg-clip-text text-2xl font-bold text-transparent sm:text-3xl">
-                Nash Workforce
+                Nash Wellness
               </h2>
               <p className="text-white/50 text-sm leading-relaxed max-w-sm">
                 {roleSummary}
@@ -348,7 +357,7 @@ export default function Footer() {
         <div className="relative pt-8 mt-8 border-t border-white/5">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="order-2 text-center text-sm text-white/40 md:order-1 md:text-left">
-              {"\u00A9"} {year} Nash Workforce. Built with <Heart className="w-3.5 h-3.5 inline-block text-pink-400 mx-0.5" /> for reliable services
+              {"\u00A9"} {year} Nash Wellness. Built with <Heart className="w-3.5 h-3.5 inline-block text-pink-400 mx-0.5" /> for reliable services
             </p>
 
             <div className="order-1 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 md:order-2 md:justify-end md:gap-6">
@@ -369,6 +378,12 @@ export default function Footer() {
               </Link>
               <Link href="/support" className="text-sm text-white/40 hover:text-white transition-colors">
                 Support
+              </Link>
+              <Link href="/contact-us" className="text-sm text-white/40 hover:text-white transition-colors">
+                Contact Us
+              </Link>
+              <Link href="/faq" className="text-sm text-white/40 hover:text-white transition-colors">
+                FAQ
               </Link>
               <Link href="/referrals" className="text-sm text-white/40 hover:text-white transition-colors">
                 Referrals

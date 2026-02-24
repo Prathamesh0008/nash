@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import Image from "next/image";
+import { useCallback, useEffect, useState } from "react";
 import { getWorkerOnboardingMissingFields, hasWorkerOnboardingComplete } from "@/lib/workerOnboardingChecklist";
 import {
   Users,
@@ -26,7 +27,6 @@ import {
   Star,
   Briefcase,
   FileText,
-  Image,
   Upload,
   Award,
   TrendingUp,
@@ -86,7 +86,7 @@ export default function AdminWorkersPage() {
   });
   const [filterHydrated, setFilterHydrated] = useState(false);
 
-  const load = async (nextFilters = filters) => {
+  const load = useCallback(async (nextFilters = filters) => {
     setLoading(true);
     try {
       const search = new URLSearchParams();
@@ -105,7 +105,7 @@ export default function AdminWorkersPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -136,7 +136,7 @@ export default function AdminWorkersPage() {
       window.history.replaceState(null, "", nextUrl);
     }, 400);
     return () => clearTimeout(timeout);
-  }, [filterHydrated, filters]);
+  }, [filterHydrated, filters, load]);
 
   const action = async (workerId, action, reason = "") => {
     const res = await fetch(`/api/admin/workers/${workerId}/verify`, {
@@ -348,7 +348,14 @@ export default function AdminWorkersPage() {
                   Close
                 </button>
               </div>
-              <img src={preview.url} alt={preview.title} className="max-h-[80vh] w-full rounded object-contain" />
+              <Image
+                src={preview.url}
+                alt={preview.title}
+                width={1440}
+                height={1080}
+                unoptimized
+                className="max-h-[80vh] w-full rounded object-contain"
+              />
             </div>
           </div>
         )}
@@ -610,7 +617,7 @@ export default function AdminWorkersPage() {
                       />
                       
                       <button
-                        className="h-16 w-16 overflow-hidden rounded-lg border border-white/10 bg-slate-900 sm:h-20 sm:w-20"
+                        className="relative h-16 w-16 overflow-hidden rounded-lg border border-white/10 bg-slate-900 sm:h-20 sm:w-20"
                         onClick={() => {
                           if (worker.profilePhoto) {
                             setPreview({ open: true, url: worker.profilePhoto, title: "Profile photo" });
@@ -618,7 +625,14 @@ export default function AdminWorkersPage() {
                         }}
                       >
                         {worker.profilePhoto ? (
-                          <img src={worker.profilePhoto} alt="Profile" className="h-full w-full object-cover" />
+                          <Image
+                            src={worker.profilePhoto}
+                            alt="Profile"
+                            fill
+                            sizes="80px"
+                            unoptimized
+                            className="object-cover"
+                          />
                         ) : (
                           <div className="flex h-full items-center justify-center">
                             <Camera className="h-6 w-6 text-slate-600" />
@@ -784,9 +798,9 @@ export default function AdminWorkersPage() {
                               ) : (
                                 <button
                                   onClick={() => setPreview({ open: true, url: worker.docs.idProof, title: "ID Proof" })}
-                                  className="h-16 w-full overflow-hidden rounded"
+                                  className="relative h-16 w-full overflow-hidden rounded"
                                 >
-                                  <img src={worker.docs.idProof} alt="ID proof" className="h-full w-full object-cover" />
+                                  <Image src={worker.docs.idProof} alt="ID proof" fill sizes="160px" unoptimized className="object-cover" />
                                 </button>
                               )
                             ) : (
@@ -800,9 +814,9 @@ export default function AdminWorkersPage() {
                             {worker.docs?.selfie ? (
                               <button
                                 onClick={() => setPreview({ open: true, url: worker.docs.selfie, title: "Selfie" })}
-                                className="h-16 w-full overflow-hidden rounded"
+                                className="relative h-16 w-full overflow-hidden rounded"
                               >
-                                <img src={worker.docs.selfie} alt="Selfie" className="h-full w-full object-cover" />
+                                <Image src={worker.docs.selfie} alt="Selfie" fill sizes="160px" unoptimized className="object-cover" />
                               </button>
                             ) : (
                               <p className="text-xs text-slate-500">Not uploaded</p>
@@ -820,9 +834,9 @@ export default function AdminWorkersPage() {
                               ) : (
                                 <button
                                   onClick={() => setPreview({ open: true, url, title: `Certificate ${index + 1}` })}
-                                  className="h-16 w-full overflow-hidden rounded"
+                                  className="relative h-16 w-full overflow-hidden rounded"
                                 >
-                                  <img src={url} alt={`Certificate ${index + 1}`} className="h-full w-full object-cover" />
+                                  <Image src={url} alt={`Certificate ${index + 1}`} fill sizes="160px" unoptimized className="object-cover" />
                                 </button>
                               )}
                             </div>
@@ -839,9 +853,9 @@ export default function AdminWorkersPage() {
                               <button
                                 key={url}
                                 onClick={() => setPreview({ open: true, url, title: `Gallery ${index + 1}` })}
-                                className="h-16 overflow-hidden rounded-lg border border-white/10"
+                                className="relative h-16 overflow-hidden rounded-lg border border-white/10"
                               >
-                                <img src={url} alt={`Gallery ${index + 1}`} className="h-full w-full object-cover" />
+                                <Image src={url} alt={`Gallery ${index + 1}`} fill sizes="96px" unoptimized className="object-cover" />
                               </button>
                             ))}
                           </div>

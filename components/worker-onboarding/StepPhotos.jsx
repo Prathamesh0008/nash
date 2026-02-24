@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import UploadImage from "@/components/UploadImage";
 
 export default function StepPhotos({
@@ -41,11 +42,7 @@ export default function StepPhotos({
         />
 
         {form.profilePhoto && (
-          <img
-            src={form.profilePhoto}
-            alt="Profile"
-            className="w-32 h-32 object-cover rounded border"
-          />
+          <Image src={form.profilePhoto} alt="Profile photo" width={128} height={128} unoptimized className="w-32 h-32 object-cover rounded border" />
         )}
       </div>
 
@@ -60,10 +57,7 @@ export default function StepPhotos({
         <div className="flex flex-wrap gap-3">
           {(form.galleryPhotos || []).map((url, i) => (
             <div key={i} className="relative">
-              <img
-                src={url}
-                className="w-24 h-24 object-cover rounded border"
-              />
+              <Image src={url} alt={`Gallery photo ${i + 1}`} width={96} height={96} unoptimized className="w-24 h-24 object-cover rounded border" />
 
               {isEdit && (
                 <button

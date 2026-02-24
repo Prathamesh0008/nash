@@ -42,7 +42,7 @@ export async function POST(req) {
     direction: "credit",
     reason: "manual_adjustment",
     amount,
-    note: "Demo wallet top-up",
+    note: "Wallet top-up",
   });
 
   const res = NextResponse.json({ ok: true, wallet: { balance: result.balance }, transaction: result.transaction });

@@ -4,7 +4,7 @@ import { createOtp, normalizeOtpContact, verifyOtp } from "@/lib/otpService";
 import { enforceRateLimit, getRateLimitKey } from "@/lib/rateLimit";
 
 export async function POST(req) {
-  const rl = enforceRateLimit({
+  const rl = await enforceRateLimit({
     key: getRateLimitKey(req, "otp"),
     limit: 20,
     windowMs: 60 * 60 * 1000,
@@ -46,12 +46,13 @@ export async function POST(req) {
   });
 
   const isDemoProvider = !process.env.OTP_PROVIDER || process.env.OTP_PROVIDER === "demo";
+  const isDev = process.env.NODE_ENV !== "production";
   return NextResponse.json({
     ok: true,
-    message: isDemoProvider ? "OTP generated (demo mode)" : "OTP sent",
+    message: "OTP sent",
     target: normalized.contact,
     channel: normalized.channel,
     expiresAt: otp.expiresAt,
-    ...(isDemoProvider ? { otp: otp.code } : {}),
+    ...(isDemoProvider && isDev ? { otp: otp.code } : {}),
   });
 }

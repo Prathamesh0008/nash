@@ -10,9 +10,11 @@ export async function POST(req) {
   const { user, errorResponse, refreshedResponse } = await requireAuth({ roles: ["user", "worker", "admin"] });
   if (errorResponse) return errorResponse;
 
+  let idempotencyKey = "";
+
   try {
     const data = parseOrThrow(paymentCreateSchema, await req.json());
-    const idempotencyKey = (req.headers.get("x-idempotency-key") || "").trim().slice(0, 128);
+    idempotencyKey = (req.headers.get("x-idempotency-key") || "").trim().slice(0, 128);
 
     if (idempotencyKey) {
       const existing = await Payment.findOne({
@@ -44,7 +46,7 @@ export async function POST(req) {
       status: "created",
       provider: order.provider,
       providerOrderId: order.providerOrderId,
-      idempotencyKey,
+      idempotencyKey: idempotencyKey || undefined,
       metadata: { ...(data.metadata || {}), order: order.raw || {} },
     });
 
@@ -62,11 +64,14 @@ export async function POST(req) {
     return applyRefreshCookies(res, refreshedResponse);
   } catch (error) {
     if (error?.code === 11000) {
-      const existing = await Payment.findOne({ userId: user.userId }).sort({ createdAt: -1 }).lean();
-      if (existing) {
-        const res = NextResponse.json({ ok: true, payment: existing, idempotent: true });
-        return applyRefreshCookies(res, refreshedResponse);
+      if (idempotencyKey) {
+        const existing = await Payment.findOne({ userId: user.userId, idempotencyKey }).lean();
+        if (existing) {
+          const res = NextResponse.json({ ok: true, payment: existing, idempotent: true });
+          return applyRefreshCookies(res, refreshedResponse);
+        }
       }
+      return NextResponse.json({ ok: false, error: "Duplicate payment request" }, { status: 409 });
     }
     return NextResponse.json({ ok: false, error: error.message || "Failed to create payment" }, { status: error.status || 400 });
   }

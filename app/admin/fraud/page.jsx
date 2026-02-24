@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Shield,
   AlertTriangle,
@@ -23,6 +23,36 @@ import {
   UserCheck,
 } from "lucide-react";
 
+const FRAUD_STAT_COLORS = {
+  blue: { bg: "bg-blue-500/20", text: "text-blue-400" },
+  rose: { bg: "bg-rose-500/20", text: "text-rose-400" },
+  orange: { bg: "bg-orange-500/20", text: "text-orange-400" },
+};
+
+function StatCard({ icon: Icon, label, value, color = "blue", alert = false }) {
+  const palette = FRAUD_STAT_COLORS[color] || FRAUD_STAT_COLORS.blue;
+
+  return (
+    <div
+      className={`group rounded-xl border ${
+        alert
+          ? "border-rose-500/30 bg-rose-500/5"
+          : "border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02]"
+      } p-4 transition hover:border-fuchsia-500/30 sm:p-5`}
+    >
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-xs text-slate-400 sm:text-sm">{label}</p>
+          <p className={`mt-1 text-xl font-bold sm:text-2xl ${alert ? "text-rose-400" : "text-white"}`}>{value}</p>
+        </div>
+        <div className={`rounded-lg p-2 sm:p-2.5 ${alert ? "bg-rose-500/20" : palette.bg}`}>
+          <Icon className={`h-4 w-4 sm:h-5 sm:w-5 ${alert ? "text-rose-400" : palette.text}`} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AdminFraudPage() {
   const [signals, setSignals] = useState([]);
   const [summary, setSummary] = useState(null);
@@ -31,7 +61,7 @@ export default function AdminFraudPage() {
   const [msg, setMsg] = useState("");
   const [msgType, setMsgType] = useState("");
 
-  const load = async () => {
+  const load = useCallback(async () => {
     const sp = new URLSearchParams();
     if (statusFilter) sp.set("status", statusFilter);
     if (severityFilter) sp.set("severity", severityFilter);
@@ -39,11 +69,14 @@ export default function AdminFraudPage() {
     const data = await res.json().catch(() => ({}));
     setSignals(data.signals || []);
     setSummary(data.summary || null);
-  };
+  }, [severityFilter, statusFilter]);
 
   useEffect(() => {
-    load();
-  }, [statusFilter, severityFilter]);
+    const timeout = setTimeout(() => {
+      load();
+    }, 0);
+    return () => clearTimeout(timeout);
+  }, [load]);
 
   const updateStatus = async (signalId, status) => {
     const res = await fetch("/api/admin/fraud", {
@@ -55,7 +88,7 @@ export default function AdminFraudPage() {
     const data = await res.json().catch(() => ({}));
     setMsgType(data.ok ? "success" : "error");
     setMsg(data.ok ? `Signal marked as ${status}` : data.error || "Failed to update signal");
-    if (data.ok) load();
+    if (data.ok) await load();
     
     // Clear message after 3 seconds
     setTimeout(() => {
@@ -93,28 +126,6 @@ export default function AdminFraudPage() {
       default: return 'bg-slate-500/20 text-slate-400 border-slate-500/30';
     }
   };
-
-  const StatCard = ({ icon: Icon, label, value, color = "fuchsia", alert = false }) => (
-    <div className={`group rounded-xl border ${
-      alert ? 'border-rose-500/30 bg-rose-500/5' : 'border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02]'
-    } p-4 transition hover:border-fuchsia-500/30 sm:p-5`}>
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-xs text-slate-400 sm:text-sm">{label}</p>
-          <p className={`mt-1 text-xl font-bold sm:text-2xl ${
-            alert ? 'text-rose-400' : 'text-white'
-          }`}>{value}</p>
-        </div>
-        <div className={`rounded-lg ${
-          alert ? 'bg-rose-500/20' : `bg-${color}-500/20`
-        } p-2 sm:p-2.5`}>
-          <Icon className={`h-4 w-4 ${
-            alert ? 'text-rose-400' : `text-${color}-400`
-          } sm:h-5 sm:w-5`} />
-        </div>
-      </div>
-    </div>
-  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">

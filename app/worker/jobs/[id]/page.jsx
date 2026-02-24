@@ -7,6 +7,59 @@ import { getSocket } from "@/lib/socket";
 const STATUS_STEPS = ["assigned", "onway", "working", "completed"];
 const TRACKABLE_STATUSES = new Set(["assigned", "onway", "working"]);
 const TRACKING_PERSIST_INTERVAL_MS = 8000;
+const MIN_TRACKING_MOVE_METERS = 8;
+const MIN_TRACKING_INTERVAL_SECONDS = 6;
+
+function haversineMeters(from, to) {
+  const lat1 = Number(from?.lat);
+  const lng1 = Number(from?.lng);
+  const lat2 = Number(to?.lat);
+  const lng2 = Number(to?.lng);
+  if (![lat1, lng1, lat2, lng2].every(Number.isFinite)) return null;
+  const R = 6371000;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const x =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
+}
+
+function shouldSendTrackingPoint(previous, next) {
+  if (!previous) return true;
+  const distanceMeters = haversineMeters(previous, next);
+  const previousAt = new Date(previous?.recordedAt || 0).getTime();
+  const nextAt = new Date(next?.recordedAt || 0).getTime();
+  const diffSeconds = (nextAt - previousAt) / 1000;
+
+  if (distanceMeters === null) return true;
+  if (!Number.isFinite(diffSeconds) || diffSeconds <= 0) return true;
+  if (distanceMeters >= MIN_TRACKING_MOVE_METERS) return true;
+  if (diffSeconds >= MIN_TRACKING_INTERVAL_SECONDS) return true;
+
+  const previousAccuracy = Number(previous?.accuracy);
+  const nextAccuracy = Number(next?.accuracy);
+  if (Number.isFinite(previousAccuracy) && Number.isFinite(nextAccuracy) && nextAccuracy + 10 < previousAccuracy) {
+    return true;
+  }
+  return false;
+}
+
+function getGeolocationErrorMessage(error) {
+  if (typeof window !== "undefined" && !window.isSecureContext) {
+    return "Live tracking needs HTTPS (or localhost). Open this site with HTTPS instead of local IP over HTTP.";
+  }
+  switch (error?.code) {
+    case 1:
+      return "Location permission denied. Enable GPS permission and retry.";
+    case 2:
+      return "Location unavailable. Move to an open area and try again.";
+    case 3:
+      return "Location timeout. Check network/GPS and retry.";
+    default:
+      return error?.message || "Unable to read location";
+  }
+}
 
 export default function WorkerJobDetailPage() {
   const params = useParams();
@@ -26,6 +79,7 @@ export default function WorkerJobDetailPage() {
   const watchIdRef = useRef(null);
   const trackingTokenRef = useRef("");
   const lastPersistAtRef = useRef(0);
+  const lastSharedLocationRef = useRef(null);
 
   const getTrackingSocket = useCallback(() => {
     if (!socketRef.current) {
@@ -34,7 +88,7 @@ export default function WorkerJobDetailPage() {
     return socketRef.current;
   }, []);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     if (!jobId) return;
     const res = await fetch(`/api/worker/jobs/${jobId}`, { credentials: "include" });
     const data = await res.json();
@@ -43,11 +97,14 @@ export default function WorkerJobDetailPage() {
       return;
     }
     setJob(data.job);
-  };
+  }, [jobId]);
 
   useEffect(() => {
-    load();
-  }, [jobId]);
+    const timeout = setTimeout(() => {
+      load();
+    }, 0);
+    return () => clearTimeout(timeout);
+  }, [load]);
 
   const stepIndex = useMemo(() => STATUS_STEPS.indexOf(job?.status), [job?.status]);
   const canTrackLive = useMemo(() => TRACKABLE_STATUSES.has(String(job?.status || "")), [job?.status]);
@@ -79,6 +136,8 @@ export default function WorkerJobDetailPage() {
       watchIdRef.current = null;
       if (updateState) setTrackingActive(false);
       trackingTokenRef.current = "";
+      lastPersistAtRef.current = 0;
+      lastSharedLocationRef.current = null;
 
       if (jobId) {
         const socket = getTrackingSocket();
@@ -99,6 +158,10 @@ export default function WorkerJobDetailPage() {
     if (!jobId || trackingBusy || trackingActive) return;
     if (!canTrackLive) {
       setTrackingError("Tracking is available only in assigned/onway/working stage");
+      return;
+    }
+    if (typeof window !== "undefined" && !window.isSecureContext) {
+      setTrackingError("Live tracking needs HTTPS (or localhost). Open this site with HTTPS instead of local IP over HTTP.");
       return;
     }
     if (typeof navigator === "undefined" || !navigator.geolocation) {
@@ -137,6 +200,8 @@ export default function WorkerJobDetailPage() {
           recordedAt: new Date(position.timestamp || Date.now()).toISOString(),
         };
 
+        if (!shouldSendTrackingPoint(lastSharedLocationRef.current, location)) return;
+        lastSharedLocationRef.current = location;
         setLastLocation(location);
         socket.emit("bookingTracking:update", {
           bookingId: jobId,
@@ -145,13 +210,15 @@ export default function WorkerJobDetailPage() {
         });
 
         const now = Date.now();
-        if (now - lastPersistAtRef.current >= TRACKING_PERSIST_INTERVAL_MS) {
+        if (lastPersistAtRef.current === 0 || now - lastPersistAtRef.current >= TRACKING_PERSIST_INTERVAL_MS) {
           lastPersistAtRef.current = now;
           persistTrackingLocation(location);
         }
       },
       (geoError) => {
-        setTrackingError(geoError?.message || "Unable to read location");
+        setTrackingError(getGeolocationErrorMessage(geoError));
+        setTrackingActive(false);
+        setTrackingBusy(false);
       },
       {
         enableHighAccuracy: true,
@@ -163,7 +230,7 @@ export default function WorkerJobDetailPage() {
     watchIdRef.current = watchId;
     setTrackingActive(true);
     setTrackingBusy(false);
-    setMsg("Live tracking started");
+    setMsg("Live tracking started. Keep GPS on for accurate updates.");
   }, [canTrackLive, getTrackingSocket, jobId, persistTrackingLocation, trackingActive, trackingBusy]);
 
   const markNext = async () => {
@@ -227,7 +294,10 @@ export default function WorkerJobDetailPage() {
 
   useEffect(() => {
     if (trackingActive && !canTrackLive) {
-      stopTracking();
+      const timeout = setTimeout(() => {
+        stopTracking();
+      }, 0);
+      return () => clearTimeout(timeout);
     }
   }, [canTrackLive, stopTracking, trackingActive]);
 
@@ -304,7 +374,7 @@ export default function WorkerJobDetailPage() {
         {trackingError && <p className="rounded bg-rose-950 p-2 text-xs text-rose-300">{trackingError}</p>}
         {lastLocation ? (
           <p className="text-xs text-slate-300">
-            Last sent: {new Date(lastLocation.recordedAt || Date.now()).toLocaleString()} |{" "}
+            Last sent: {lastLocation.recordedAt ? new Date(lastLocation.recordedAt).toLocaleString() : "-"} |{" "}
             {Number(lastLocation.lat).toFixed(5)}, {Number(lastLocation.lng).toFixed(5)}
           </p>
         ) : (

@@ -13,13 +13,12 @@ export default function ProviderCard({ provider }) {
   const intervalRef = useRef(null);
 
   const images = provider.images || [];
-  const profileHref =
-    provider.profileHref ||
-    (provider.slug ? `/providers/${provider.slug}` : provider.id ? `/workers/${provider.id}` : "/workers");
+  const profileHref = provider.profileHref || (provider.id ? `/workers/${provider.id}` : "/workers");
   const locationText = provider.location || provider.city || "Location unavailable";
   const ratingValue = Number(provider.rating || 0);
   const reviewsCount = Number(provider.reviewsCount || provider.jobs || 0);
   const tags = provider.tags?.length ? provider.tags : provider.specialties || [];
+  const currency = provider.currency || "INR";
 
   useEffect(() => {
     if (!images.length || isHovering) return;
@@ -65,18 +64,21 @@ export default function ProviderCard({ provider }) {
     e.stopPropagation();
     if (!provider.id || favoriteSaving) return;
     setFavoriteSaving(true);
-    const res = await fetch("/api/users/preferences", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ action: "toggleFavorite", workerId: provider.id }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (res.ok && data.ok) {
-      const favIds = (data.preferences?.favoriteWorkerIds || []).map((id) => String(id));
-      setIsFavorite(favIds.includes(String(provider.id)));
+    try {
+      const res = await fetch("/api/users/preferences", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ action: "toggleFavorite", workerId: provider.id }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.ok) {
+        const favIds = (data.preferences?.favoriteWorkerIds || []).map((id) => String(id));
+        setIsFavorite(favIds.includes(String(provider.id)));
+      }
+    } finally {
+      setFavoriteSaving(false);
     }
-    setFavoriteSaving(false);
   };
 
   return (
@@ -232,7 +234,7 @@ export default function ProviderCard({ provider }) {
             <div className="text-xs text-white/50">Starting at</div>
             <div className="flex items-baseline gap-0.5">
               <span className="bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-xl font-bold text-transparent">
-                INR {provider.ratePerHour}
+                {currency} {provider.ratePerHour}
               </span>
               <span className="text-xs font-medium text-white/50">/hr</span>
             </div>

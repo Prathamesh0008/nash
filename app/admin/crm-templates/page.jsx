@@ -47,7 +47,10 @@ export default function AdminCrmTemplatesPage() {
   };
 
   useEffect(() => {
-    load();
+    const timeout = setTimeout(() => {
+      load();
+    }, 0);
+    return () => clearTimeout(timeout);
   }, []);
 
   const save = async (e) => {
@@ -91,7 +94,7 @@ export default function AdminCrmTemplatesPage() {
     }, 3000);
   };
 
-  const useTemplate = (template) => {
+  const fillTemplateForm = (template) => {
     setForm({
       key: template.key,
       channel: template.channel,
@@ -391,7 +394,7 @@ export default function AdminCrmTemplatesPage() {
                     {/* Action Buttons */}
                     <div className="mt-3 flex gap-2">
                       <button
-                        onClick={() => useTemplate(item)}
+                        onClick={() => fillTemplateForm(item)}
                         className="flex-1 inline-flex items-center justify-center gap-1 rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 text-xs text-slate-300 transition hover:border-fuchsia-400/50 hover:text-white"
                       >
                         <Copy className="h-3 w-3" />

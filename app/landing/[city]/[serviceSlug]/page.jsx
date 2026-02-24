@@ -15,12 +15,12 @@ function toTitleCity(citySlug = "") {
 export async function generateMetadata({ params }) {
   const { city, serviceSlug } = await params;
   await dbConnect();
-  const service = await Service.findOne({ slug: serviceSlug, active: true }).select("description").lean();
+  const service = await Service.findOne({ slug: serviceSlug, active: true }).select("title description").lean();
   const cityTitle = toTitleCity(city);
-  const serviceTitle = "All-Rounder Worker Visit";
+  const serviceTitle = service?.title || "Wellness Home Service";
   return {
-    title: `${serviceTitle} in ${cityTitle} | Verified Workers`,
-    description: `Book ${serviceTitle} in ${cityTitle} with verified workers and transparent pricing.`,
+    title: `${serviceTitle} in ${cityTitle} | Verified Therapists`,
+    description: `Book ${serviceTitle} in ${cityTitle} with verified therapists and transparent pricing.`,
     alternates: {
       canonical: `/landing/${city}/${serviceSlug}`,
     },
@@ -64,8 +64,8 @@ export default async function CityServiceLandingPage({ params }) {
   return (
     <section className="space-y-4">
       <div className="panel">
-        <h1 className="text-3xl font-semibold">All-Rounder Worker Visit in {cityTitle}</h1>
-        <p className="mt-1 text-sm text-slate-400">Compare verified all-rounder workers in {cityTitle} by rating and availability.</p>
+        <h1 className="text-3xl font-semibold">{service.title} in {cityTitle}</h1>
+        <p className="mt-1 text-sm text-slate-400">Compare verified therapists in {cityTitle} by rating and availability.</p>
         <div className="mt-3 flex flex-wrap gap-2">
           <Link href={`/service/${service.slug}?city=${encodeURIComponent(cityTitle)}`} className="rounded bg-sky-700 px-3 py-2 text-sm text-white hover:bg-sky-600">
             View full service page
@@ -77,8 +77,8 @@ export default async function CityServiceLandingPage({ params }) {
       </div>
 
       <div className="panel">
-        <h2 className="text-xl font-semibold">Top verified workers in {cityTitle}</h2>
-        <p className="text-sm text-slate-400">{workers.length} worker(s) found</p>
+        <h2 className="text-xl font-semibold">Top verified therapists in {cityTitle}</h2>
+        <p className="text-sm text-slate-400">{workers.length} therapist(s) found</p>
         <div className="mt-3 grid gap-2 md:grid-cols-2">
           {workers.map((worker) => (
             <article key={worker.userId} className="rounded border border-slate-700 bg-slate-900/40 p-3 text-sm">

@@ -5,7 +5,7 @@ import WorkerProfile from "@/models/WorkerProfile";
 
 export const metadata = {
   title: "Service Areas & City Landing Pages",
-  description: "Explore city and service specific pages for verified workers.",
+  description: "Explore city and service specific pages for verified therapists.",
 };
 
 function slugifyCity(city = "") {

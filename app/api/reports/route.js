@@ -20,7 +20,7 @@ function getReportSlaHours(severity) {
 }
 
 export async function POST(req) {
-  const rl = enforceRateLimit({
+  const rl = await enforceRateLimit({
     key: getRateLimitKey(req, "report"),
     limit: 10,
     windowMs: 24 * 60 * 60 * 1000,

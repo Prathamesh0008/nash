@@ -25,13 +25,13 @@ export default function ServicesPage() {
   return (
     <section className="space-y-4">
       <div className="panel">
-        <h1 className="text-2xl font-semibold">Worker Visit Options</h1>
-        <p className="mt-1 text-sm text-slate-400">Pick any option and assign an all-rounder worker for your home visit.</p>
+        <h1 className="text-2xl font-semibold">Wellness Service Catalog</h1>
+        <p className="mt-1 text-sm text-slate-400">Choose massage, spa, and wellness services available for home visits.</p>
 
         <div className="mt-4 grid gap-3 md:grid-cols-2">
           <input
             className="p-2.5 text-sm"
-            placeholder="Search worker visit option"
+            placeholder="Search wellness service"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
@@ -47,9 +47,9 @@ export default function ServicesPage() {
         {services.map((service, idx) => (
           <article key={service._id} className="panel space-y-2">
             <div className="flex items-center justify-between gap-3">
-              <h2 className="text-lg font-semibold">{`Worker Visit Option ${idx + 1}`}</h2>
+              <h2 className="text-lg font-semibold">{service.title || `Service ${idx + 1}`}</h2>
             </div>
-            <p className="text-sm text-slate-400">Flexible all-rounder worker support based on customer requirement.</p>
+            <p className="text-sm text-slate-400">{service.description || "Verified therapist home service."}</p>
             <p className="text-sm">Base: INR {service.basePrice} | Visit: INR {service.visitFee}</p>
             <div className="flex gap-2">
               <Link href={`/service/${service.slug}`} className="app-btn-secondary rounded-lg px-3 py-2 text-sm font-medium">

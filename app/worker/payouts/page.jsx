@@ -26,7 +26,10 @@ export default function WorkerPayoutsPage() {
   };
 
   useEffect(() => {
-    load();
+    const timeout = setTimeout(() => {
+      load();
+    }, 0);
+    return () => clearTimeout(timeout);
   }, []);
 
   const requestPayout = async () => {

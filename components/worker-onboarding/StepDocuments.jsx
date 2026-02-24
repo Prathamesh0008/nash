@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import UploadImage from "@/components/UploadImage";
 
 export default function StepDocuments({
@@ -30,13 +31,7 @@ export default function StepDocuments({
           onUploaded={(url) => updateDoc("idProof", url)}
         />
 
-        {docs.idProof && (
-          <img
-            src={docs.idProof}
-            alt="ID Proof"
-            className="w-32 rounded border"
-          />
-        )}
+        {docs.idProof && <Image src={docs.idProof} alt="ID Proof" width={128} height={128} unoptimized className="w-32 rounded border" />}
       </div>
 
       {/* ADDRESS PROOF */}
@@ -46,13 +41,7 @@ export default function StepDocuments({
           onUploaded={(url) => updateDoc("selfie", url)}
         />
 
-        {docs.selfie && (
-          <img
-            src={docs.selfie}
-            alt="Selfie"
-            className="w-32 rounded border"
-          />
-        )}
+        {docs.selfie && <Image src={docs.selfie} alt="Selfie" width={128} height={128} unoptimized className="w-32 rounded border" />}
       </div>
 
       {/* BUTTONS */}

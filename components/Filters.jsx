@@ -41,7 +41,7 @@ export default function Filters({ filters, setFilters }) {
       />
 
       <input
-        placeholder="Worker type (All-Rounder)"
+        placeholder="Service type (Massage, Spa, Wellness)"
         className={inputClass}
         value={filters.service || ""}
         onChange={(e) => update("service", e.target.value)}

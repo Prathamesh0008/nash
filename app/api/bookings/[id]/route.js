@@ -26,14 +26,21 @@ export async function GET(req, context) {
     booking.workerId?.toString() === user.userId;
 
   if (!canAccess) return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
+  const includeSourceBooking = user.role === "admin" || booking.userId?.toString() === user.userId;
 
-  const [service, customer, worker, rescheduleLogs] = await Promise.all([
+  const [service, customer, worker, rescheduleLogs, sourceBooking] = await Promise.all([
     Service.findById(booking.serviceId).select("title slug category").lean(),
     User.findById(booking.userId).select("name email phone").lean(),
     booking.workerId ? User.findById(booking.workerId).select("name email phone").lean() : null,
     RescheduleLog.find({ bookingId: booking._id }).sort({ createdAt: -1 }).lean(),
+    includeSourceBooking && booking.sourceBookingId
+      ? Booking.findById(booking.sourceBookingId).select("_id slotTime status createdAt").lean()
+      : null,
   ]);
 
-  const res = NextResponse.json({ ok: true, booking: { ...booking, service, customer, worker, rescheduleLogs } });
+  const res = NextResponse.json({
+    ok: true,
+    booking: { ...booking, service, customer, worker, rescheduleLogs, sourceBooking: sourceBooking || null },
+  });
   return applyRefreshCookies(res, refreshedResponse);
 }

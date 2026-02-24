@@ -32,7 +32,10 @@ export default function AdminReschedulePolicyPage() {
   };
 
   useEffect(() => {
-    load();
+    const timeout = setTimeout(() => {
+      load();
+    }, 0);
+    return () => clearTimeout(timeout);
   }, []);
 
   const updateTier = (idx, key, value) => {

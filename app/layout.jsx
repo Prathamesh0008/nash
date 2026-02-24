@@ -4,8 +4,8 @@ import MainNav from "@/components/MainNav";
 import Footer from "@/components/Footer";
 
 export const metadata = {
-  title: "Nash Workforce",
-  description: "Home services booking platform",
+  title: "Nash Wellness",
+  description: "Book verified massage, spa, and wellness home services with live chat support.",
 };
 
 export default function RootLayout({ children }) {
