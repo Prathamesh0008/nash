@@ -20,7 +20,7 @@ export default function WorkerWalletPage() {
   return (
     <section className="space-y-4">
       <div className="panel">
-        <h1 className="text-2xl font-semibold">Worker Wallet</h1>
+        <h1 className="text-2xl font-semibold">Escort Wallet</h1>
         <p className="text-sm text-slate-400">Track payout wallet and request withdrawals.</p>
       </div>
 

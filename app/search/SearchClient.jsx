@@ -41,7 +41,7 @@ export default function SearchClient() {
 
         const mapped = (data.workers || []).map((worker) => ({
           id: String(worker.id),
-          name: worker.name || "Therapist",
+          name: worker.name || "Escort",
           location: worker.serviceAreas?.[0]?.city || "Unknown location",
           rating: Number(worker.ratingAvg || 0),
           reviewsCount: Number(worker.jobsCompleted || 0),
@@ -52,7 +52,7 @@ export default function SearchClient() {
             worker.bio ||
             (worker.skills?.length > 0
               ? worker.skills.slice(0, 3).join(", ")
-              : "Verified wellness therapist profile"),
+              : "Verified escort profile"),
           tags: worker.categories?.length ? worker.categories.slice(0, 3) : worker.skills?.slice(0, 3) || [],
           specialties: [],
           verified: worker.verificationStatus === "APPROVED",
@@ -224,7 +224,7 @@ export default function SearchClient() {
         </div>
       </div>
       {prefMsg && <p className="mb-3 text-xs text-slate-300">{prefMsg}</p>}
-      {loading && <p className="mb-6 text-sm text-slate-400">Searching live workers...</p>}
+      {loading && <p className="mb-6 text-sm text-slate-400">Searching live escorts...</p>}
       {!!error && <p className="mb-6 rounded-lg bg-rose-950 p-3 text-sm text-rose-300">{error}</p>}
 
       {!loading && !error && providers.length > 0 ? (

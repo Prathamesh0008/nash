@@ -4,8 +4,8 @@ import Service from "@/models/Service";
 import WorkerProfile from "@/models/WorkerProfile";
 
 export const metadata = {
-  title: "Service Areas & City Landing Pages",
-  description: "Explore city and service specific pages for verified therapists.",
+  title: "City Landing Pages | Nash Elite Escorts",
+  description: "Explore city and service specific pages for verified escort providers.",
 };
 
 function slugifyCity(city = "") {
@@ -40,7 +40,7 @@ export default async function LandingIndexPage() {
     <section className="space-y-4">
       <div className="panel">
         <h1 className="text-2xl font-semibold">City + Service Landing Pages</h1>
-        <p className="text-sm text-slate-400">SEO-ready pages for each service in major cities.</p>
+        <p className="text-sm text-slate-400">SEO-ready pages for escort services in major cities.</p>
       </div>
 
       <div className="panel space-y-3">

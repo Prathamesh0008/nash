@@ -4,8 +4,8 @@ export default function WomensPage() {
   return (
     <GenderWorkersPage
       gender="female"
-      title="Womens Workers"
-      subtitle="Explore verified female workers available for bookings."
+      title="Female Escorts"
+      subtitle="Explore verified female escorts available for bookings."
     />
   );
 }

@@ -1,6 +1,6 @@
-# Nash Workforce Platform
+# Nash Elite Escorts Platform
 
-Production-style home services platform built on Next.js App Router + MongoDB.
+Production-style escort services platform built on Next.js App Router + MongoDB.
 
 ## Implemented
 
@@ -41,7 +41,7 @@ npm install
 cp .env.example .env.local
 ```
 
-3. Seed DB (creates admin + user + 20 workers + services + plans + bookings)
+3. Seed DB (creates admin + user + 20 escorts + services + plans + bookings)
 
 ```bash
 npm run seed
@@ -55,9 +55,9 @@ npm run dev
 
 ## Seed Credentials
 
-- Admin: `admin@nashworkforce.com` / `Admin@123`
-- User: `user@nashworkforce.com` / `User@123`
-- Workers: `worker1@nashworkforce.com` to `worker20@nashworkforce.com` / `Worker@123`
+- Admin: `admin@nasheliteescorts.com` / `Admin@123`
+- User: `user@nasheliteescorts.com` / `User@123`
+- Escorts: `escort1@nasheliteescorts.com` to `escort20@nasheliteescorts.com` / `Worker@123`
 
 ## Notes
 

@@ -28,14 +28,14 @@ function WorkerGenderCard({ worker }) {
         </div>
         <div className="text-xs text-slate-400">
           <MapPin className="mr-1 inline h-3.5 w-3.5" />
-          Service worker
+          Verified escort
         </div>
         <div className="flex items-center justify-between text-xs text-slate-300">
           <span>
             <Star className="mr-1 inline h-3 w-3 text-yellow-400" />
             {Number(worker.ratingAvg || 0).toFixed(1)}
           </span>
-          <span>{worker.jobsCompleted || 0}+ jobs</span>
+          <span>{worker.jobsCompleted || 0}+ sessions</span>
         </div>
       </div>
     </Link>
@@ -53,13 +53,13 @@ export default function GenderWorkersPage({ gender, title, subtitle }) {
         const res = await fetch(`/api/workers/by-gender/${gender}`);
         const data = await res.json();
         if (!data.ok) {
-          setError(data.error || "Failed to load workers");
+          setError(data.error || "Failed to load escorts");
           setLoading(false);
           return;
         }
         setWorkers(data.workers || []);
       } catch {
-        setError("Failed to load workers");
+        setError("Failed to load escorts");
       } finally {
         setLoading(false);
       }
@@ -79,9 +79,9 @@ export default function GenderWorkersPage({ gender, title, subtitle }) {
       {!!error && <p className="rounded-lg bg-rose-950 p-3 text-sm text-rose-200">{error}</p>}
       {!loading && !error && workers.length === 0 && (
         <div className="panel">
-          <p className="text-sm text-slate-300">No workers found in this category yet.</p>
+          <p className="text-sm text-slate-300">No escorts found in this category yet.</p>
           <Link href="/workers" className="app-btn-secondary mt-3 inline-block rounded-lg px-3 py-2 text-sm font-medium">
-            Browse All Workers
+            Browse All Escorts
           </Link>
         </div>
       )}

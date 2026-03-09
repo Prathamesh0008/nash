@@ -4,6 +4,9 @@ import dbConnect from "@/lib/dbConnect";
 import SupportTicket from "@/models/SupportTicket";
 import { requireAuth, applyRefreshCookies } from "@/lib/apiAuth";
 import { createNotification } from "@/lib/notify";
+import { scanProhibitedContent } from "@/lib/prohibitedDetection";
+import { createRiskSignal } from "@/lib/riskSignals";
+import { writeAuditLog } from "@/lib/audit";
 
 export async function PATCH(req, context) {
   await dbConnect();
@@ -21,6 +24,32 @@ export async function PATCH(req, context) {
 
   if (!message) {
     return NextResponse.json({ ok: false, error: "Reply message is required" }, { status: 400 });
+  }
+
+  const moderation = scanProhibitedContent(message, {
+    channel: "support_reply",
+    actorRole: user.role,
+  });
+  if (moderation.matched) {
+    await createRiskSignal({
+      userId: user.userId,
+      signalType: "support_reply_policy_violation",
+      severity: moderation.severity,
+      reasons: moderation.reasons,
+      meta: {
+        ticketId: id,
+        shouldBlock: moderation.shouldBlock,
+      },
+      actorId: user.userId,
+      actorRole: user.role,
+      req,
+    });
+    if (moderation.shouldBlock) {
+      return NextResponse.json(
+        { ok: false, error: "Reply contains prohibited content and cannot be posted." },
+        { status: 400 }
+      );
+    }
   }
 
   const ticket = await SupportTicket.findById(id);
@@ -49,7 +78,22 @@ export async function PATCH(req, context) {
     ticket.status = "open";
   }
 
-  ticket.lastReplyAt = new Date();
+  const now = new Date();
+  ticket.lastReplyAt = now;
+  if (user.role === "admin" && !ticket.firstResponseAt) {
+    ticket.firstResponseAt = now;
+  }
+  if (["resolved", "closed"].includes(ticket.status) && !ticket.resolvedAt) {
+    ticket.resolvedAt = now;
+  }
+  ticket.auditTrail = Array.isArray(ticket.auditTrail) ? ticket.auditTrail : [];
+  ticket.auditTrail.push({
+    action: "reply_added",
+    actorId: user.userId,
+    actorRole: user.role,
+    note: `Status:${ticket.status}`,
+    at: now,
+  });
   await ticket.save();
 
   if (user.role === "admin") {
@@ -63,6 +107,20 @@ export async function PATCH(req, context) {
       meta: { ticketId: ticket._id.toString(), ticketNo: ticket.ticketNo },
     });
   }
+
+  await writeAuditLog({
+    actorId: user.userId,
+    actorRole: user.role,
+    action: "support.ticket.reply",
+    targetType: "support_ticket",
+    targetId: ticket._id,
+    metadata: {
+      ticketNo: ticket.ticketNo,
+      status: ticket.status,
+      byAdmin: user.role === "admin",
+    },
+    req,
+  });
 
   const res = NextResponse.json({ ok: true, ticket });
   return applyRefreshCookies(res, refreshedResponse);

@@ -28,10 +28,10 @@ const userLinkSections = [
     icon: Sparkles,
     links: [
       { href: "/services", label: "All Services", badge: "Hot" },
-      { href: "/workers", label: "Find Workers" },
+      { href: "/workers", label: "Find Escorts" },
       { href: "/search", label: "Search Providers", badge: "New" },
       { href: "/faq", label: "FAQ" },
-      { href: "/booking/new", label: "Book a Service" },
+      { href: "/booking/new", label: "Book an Escort" },
     ],
   },
   {
@@ -43,7 +43,7 @@ const userLinkSections = [
       { href: "/orders", label: "Your Orders" },
       { href: "/wallet", label: "Wallet" },
       { href: "/membership", label: "Membership", badge: "New" },
-      { href: "/family-pass", label: "Family Pass", badge: "New" },
+      { href: "/family-pass", label: "VIP Pass", badge: "New" },
       { href: "/referrals", label: "Referrals", badge: "New" },
     ],
   },
@@ -51,8 +51,8 @@ const userLinkSections = [
     title: "Community",
     icon: Users,
     links: [
-      { href: "/worker/onboarding", label: "Become a Worker" },
-      { href: "/worker/jobs", label: "Worker Jobs" },
+      { href: "/worker/onboarding", label: "Become an Escort" },
+      { href: "/worker/jobs", label: "Escort Jobs" },
       { href: "/contact-us", label: "Contact Us" },
       { href: "/support", label: "Support" },
       { href: "/faq", label: "FAQ" },
@@ -66,6 +66,7 @@ const userLinkSections = [
       { href: "/legal/terms", label: "Terms of Use" },
       { href: "/legal/privacy", label: "Privacy Policy" },
       { href: "/legal/cookies", label: "Cookie Policy" },
+      { href: "/legal/safety", label: "Safety Policy" },
       { href: "/legal/payments", label: "Payment Policy" },
     ],
   },
@@ -78,9 +79,9 @@ const socialLinks = [
 ];
 
 const appFeatures = [
-  { icon: Heart, text: "Trusted by Local Customers" },
-  { icon: Star, text: "Top Rated Service Platform" },
-  { icon: Shield, text: "Verified Worker Profiles" },
+  { icon: Heart, text: "Trusted by Private Clients" },
+  { icon: Star, text: "Top Rated Escort Platform" },
+  { icon: Shield, text: "Verified Escort Profiles" },
 ];
 
 const adminLinkSections = [
@@ -89,7 +90,7 @@ const adminLinkSections = [
     icon: LayoutDashboard,
     links: [
       { href: "/admin/dashboard", label: "Dashboard" },
-      { href: "/admin/workers", label: "Workers" },
+      { href: "/admin/workers", label: "Escorts" },
       { href: "/admin/users", label: "Users" },
       { href: "/admin/orders", label: "Orders" },
     ],
@@ -121,6 +122,7 @@ const adminLinkSections = [
       { href: "/legal/terms", label: "Terms of Use" },
       { href: "/legal/privacy", label: "Privacy Policy" },
       { href: "/legal/cookies", label: "Cookie Policy" },
+      { href: "/legal/safety", label: "Safety Policy" },
       { href: "/contact-us", label: "Contact Us" },
       { href: "/support", label: "Support" },
       { href: "/faq", label: "FAQ" },
@@ -130,7 +132,7 @@ const adminLinkSections = [
 
 const workerLinkSections = [
   {
-    title: "Worker Core",
+    title: "Escort Core",
     icon: LayoutDashboard,
     links: [
       { href: "/worker/dashboard", label: "Dashboard" },
@@ -168,6 +170,7 @@ const workerLinkSections = [
       { href: "/legal/terms", label: "Terms of Use" },
       { href: "/legal/privacy", label: "Privacy Policy" },
       { href: "/legal/cookies", label: "Cookie Policy" },
+      { href: "/legal/safety", label: "Safety Policy" },
       { href: "/legal/payments", label: "Payment Policy" },
     ],
   },
@@ -223,17 +226,17 @@ export default function Footer() {
     if (role === "worker") return workerLinkSections;
     return userLinkSections;
   }, [role]);
-  const roleSummary = role === "admin" ? "Admin operations and moderation tools" : role === "worker" ? "Worker jobs, earnings, and profile tools" : "Customer booking and service discovery";
+  const roleSummary = role === "admin" ? "Admin operations and moderation tools" : role === "worker" ? "Escort jobs, earnings, and profile tools" : "Private booking and provider discovery";
   const rolePrimaryCta = role === "admin"
     ? { href: "/admin/dashboard", label: "Open Admin Dashboard", icon: UserCog }
     : role === "worker"
-      ? { href: "/worker/dashboard", label: "Open Worker Dashboard", icon: LayoutDashboard }
+      ? { href: "/worker/dashboard", label: "Open Escort Dashboard", icon: LayoutDashboard }
       : { href: "/services", label: "Explore Services", icon: Heart };
   const roleSecondaryCta = role === "admin"
-    ? { href: "/admin/workers", label: "Review Workers", icon: Users }
+    ? { href: "/admin/workers", label: "Review Escorts", icon: Users }
     : role === "worker"
       ? { href: "/worker/jobs", label: "View Jobs", icon: ClipboardList }
-      : { href: "/worker/onboarding", label: "Become a Worker", icon: Globe };
+      : { href: "/worker/onboarding", label: "Become an Escort", icon: Globe };
   const PrimaryCtaIcon = rolePrimaryCta.icon;
   const SecondaryCtaIcon = roleSecondaryCta.icon;
 
@@ -241,7 +244,7 @@ export default function Footer() {
     return (
       <footer className="mt-8 border-t border-white/10 bg-slate-950/80">
         <div className="mx-auto flex w-full max-w-[92rem] flex-col items-center justify-between gap-3 px-4 py-4 text-center text-xs text-slate-400 sm:flex-row sm:text-left">
-          <p>{"\u00A9"} {year} Nash Wellness</p>
+          <p>{"\u00A9"} {year} Nash Elite Escorts</p>
           <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 sm:justify-end">
             <Link href="/contact-us" className="hover:text-slate-200">Contact Us</Link>
             <Link href="/support" className="hover:text-slate-200">Support</Link>
@@ -279,12 +282,12 @@ export default function Footer() {
           <div className="lg:col-span-4 space-y-6">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-pink-500/10 to-purple-500/10 border border-pink-500/20">
               <Sparkles className="w-4 h-4 text-pink-400" />
-              <span className="text-xs font-medium text-white/80">Book Trusted Home Services</span>
+              <span className="text-xs font-medium text-white/80">Book Verified Escort Services</span>
             </div>
 
             <div>
               <h2 className="mb-2 bg-gradient-to-r from-white to-white/70 bg-clip-text text-2xl font-bold text-transparent sm:text-3xl">
-                Nash Wellness
+                Nash Elite Escorts
               </h2>
               <p className="text-white/50 text-sm leading-relaxed max-w-sm">
                 {roleSummary}
@@ -357,7 +360,7 @@ export default function Footer() {
         <div className="relative pt-8 mt-8 border-t border-white/5">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="order-2 text-center text-sm text-white/40 md:order-1 md:text-left">
-              {"\u00A9"} {year} Nash Wellness. Built with <Heart className="w-3.5 h-3.5 inline-block text-pink-400 mx-0.5" /> for reliable services
+              {"\u00A9"} {year} Nash Elite Escorts. Built with <Heart className="w-3.5 h-3.5 inline-block text-pink-400 mx-0.5" /> for private, verified bookings
             </p>
 
             <div className="order-1 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 md:order-2 md:justify-end md:gap-6">
@@ -370,11 +373,14 @@ export default function Footer() {
               <Link href="/legal/cookies" className="text-sm text-white/40 hover:text-white transition-colors">
                 Cookies
               </Link>
+              <Link href="/legal/safety" className="text-sm text-white/40 hover:text-white transition-colors">
+                Safety
+              </Link>
               <Link href="/membership" className="text-sm text-white/40 hover:text-white transition-colors">
                 Membership
               </Link>
               <Link href="/family-pass" className="text-sm text-white/40 hover:text-white transition-colors">
-                Family Pass
+                VIP Pass
               </Link>
               <Link href="/support" className="text-sm text-white/40 hover:text-white transition-colors">
                 Support

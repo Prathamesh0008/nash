@@ -7,20 +7,20 @@ const faqGroups = [
     icon: CalendarClock,
     items: [
       {
-        q: "How do I book a therapist?",
-        a: "Open Services or Workers, choose a therapist/service, select date-time, add address, and confirm booking.",
+        q: "How do I book an escort?",
+        a: "Open Services or Escorts, choose an escort/service, select date-time, add address, and confirm booking.",
       },
       {
-        q: "Can I choose a specific worker?",
-        a: "Yes. If a worker profile is selected, booking tries strict assignment first. If unavailable, you can allow alternate assignment.",
+        q: "Can I choose a specific escort?",
+        a: "Yes. If an escort profile is selected, booking tries strict assignment first. If unavailable, you can allow alternate assignment.",
       },
       {
         q: "Why was my slot changed or delayed?",
-        a: "Slot updates may happen due to worker availability, route conditions, safety checks, or high demand in your area.",
+        a: "Slot updates may happen due to escort availability, route conditions, safety checks, or high demand in your area.",
       },
       {
         q: "How does live tracking work?",
-        a: "For active jobs, tracking shows worker location updates, status freshness, ETA, and route movement until arrival.",
+        a: "For active jobs, tracking shows escort location updates, status freshness, ETA, and route movement until arrival.",
       },
     ],
   },
@@ -47,20 +47,20 @@ const faqGroups = [
     ],
   },
   {
-    title: "Workers",
+    title: "Escorts",
     icon: UserCheck,
     items: [
       {
-        q: "How do workers become verified?",
-        a: "Workers complete onboarding, upload required documents, and pass verification review before going live.",
+        q: "How do escorts become verified?",
+        a: "Escorts complete onboarding, upload required documents, and pass verification review before going live.",
       },
       {
-        q: "Can I contact worker directly?",
+        q: "Can I contact escort directly?",
         a: "Direct contact may be restricted until policy conditions are met. Use in-app chat for safe communication.",
       },
       {
-        q: "Why does worker availability change quickly?",
-        a: "Availability is live and can change with active jobs, blocked slots, area constraints, or online/offline status updates.",
+        q: "Why does escort availability change quickly?",
+        a: "Availability is live and can change with active bookings, blocked slots, area constraints, or online/offline status updates.",
       },
     ],
   },
@@ -97,7 +97,7 @@ export default function FaqPage() {
           <h1 className="text-2xl font-semibold">Frequently Asked Questions</h1>
         </div>
         <p className="mt-2 text-sm text-slate-400">
-          Quick answers for booking, payments, live tracking, worker profiles, and account support.
+          Quick answers for booking, payments, live tracking, escort profiles, and account support.
         </p>
       </div>
 

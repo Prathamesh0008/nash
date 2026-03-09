@@ -2,10 +2,11 @@ import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import MainNav from "@/components/MainNav";
 import Footer from "@/components/Footer";
+import LiveLocationTracker from "@/components/LiveLocationTracker";
 
 export const metadata = {
-  title: "Nash Wellness",
-  description: "Book verified massage, spa, and wellness home services with live chat support.",
+  title: "Nash Elite Escorts",
+  description: "Book verified escort and companionship providers with secure booking and live chat support.",
 };
 
 export default function RootLayout({ children }) {
@@ -13,6 +14,7 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body className="min-h-screen bg-slate-950 text-slate-100">
         <AuthProvider>
+          <LiveLocationTracker />
           <div className="flex min-h-screen flex-col">
             <MainNav />
             <main className="page w-full flex-1">{children}</main>

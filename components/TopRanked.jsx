@@ -18,8 +18,8 @@ export default function TopRanked({ providers = [] }) {
               <Crown className="h-3.5 w-3.5" />
               Top Rated
             </p>
-            <h3 className="mt-2 text-lg font-semibold text-white">Top wellness therapists</h3>
-            <p className="text-sm text-slate-400">Sorted by rating and recent service performance.</p>
+            <h3 className="mt-2 text-lg font-semibold text-white">Top rated escorts</h3>
+            <p className="text-sm text-slate-400">Sorted by rating and recent booking performance.</p>
           </div>
           <Link href="/workers" className="hidden items-center gap-1 text-sm text-sky-300 hover:text-sky-200 md:inline-flex">
             View all

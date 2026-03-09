@@ -95,10 +95,10 @@ export default function RebookOptionsModal({
               <div>
                 <div className="flex items-center gap-2">
                   <UserRound className="h-4 w-4 text-emerald-300" />
-                  <p className="text-sm font-medium">Same Worker</p>
+                  <p className="text-sm font-medium">Same Escort</p>
                 </div>
                 <p className="mt-1 text-xs text-slate-400">
-                  {sameWorkerAvailable ? "Try booking with your previous worker." : sameWorkerReason || "Not available right now."}
+                  {sameWorkerAvailable ? "Try booking with your previous escort." : sameWorkerReason || "Not available right now."}
                 </p>
               </div>
             </label>
@@ -116,9 +116,9 @@ export default function RebookOptionsModal({
               <div>
                 <div className="flex items-center gap-2">
                   <Zap className="h-4 w-4 text-cyan-300" />
-                  <p className="text-sm font-medium">Fastest Available Worker</p>
+                  <p className="text-sm font-medium">Fastest Available Escort</p>
                 </div>
-                <p className="mt-1 text-xs text-slate-400">Auto-assign the best available worker for this slot.</p>
+                <p className="mt-1 text-xs text-slate-400">Auto-assign the best available escort for this slot.</p>
               </div>
             </label>
           </div>
@@ -132,7 +132,7 @@ export default function RebookOptionsModal({
                 disabled={submitting}
                 onChange={(e) => setStrictSameWorker(e.target.checked)}
               />
-              <span className="text-slate-300">Do not fallback to auto assignment if previous worker is unavailable.</span>
+              <span className="text-slate-300">Do not fallback to auto assignment if previous escort is unavailable.</span>
             </label>
           )}
 

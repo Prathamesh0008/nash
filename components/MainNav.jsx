@@ -34,47 +34,50 @@ import {
   X,
 } from "lucide-react";
 
-function TopPillLink({ href, label }) {
+function TopPillLink({ href, label, onClick }) {
   return (
     <Link
       href={href}
-      className="rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-2.5 text-sm font-medium text-slate-200 transition hover:border-fuchsia-400/50 hover:text-white md:text-base"
+      onClick={onClick}
+      className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-1.5 text-xs font-medium text-slate-200 transition hover:border-fuchsia-400/50 hover:text-white lg:px-5 lg:py-2 lg:text-sm"
     >
       {label}
     </Link>
   );
 }
 
-function MainTab({ href, label, icon: Icon, pathname }) {
+function MainTab({ href, label, icon: Icon, pathname, isScrolled, onClick }) {
   const active = pathname === href || pathname.startsWith(`${href}/`);
   return (
     <Link
       href={href}
-      className={`inline-flex items-center gap-2 rounded-2xl px-5 py-2.5 text-sm transition md:text-base ${
+      onClick={onClick}
+      className={`inline-flex items-center gap-1.5 rounded-2xl px-3 py-1.5 text-xs transition-all lg:gap-2 lg:px-4 lg:text-sm xl:px-5 ${
         active
           ? "bg-gradient-to-r from-fuchsia-600 via-pink-600 to-violet-600 text-white shadow-[0_0_18px_rgba(217,70,239,0.35)]"
           : "text-slate-300 hover:bg-white/[0.06] hover:text-white"
-      }`}
+      } ${isScrolled ? "lg:py-1.5" : "lg:py-2"}`}
     >
-      <Icon className="h-4 w-4" />
-      {label}
+      <Icon className={`${isScrolled ? "h-3.5 w-3.5" : "h-4 w-4"} lg:h-4 lg:w-4`} />
+      <span className="hidden sm:inline">{label}</span>
     </Link>
   );
 }
 
 function getRoleConfig(role) {
+  // ... (keep your existing roleConfig function exactly as is)
   if (role === "admin") {
     return {
       brandHref: "/admin/dashboard",
       badge: "Admin Panel",
       topLinks: [
         { href: "/admin/dashboard", label: "Dashboard" },
-        { href: "/admin/workers", label: "Workers" },
+        { href: "/admin/workers", label: "Escorts" },
         { href: "/admin/orders", label: "Orders" },
       ],
       tabs: [
         { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
-        { href: "/admin/workers", label: "Workers", icon: UserCog },
+        { href: "/admin/workers", label: "Escorts", icon: UserCog },
         { href: "/admin/users", label: "Users", icon: Users },
         { href: "/admin/orders", label: "Orders", icon: ClipboardList },
         { href: "/admin/payments", label: "Payments", icon: BadgeDollarSign },
@@ -105,7 +108,7 @@ function getRoleConfig(role) {
   if (role === "worker") {
     return {
       brandHref: "/worker/dashboard",
-      badge: "Worker Panel",
+      badge: "Escort Panel",
       topLinks: [
         { href: "/worker/dashboard", label: "Dashboard" },
         { href: "/worker/jobs", label: "Jobs" },
@@ -128,7 +131,7 @@ function getRoleConfig(role) {
         { href: "/worker/inbox", label: "Legacy Inbox" },
       ],
       showSearch: false,
-      searchHint: "Manage your work activity",
+      searchHint: "Manage your escort activity",
       regionsHref: "/worker/jobs",
       filtersHref: "/worker/dashboard",
       showSupport: true,
@@ -138,22 +141,22 @@ function getRoleConfig(role) {
   return {
     brandHref: "/",
     badge: "Premium",
-    topLinks: [{ href: "/workers", label: "Therapists" }],
-    tabs: [
-      { href: "/", label: "Home", icon: Home },
-      { href: "/womens", label: "Womens", icon: Venus },
-      { href: "/mens", label: "Mens", icon: Mars },
-      { href: "/services", label: "Wellness", icon: BriefcaseBusiness },
-      { href: "/workers", label: "Therapists", icon: Users },
-      { href: "/orders", label: "Orders", icon: Wrench },
-      { href: "/chat", label: "Chat", icon: Video },
-    ],
+      topLinks: [{ href: "/workers", label: "Escorts" }],
+      tabs: [
+        { href: "/", label: "Home", icon: Home },
+        { href: "/womens", label: "Womens", icon: Venus },
+        { href: "/mens", label: "Mens", icon: Mars },
+        { href: "/services", label: "Services", icon: BriefcaseBusiness },
+        { href: "/workers", label: "Escorts", icon: Users },
+        { href: "/orders", label: "Orders", icon: Wrench },
+        { href: "/chat", label: "Chat", icon: Video },
+      ],
       quickTags: [
-        { href: "/workers", label: "Massage Pros" },
+        { href: "/workers", label: "Verified Escorts" },
         { href: "/workers?sort=rating", label: "Top Rated" },
         { href: "/booking/new", label: "Quick Booking" },
         { href: "/membership", label: "Membership" },
-        { href: "/family-pass", label: "Family Pass" },
+        { href: "/family-pass", label: "VIP Pass" },
         { href: "/favorites", label: "Favorites" },
         { href: "/contact-us", label: "Contact Us" },
         { href: "/faq", label: "FAQ" },
@@ -161,7 +164,7 @@ function getRoleConfig(role) {
         { href: "/search", label: "More..." },
       ],
     showSearch: true,
-    searchHint: "Search therapists, spa services, locations...",
+    searchHint: "Search escorts, companionship services, locations...",
     regionsHref: "/workers",
     filtersHref: "/services",
     showSupport: true,
@@ -175,22 +178,53 @@ export default function MainNav() {
   const [query, setQuery] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [showCompactSearch, setShowCompactSearch] = useState(false);
   const profileMenuRef = useRef(null);
+  const searchInputRef = useRef(null);
+  
   const roleConfig = useMemo(() => getRoleConfig(user?.role), [user?.role]);
   const roleTitle = !user?.role
     ? "Guest"
     : user.role === "worker"
-      ? "Verified Worker"
+      ? "Verified Escort"
       : user.role === "admin"
         ? "Admin"
         : "Customer";
 
-  const profileHref = user?.role === "worker" ? "/worker/dashboard" : user?.role === "admin" ? "/admin/dashboard" : "/profile";
+  // Scroll effect with throttle
+  useEffect(() => {
+    let ticking = false;
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const scrollPosition = window.scrollY;
+          setIsScrolled(scrollPosition > 80);
+          if (scrollPosition > 80 && showCompactSearch) {
+            setShowCompactSearch(false);
+          }
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [showCompactSearch]);
+
+  // Focus search input when compact search opens
+  useEffect(() => {
+    if (showCompactSearch && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [showCompactSearch]);
+
   const profileMenuItems = useMemo(() => {
     if (user?.role === "admin") {
       return [
         { href: "/admin/dashboard", label: "Dashboard" },
-        { href: "/admin/workers", label: "Workers" },
+        { href: "/admin/workers", label: "Escorts" },
         { href: "/admin/orders", label: "Orders" },
         { href: "/admin/payments", label: "Payments" },
       ];
@@ -215,261 +249,362 @@ export default function MainNav() {
   const onSearch = (e) => {
     e.preventDefault();
     const value = query.trim();
-    router.push(value ? `/search?q=${encodeURIComponent(value)}` : "/search");
+    if (value) {
+      router.push(`/search?q=${encodeURIComponent(value)}`);
+    } else {
+      router.push("/search");
+    }
+    setShowCompactSearch(false);
+    setMobileMenuOpen(false);
   };
 
+  const handleCompactSearchClick = () => {
+    setShowCompactSearch(!showCompactSearch);
+  };
+
+  // Close menus on route change
+  useEffect(() => {
+    setProfileMenuOpen(false);
+    setMobileMenuOpen(false);
+    setShowCompactSearch(false);
+  }, [pathname]);
+
+  // Click outside handler for profile menu
   useEffect(() => {
     if (!profileMenuOpen) return;
     const onClickOutside = (event) => {
-      if (!profileMenuRef.current) return;
-      if (!profileMenuRef.current.contains(event.target)) {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
         setProfileMenuOpen(false);
       }
     };
-    const onEsc = (event) => {
-      if (event.key === "Escape") setProfileMenuOpen(false);
-    };
     document.addEventListener("mousedown", onClickOutside);
-    document.addEventListener("touchstart", onClickOutside);
-    document.addEventListener("keydown", onEsc);
-    return () => {
-      document.removeEventListener("mousedown", onClickOutside);
-      document.removeEventListener("touchstart", onClickOutside);
-      document.removeEventListener("keydown", onEsc);
-    };
+    return () => document.removeEventListener("mousedown", onClickOutside);
   }, [profileMenuOpen]);
 
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      setProfileMenuOpen(false);
-      setMobileMenuOpen(false);
-    }, 0);
-    return () => clearTimeout(timeout);
-  }, [pathname]);
-
   return (
-    <header className="sticky top-0 z-50 border-b border-white/10 bg-black/95 backdrop-blur-xl">
-      <div className="border-b border-white/10">
-        <div className="mx-auto flex w-full max-w-[92rem] flex-wrap items-center justify-between gap-4 px-4 py-4">
-          <div className="flex items-center gap-3">
-            <Link href={roleConfig.brandHref} className="flex items-center gap-3">
-              <span className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-fuchsia-600 to-violet-600 text-2xl font-bold text-white shadow-[0_10px_30px_rgba(168,85,247,0.45)]">
+    <header className={`sticky top-0 z-50 border-b border-white/10 bg-black/95 backdrop-blur-xl transition-all duration-300 ${
+      isScrolled ? "shadow-lg" : ""
+    }`}>
+      {/* Main Top Bar */}
+      <div className={`transition-all duration-300 ${
+        isScrolled ? "py-1" : "py-2 md:py-3"
+      }`}>
+        <div className="mx-auto flex max-w-[92rem] items-center justify-between px-3 md:px-4">
+          {/* Logo Section */}
+          <div className="flex items-center gap-2 md:gap-3">
+            <Link href={roleConfig.brandHref} className="flex items-center gap-2 md:gap-3">
+              <span className={`grid place-items-center rounded-2xl bg-gradient-to-br from-fuchsia-600 to-violet-600 font-bold text-white shadow-[0_10px_30px_rgba(168,85,247,0.45)] transition-all duration-300 ${
+                isScrolled ? "h-8 w-8 text-base md:h-9 md:w-9" : "h-10 w-10 text-xl md:h-12 md:w-12 md:text-2xl"
+              }`}>
                 N
               </span>
-              <div>
-                <p className="text-xl font-bold tracking-tight text-fuchsia-300 md:text-3xl">Nash Wellness</p>
-                <p className="text-xs tracking-[0.4em] text-slate-400">{user?.role === "admin" ? "ADMIN OPERATIONS" : user?.role === "worker" ? "THERAPIST OPERATIONS" : "SPA HOME SERVICES"}</p>
+              <div className="flex flex-col">
+                <p className={`font-bold tracking-tight text-fuchsia-300 transition-all duration-300 ${
+                  isScrolled ? "text-sm md:text-base" : "text-base md:text-xl lg:text-2xl"
+                }`}>
+                  Nash Elite Escorts
+                </p>
+                <p className={`text-[8px] tracking-[0.2em] text-slate-400 transition-all duration-300 md:text-[10px] md:tracking-[0.3em] ${
+                  isScrolled ? "hidden md:hidden lg:block" : "block"
+                }`}>
+                  {user?.role === "admin" ? "ADMIN OPERATIONS" : user?.role === "worker" ? "ESCORT OPERATIONS" : "PRIVATE COMPANION SERVICES"}
+                </p>
               </div>
             </Link>
-            <span className="ml-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-pink-500 px-4 py-1 text-[11px] font-semibold text-white">
+            <span className={`rounded-full bg-gradient-to-r from-fuchsia-500 to-pink-500 px-2 py-0.5 text-[9px] font-semibold text-white transition-all md:px-3 md:text-[10px] lg:px-4 lg:py-1 lg:text-[11px] ${
+              isScrolled ? "opacity-90" : ""
+            }`}>
               {roleConfig.badge}
             </span>
           </div>
 
-          <div className="flex items-center gap-2 md:gap-3">
-            <Link href="/notifications" className="rounded-2xl border border-white/10 p-3 text-slate-300 transition hover:border-fuchsia-400/50 hover:text-white">
-              <Bell className="h-5 w-5" />
+          {/* Right Section */}
+          <div className="flex items-center gap-1 md:gap-2 lg:gap-3">
+            {/* Notifications */}
+            <Link 
+              href="/notifications" 
+              className="rounded-xl border border-white/10 p-2 text-slate-300 transition hover:border-fuchsia-400/50 hover:text-white md:rounded-2xl"
+            >
+              <Bell className={`transition-all duration-300 ${
+                isScrolled ? "h-4 w-4" : "h-4 w-4 md:h-5 md:w-5"
+              }`} />
             </Link>
 
-            <div className="hidden lg:flex items-center gap-2">
-              {roleConfig.showSupport && <TopPillLink href="/support" label="Support" />}
-              {roleConfig.showSupport && <TopPillLink href="/contact-us" label="Contact Us" />}
+            {/* Desktop Support Links */}
+            <div className="hidden items-center gap-1 lg:flex">
+              {roleConfig.showSupport && (
+                <>
+                  <TopPillLink href="/support" label="Support" />
+                  <TopPillLink href="/contact-us" label="Contact Us" />
+                </>
+              )}
               {roleConfig.topLinks.map((item) => (
                 <TopPillLink key={item.href} href={item.href} label={item.label} />
               ))}
             </div>
 
+            {/* Auth Buttons */}
             {!loading && !user && (
-              <div className="hidden md:flex items-center gap-2">
+              <div className="hidden items-center gap-1 md:flex">
                 <TopPillLink href="/auth/login" label="Login" />
                 <Link
                   href="/auth/signup"
-                  className="rounded-2xl bg-gradient-to-r from-fuchsia-600 to-violet-600 px-5 py-2.5 text-lg font-semibold text-white transition hover:opacity-90"
+                  className={`rounded-xl bg-gradient-to-r from-fuchsia-600 to-violet-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:opacity-90 md:rounded-2xl md:px-4 md:py-2 md:text-sm ${
+                    isScrolled ? "md:py-1.5" : ""
+                  }`}
                 >
                   Signup
                 </Link>
               </div>
             )}
 
+            {/* User Profile */}
             {!loading && user && (
-              <>
-                <div ref={profileMenuRef} className="relative">
-                  <button
-                    type="button"
-                    onClick={() => setProfileMenuOpen((prev) => !prev)}
-                    className="flex min-w-[13rem] sm:min-w-[17rem] items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2 text-left transition hover:border-fuchsia-400/50"
-                  >
-                    <span className="grid h-10 w-10 place-items-center rounded-full border border-fuchsia-500/40 bg-fuchsia-500/10 text-fuchsia-300">
-                      <UserRound className="h-5 w-5" />
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-semibold text-white">{user.name || user.email || "User"}</span>
-                      <span className="block truncate text-xs text-slate-400">{roleTitle}</span>
-                    </span>
-                    <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform ${profileMenuOpen ? "rotate-180" : ""}`} />
-                  </button>
-                  {profileMenuOpen && (
-                    <div className="absolute right-0 top-[calc(100%+8px)] z-50 w-56 rounded-xl border border-white/10 bg-slate-950/95 p-2 shadow-xl backdrop-blur">
-                      <div className="mb-1 border-b border-white/10 px-2 pb-2 text-[11px] uppercase tracking-wide text-slate-400">
-                        Quick Menu
-                      </div>
-                      {profileMenuItems.map((item) => (
-                        <Link
-                          key={item.href}
-                          href={item.href}
-                          className="block rounded-lg px-3 py-2 text-sm text-slate-200 hover:bg-white/10 hover:text-white"
-                        >
-                          {item.label}
-                        </Link>
-                      ))}
-                      <button
-                        onClick={async () => {
-                          setProfileMenuOpen(false);
-                          await logout();
-                          router.push("/auth/login");
-                        }}
-                        className="mt-1 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-rose-200 hover:bg-rose-500/20"
-                      >
-                        <LogOut className="h-4 w-4" />
-                        Logout
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </>
-            )}
-
-            <button className="hidden md:inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-2.5 text-sm text-slate-200 transition hover:border-fuchsia-400/50 hover:text-white md:text-base">
-              <Globe className="h-4 w-4" />
-              EN
-              <ChevronDown className="h-4 w-4" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setMobileMenuOpen((prev) => !prev)}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] text-slate-200 transition hover:border-fuchsia-400/50 md:hidden"
-              aria-label="Toggle menu"
-            >
-              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="hidden border-b border-white/10 md:block">
-        <div className="mx-auto flex w-full max-w-[92rem] flex-wrap items-center justify-between gap-3 px-4 py-3">
-          <nav className="no-scrollbar flex max-w-full flex-nowrap items-center gap-2 overflow-x-auto">
-            {roleConfig.tabs.map((tab) => (
-              <MainTab key={tab.href} href={tab.href} label={tab.label} icon={tab.icon} pathname={pathname} />
-            ))}
-          </nav>
-
-          <div className="no-scrollbar flex max-w-full flex-nowrap items-center gap-2 overflow-x-auto">
-            {roleConfig.quickTags.map((tag) => (
-              <Link
-                key={tag.label}
-                href={tag.href}
-                className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-2 text-xs font-medium text-slate-200 transition hover:border-fuchsia-400/50 hover:text-white md:text-sm"
-              >
-                {tag.label}
-              </Link>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div className="hidden md:block">
-        <div className="mx-auto w-full max-w-[92rem] px-4 py-4">
-          {roleConfig.showSearch ? (
-            <>
-              <form onSubmit={onSearch} className="flex flex-wrap items-center gap-3">
-                <div className="relative min-w-[16rem] flex-1">
-                  <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-fuchsia-400" />
-                  <input
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    type="search"
-                    placeholder={roleConfig.searchHint}
-                    className="h-14 w-full rounded-2xl border border-white/15 bg-black/60 pl-12 pr-4 text-base text-slate-100 placeholder:text-slate-500 outline-none transition focus:border-fuchsia-500/60"
-                  />
-                </div>
-
+              <div ref={profileMenuRef} className="relative">
                 <button
-                  type="submit"
-                  className="h-14 rounded-2xl bg-gradient-to-r from-fuchsia-600 to-pink-600 px-8 text-base font-semibold text-white transition hover:opacity-90"
+                  onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+                  className={`flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-2 py-1 transition hover:border-fuchsia-400/50 md:rounded-2xl md:px-3 ${
+                    isScrolled ? "md:py-1" : "md:py-1.5"
+                  }`}
                 >
-                  Search
+                  <span className={`grid place-items-center rounded-full border border-fuchsia-500/40 bg-fuchsia-500/10 text-fuchsia-300 transition-all ${
+                    isScrolled ? "h-7 w-7" : "h-8 w-8 md:h-9 md:w-9"
+                  }`}>
+                    <UserRound className={`${isScrolled ? "h-3.5 w-3.5" : "h-4 w-4 md:h-5 md:w-5"}`} />
+                  </span>
+                  <span className="hidden min-w-0 flex-1 lg:block">
+                    <span className="block truncate text-xs font-semibold text-white">
+                      {user.name || user.email || "User"}
+                    </span>
+                    <span className="block truncate text-[10px] text-slate-400">
+                      {roleTitle}
+                    </span>
+                  </span>
+                  <ChevronDown className={`hidden h-3 w-3 text-slate-400 transition-transform lg:block ${
+                    profileMenuOpen ? "rotate-180" : ""
+                  }`} />
                 </button>
 
-                <Link
-                  href={roleConfig.filtersHref}
-                  className="inline-flex h-14 items-center gap-2 rounded-2xl border border-white/15 bg-white/[0.03] px-6 text-base font-medium text-slate-100 transition hover:border-fuchsia-400/50"
-                >
-                  <SlidersHorizontal className="h-5 w-5" />
-                  Filters
-                </Link>
-
-                <Link
-                  href={roleConfig.regionsHref}
-                  className="inline-flex h-14 items-center gap-2 rounded-2xl border border-white/15 bg-white/[0.03] px-6 text-base font-medium text-slate-100 transition hover:border-fuchsia-400/50"
-                >
-                  <MapPin className="h-5 w-5" />
-                  Regions
-                </Link>
-              </form>
-
-              <div className="mt-2 flex flex-wrap items-center gap-3 px-1 text-xs text-slate-500">
-                <span className="inline-flex items-center gap-1 rounded-full border border-white/10 px-2 py-1">
-                  <MessageCircle className="h-3 w-3" />
-                  Fast booking support
-                </span>
-                <span className="inline-flex items-center gap-1 rounded-full border border-white/10 px-2 py-1">
-                  Verified workers
-                </span>
-                <span className="inline-flex items-center gap-1 rounded-full border border-white/10 px-2 py-1">
-                  Secure online payments
-                </span>
+                {profileMenuOpen && (
+                  <div className="absolute right-0 top-[calc(100%+8px)] z-50 w-48 rounded-xl border border-white/10 bg-slate-950/95 p-2 shadow-xl backdrop-blur md:w-56">
+                    <div className="mb-1 border-b border-white/10 px-2 pb-2 text-[10px] uppercase tracking-wide text-slate-400">
+                      Quick Menu
+                    </div>
+                    {profileMenuItems.map((item) => (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        className="block rounded-lg px-3 py-2 text-xs text-slate-200 hover:bg-white/10 hover:text-white md:text-sm"
+                        onClick={() => setProfileMenuOpen(false)}
+                      >
+                        {item.label}
+                      </Link>
+                    ))}
+                    <button
+                      onClick={async () => {
+                        setProfileMenuOpen(false);
+                        await logout();
+                        router.push("/auth/login");
+                      }}
+                      className="mt-1 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-rose-200 hover:bg-rose-500/20 md:text-sm"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Logout
+                    </button>
+                  </div>
+                )}
               </div>
-            </>
-          ) : (
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/[0.02] px-4 py-3 text-sm text-slate-300">
-              <span className="inline-flex items-center gap-2">
-                <ShieldCheck className="h-4 w-4 text-fuchsia-400" />
-                {roleConfig.searchHint}
-              </span>
-              <span className="text-xs text-slate-400">
-                {user?.role === "admin" ? "Admin focused navigation active" : "Worker focused navigation active"}
-              </span>
-            </div>
-          )}
+            )}
+
+            {/* Language Selector */}
+            <button className={`hidden items-center gap-1 rounded-xl border border-white/10 bg-white/[0.03] px-2 py-1.5 text-xs text-slate-200 transition hover:border-fuchsia-400/50 hover:text-white md:inline-flex lg:rounded-2xl lg:px-3 lg:text-sm ${
+              isScrolled ? "md:py-1" : ""
+            }`}>
+              <Globe className="h-3.5 w-3.5 lg:h-4 lg:w-4" />
+              <span className="hidden lg:inline">EN</span>
+              <ChevronDown className="hidden h-3 w-3 lg:inline" />
+            </button>
+
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] text-slate-200 transition hover:border-fuchsia-400/50 md:h-9 md:w-9 lg:hidden"
+            >
+              {mobileMenuOpen ? <X className="h-4 w-4 md:h-5 md:w-5" /> : <Menu className="h-4 w-4 md:h-5 md:w-5" />}
+            </button>
+          </div>
         </div>
       </div>
 
-      {mobileMenuOpen && (
-        <div className="border-t border-white/10 md:hidden">
-          <div className="mx-auto w-full max-w-[92rem] space-y-3 px-4 py-4">
-            <div className="grid grid-cols-2 gap-2">
-              {roleConfig.tabs.map((tab) => {
-                const active = pathname === tab.href || pathname.startsWith(`${tab.href}/`);
-                return (
-                  <Link
-                    key={tab.href}
-                    href={tab.href}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={`rounded-xl px-3 py-2 text-sm ${
-                      active
-                        ? "bg-gradient-to-r from-fuchsia-600 to-violet-600 text-white"
-                        : "border border-white/10 bg-white/[0.03] text-slate-200"
-                    }`}
-                  >
-                    {tab.label}
-                  </Link>
-                );
-              })}
+      {/* Desktop Navigation - Only shows when not scrolled */}
+      {!isScrolled && (
+        <div className="hidden border-t border-white/10 md:block">
+          <div className="mx-auto max-w-[92rem] px-4">
+            {/* Main Tabs */}
+            <div className="flex items-center justify-between gap-4 py-2">
+              <nav className="no-scrollbar flex flex-1 items-center gap-1 overflow-x-auto lg:gap-2">
+                {roleConfig.tabs.map((tab) => (
+                  <MainTab 
+                    key={tab.href} 
+                    href={tab.href} 
+                    label={tab.label} 
+                    icon={tab.icon} 
+                    pathname={pathname} 
+                    isScrolled={isScrolled}
+                  />
+                ))}
+              </nav>
             </div>
 
-            <div className="flex flex-wrap gap-2">
+            {/* Quick Tags */}
+            <div className="no-scrollbar flex items-center gap-2 overflow-x-auto py-2">
               {roleConfig.quickTags.map((tag) => (
+                <Link
+                  key={tag.label}
+                  href={tag.href}
+                  className="whitespace-nowrap rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-1.5 text-xs font-medium text-slate-200 transition hover:border-fuchsia-400/50 hover:text-white lg:text-sm"
+                >
+                  {tag.label}
+                </Link>
+              ))}
+            </div>
+
+            {/* Search Section */}
+            {roleConfig.showSearch && (
+              <div className="py-3">
+                <form onSubmit={onSearch} className="flex items-center gap-3">
+                  <div className="relative flex-1">
+                    <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-fuchsia-400" />
+                    <input
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
+                      type="search"
+                      placeholder={roleConfig.searchHint}
+                      className="h-12 w-full rounded-2xl border border-white/15 bg-black/60 pl-12 pr-4 text-base text-slate-100 placeholder:text-slate-500 outline-none transition focus:border-fuchsia-500/60"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="h-12 rounded-2xl bg-gradient-to-r from-fuchsia-600 to-pink-600 px-6 text-base font-semibold text-white transition hover:opacity-90"
+                  >
+                    Search
+                  </button>
+
+                  <Link
+                    href={roleConfig.filtersHref}
+                    className="flex h-12 items-center gap-2 rounded-2xl border border-white/15 bg-white/[0.03] px-4 text-base font-medium text-slate-100 transition hover:border-fuchsia-400/50"
+                  >
+                    <SlidersHorizontal className="h-5 w-5" />
+                    <span className="hidden lg:inline">Filters</span>
+                  </Link>
+
+                  <Link
+                    href={roleConfig.regionsHref}
+                    className="flex h-12 items-center gap-2 rounded-2xl border border-white/15 bg-white/[0.03] px-4 text-base font-medium text-slate-100 transition hover:border-fuchsia-400/50"
+                  >
+                    <MapPin className="h-5 w-5" />
+                    <span className="hidden lg:inline">Regions</span>
+                  </Link>
+                </form>
+
+                {/* Trust Badges */}
+                <div className="mt-2 flex items-center gap-3 px-2 text-xs text-slate-500">
+                  <span className="flex items-center gap-1 rounded-full border border-white/10 px-2 py-1">
+                    <MessageCircle className="h-3 w-3" />
+                    Private booking support
+                  </span>
+                  <span className="flex items-center gap-1 rounded-full border border-white/10 px-2 py-1">
+                    Verified escorts
+                  </span>
+                  <span className="flex items-center gap-1 rounded-full border border-white/10 px-2 py-1">
+                    Secure online payments
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Compact Scrolled Navigation */}
+      {isScrolled && (
+        <div className="hidden border-t border-white/10 md:block">
+          <div className="mx-auto max-w-[92rem] px-4">
+            <div className="flex items-center justify-between gap-4 py-1.5">
+              {/* Compact Tabs */}
+              <nav className="no-scrollbar flex flex-1 items-center gap-1 overflow-x-auto">
+                {roleConfig.tabs.slice(0, 5).map((tab) => (
+                  <MainTab 
+                    key={tab.href} 
+                    href={tab.href} 
+                    label={tab.label} 
+                    icon={tab.icon} 
+                    pathname={pathname} 
+                    isScrolled={isScrolled}
+                  />
+                ))}
+              </nav>
+
+              {/* Compact Search */}
+              <div className="relative">
+                {showCompactSearch ? (
+                  <form onSubmit={onSearch} className="flex items-center">
+                    <input
+                      ref={searchInputRef}
+                      type="search"
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
+                      placeholder="Search..."
+                      className="h-8 w-48 rounded-l-xl border border-white/15 bg-black/60 px-3 text-xs text-slate-100 placeholder:text-slate-500 outline-none focus:border-fuchsia-500/60"
+                    />
+                    <button
+                      type="submit"
+                      className="h-8 rounded-r-xl bg-gradient-to-r from-fuchsia-600 to-pink-600 px-3 text-xs font-semibold text-white"
+                    >
+                      Go
+                    </button>
+                  </form>
+                ) : (
+                  <button
+                    onClick={handleCompactSearchClick}
+                    className="flex h-8 items-center gap-1 rounded-xl border border-white/10 bg-white/[0.03] px-3 text-xs text-slate-200 transition hover:border-fuchsia-400/50"
+                  >
+                    <Search className="h-3.5 w-3.5" />
+                    <span>Search</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mobile Menu */}
+      {mobileMenuOpen && (
+        <div className="border-t border-white/10 md:hidden">
+          <div className="mx-auto max-w-[92rem] space-y-4 px-3 py-4">
+            {/* Mobile Tabs */}
+            <div className="grid grid-cols-2 gap-2">
+              {roleConfig.tabs.map((tab) => (
+                <Link
+                  key={tab.href}
+                  href={tab.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`rounded-xl px-3 py-2 text-sm ${
+                    pathname === tab.href
+                      ? "bg-gradient-to-r from-fuchsia-600 to-violet-600 text-white"
+                      : "border border-white/10 bg-white/[0.03] text-slate-200"
+                  }`}
+                >
+                  {tab.label}
+                </Link>
+              ))}
+            </div>
+
+            {/* Mobile Quick Tags */}
+            <div className="flex flex-wrap gap-2">
+              {roleConfig.quickTags.slice(0, 6).map((tag) => (
                 <Link
                   key={tag.label}
                   href={tag.href}
@@ -481,6 +616,7 @@ export default function MainNav() {
               ))}
             </div>
 
+            {/* Mobile Auth */}
             {!loading && !user && (
               <div className="grid grid-cols-2 gap-2">
                 <Link
@@ -500,19 +636,21 @@ export default function MainNav() {
               </div>
             )}
 
+            {/* Mobile Support Links */}
             <div className="flex flex-wrap gap-2">
               {roleConfig.showSupport && (
-                <TopPillLink href="/support" label="Support" />
-              )}
-              {roleConfig.showSupport && (
-                <TopPillLink href="/contact-us" label="Contact Us" />
+                <>
+                  <TopPillLink href="/support" label="Support" onClick={() => setMobileMenuOpen(false)} />
+                  <TopPillLink href="/contact-us" label="Contact Us" onClick={() => setMobileMenuOpen(false)} />
+                </>
               )}
               {roleConfig.topLinks.map((item) => (
-                <TopPillLink key={item.href} href={item.href} label={item.label} />
+                <TopPillLink key={item.href} href={item.href} label={item.label} onClick={() => setMobileMenuOpen(false)} />
               ))}
             </div>
 
-            {roleConfig.showSearch ? (
+            {/* Mobile Search */}
+            {roleConfig.showSearch && (
               <form onSubmit={onSearch} className="space-y-2">
                 <div className="relative">
                   <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-fuchsia-400" />
@@ -521,13 +659,13 @@ export default function MainNav() {
                     onChange={(e) => setQuery(e.target.value)}
                     type="search"
                     placeholder={roleConfig.searchHint}
-                    className="h-11 w-full rounded-xl border border-white/15 bg-black/60 pl-10 pr-3 text-sm text-slate-100 placeholder:text-slate-500 outline-none"
+                    className="h-10 w-full rounded-xl border border-white/15 bg-black/60 pl-9 pr-3 text-sm text-slate-100 placeholder:text-slate-500 outline-none"
                   />
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   <button
                     type="submit"
-                    className="rounded-xl bg-gradient-to-r from-fuchsia-600 to-pink-600 px-3 py-2 text-sm font-semibold text-white"
+                    className="rounded-xl cursor-pointer bg-gradient-to-r from-fuchsia-600  to-pink-600 px-3 py-2 text-sm font-semibold text-white"
                   >
                     Search
                   </button>
@@ -547,10 +685,6 @@ export default function MainNav() {
                   </Link>
                 </div>
               </form>
-            ) : (
-              <div className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-xs text-slate-400">
-                {roleConfig.searchHint}
-              </div>
             )}
           </div>
         </div>

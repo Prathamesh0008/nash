@@ -10,10 +10,10 @@ import Booking from "@/models/Booking";
 import Conversation from "@/models/Conversation";
 import Payment from "@/models/Payment";
 import WorkerProfile from "@/models/WorkerProfile";
-import FraudSignal from "@/models/FraudSignal";
 import PromoCode from "@/models/PromoCode";
 import Referral from "@/models/Referral";
 import User from "@/models/User";
+import ConsentEvidenceLog from "@/models/ConsentEvidenceLog";
 import { adjustWallet } from "@/lib/wallet";
 import { createNotification } from "@/lib/notify";
 import { logError } from "@/lib/monitoring";
@@ -22,6 +22,10 @@ import { sendCrmTemplate } from "@/lib/crm";
 import { isWorkerAvailableForSlot } from "@/lib/availability";
 import { calculateMembershipDiscount, getActiveMembershipForUser, markMembershipUsage } from "@/lib/membership";
 import { normalizeAddressInput } from "@/lib/geo";
+import { evaluateGeoPolicy } from "@/lib/compliancePolicy";
+import { scanProhibitedContent } from "@/lib/prohibitedDetection";
+import { createRiskSignal } from "@/lib/riskSignals";
+import { writeAuditLog } from "@/lib/audit";
 
 const BOOKING_IP_LIMIT = Number(process.env.BOOKING_IP_LIMIT || 20);
 const BOOKING_USER_LIMIT = Number(process.env.BOOKING_USER_LIMIT || 5);
@@ -34,6 +38,9 @@ const BOOKING_24X7 =
 const DEFAULT_REFERRAL_DISCOUNT = Number(process.env.REFERRAL_BOOKING_DISCOUNT || 50);
 const DEFAULT_REFERRAL_REWARD = Number(process.env.REFERRAL_REWARD || 100);
 const ACTIVE_SLOT_STATUSES = ["confirmed", "assigned", "onway", "working"];
+const CONSENT_ENFORCE = ["1", "true", "yes", "on"].includes(String(process.env.CONSENT_ENFORCE || "").trim().toLowerCase());
+const CONSENT_MAX_AGE_DAYS = Math.max(1, Number(process.env.CONSENT_MAX_AGE_DAYS || 365));
+const CONSENT_TYPES = ["age_attestation", "consent_attestation"];
 
 function toSignalSeverity(reasons = []) {
   if (reasons.includes("high_booking_velocity_30m")) return "high";
@@ -113,6 +120,24 @@ function toRetryAfterSeconds(retryAfterMs) {
   return Math.max(1, Number.isFinite(value) ? value : 60);
 }
 
+async function hasRecentConsentEvidence(userId) {
+  const cutoff = new Date(Date.now() - CONSENT_MAX_AGE_DAYS * 24 * 60 * 60 * 1000);
+  const rows = await ConsentEvidenceLog.find({
+    userId,
+    evidenceType: { $in: CONSENT_TYPES },
+    accepted: true,
+    createdAt: { $gte: cutoff },
+  })
+    .select("evidenceType")
+    .lean();
+  const found = new Set(rows.map((row) => row.evidenceType));
+  return CONSENT_TYPES.every((type) => found.has(type));
+}
+
+function getClientIp(req) {
+  return req?.headers?.get?.("x-forwarded-for")?.split(",")?.[0]?.trim?.() || "";
+}
+
 async function findNearestAvailableSlotsForWorker({ workerProfile, fromTime, maxSlots = 5 }) {
   if (!workerProfile?.userId || !fromTime) return [];
 
@@ -180,13 +205,15 @@ export async function POST(req) {
   });
   if (!userRl.ok) {
     const retryAfterSeconds = toRetryAfterSeconds(userRl.retryAfterMs);
-    await FraudSignal.create({
+    await createRiskSignal({
       userId: user.userId,
       signalType: "booking_risk",
       severity: "critical",
       reasons: ["booking_velocity_limit_exceeded"],
-      status: "open",
       meta: { scope: "booking:create", retryAfterMs: userRl.retryAfterMs || 0 },
+      actorId: user.userId,
+      actorRole: user.role,
+      req,
     });
     const res = NextResponse.json(
       {
@@ -208,6 +235,44 @@ export async function POST(req) {
     const requestedServiceId = String(data.serviceId || "").trim();
     const isManualAssignment = data.assignmentMode === "manual";
     const workerPricingMode = isManualAssignment && !requestedServiceId;
+    const notesModeration = scanProhibitedContent(String(data.notes || ""), {
+      channel: "booking_notes",
+      actorRole: user.role,
+    });
+    if (notesModeration.matched) {
+      await createRiskSignal({
+        userId: user.userId,
+        signalType: "booking_policy_violation",
+        severity: notesModeration.severity,
+        reasons: notesModeration.reasons,
+        meta: {
+          scope: "booking_notes",
+          shouldBlock: notesModeration.shouldBlock,
+        },
+        actorId: user.userId,
+        actorRole: user.role,
+        req,
+      });
+      if (notesModeration.shouldBlock) {
+        return NextResponse.json(
+          { ok: false, error: "Booking notes contain prohibited request content." },
+          { status: 400 }
+        );
+      }
+    }
+
+    if (CONSENT_ENFORCE && user.role !== "admin") {
+      const hasRecentEvidence = await hasRecentConsentEvidence(user.userId);
+      if (!hasRecentEvidence) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: "Consent and age attestation required before booking. Submit evidence via /api/compliance/consent.",
+          },
+          { status: 400 }
+        );
+      }
+    }
 
     if (requestedServiceId && !mongoose.Types.ObjectId.isValid(requestedServiceId)) {
       return NextResponse.json({ ok: false, error: "Invalid serviceId" }, { status: 400 });
@@ -334,6 +399,28 @@ export async function POST(req) {
         })
       : calculatePriceBreakup({ service, selectedAddons: data.addons });
     const normalizedAddress = normalizeAddressInput(data.address || {});
+    const geoPolicyCheck = evaluateGeoPolicy({
+      address: normalizedAddress,
+      serviceCategory: String(service?.category || ""),
+    });
+    if (!geoPolicyCheck.allowed) {
+      await createRiskSignal({
+        userId: user.userId,
+        signalType: "geo_policy_violation",
+        severity: "high",
+        reasons: [geoPolicyCheck.code || "geo_policy_violation"],
+        meta: {
+          city: normalizedAddress?.city || "",
+          state: normalizedAddress?.state || "",
+          pincode: normalizedAddress?.pincode || "",
+          serviceCategory: service?.category || "",
+        },
+        actorId: user.userId,
+        actorRole: user.role,
+        req,
+      });
+      return NextResponse.json({ ok: false, error: geoPolicyCheck.reason || "Booking blocked by geo policy" }, { status: 403 });
+    }
     const promoCode = normalizeCode(data.promoCode);
     const referralCodeInput = normalizeCode(data.referralCode);
     let promo = null;
@@ -490,18 +577,20 @@ export async function POST(req) {
     }
 
     if (suspiciousReasons.length > 0) {
-      await FraudSignal.create({
+      await createRiskSignal({
         userId: user.userId,
         signalType: "booking_risk",
         severity: toSignalSeverity(suspiciousReasons),
         reasons: suspiciousReasons,
-        status: "open",
         meta: {
           serviceId: service._id?.toString(),
           slotTime,
           amount: finalPriceBreakup.total,
           assignmentMode: data.assignmentMode,
         },
+        actorId: user.userId,
+        actorRole: user.role,
+        req,
       });
 
       if (recentBookings.length >= 8) {
@@ -761,6 +850,70 @@ export async function POST(req) {
       membershipPlanCode,
       membershipDiscount,
       userMembershipId: membershipDiscount > 0 ? activeMembership?._id || null : null,
+    });
+
+    try {
+      const ip = getClientIp(req);
+      const userAgent = req?.headers?.get?.("user-agent") || "";
+      await ConsentEvidenceLog.insertMany(
+        [
+          {
+            userId: user.userId,
+            userRole: user.role,
+            bookingId: booking._id,
+            evidenceType: "age_attestation",
+            accepted: true,
+            statement: "User confirmed legal age requirement during booking checkout.",
+            source: "booking_checkout",
+            geoSnapshot: {
+              city: normalizedAddress?.city || "",
+              state: normalizedAddress?.state || "",
+              pincode: normalizedAddress?.pincode || "",
+              country: "",
+            },
+            metadata: { bookingId: booking._id.toString() },
+            ip,
+            userAgent,
+          },
+          {
+            userId: user.userId,
+            userRole: user.role,
+            bookingId: booking._id,
+            evidenceType: "consent_attestation",
+            accepted: true,
+            statement: "User consent evidence captured during booking checkout.",
+            source: "booking_checkout",
+            geoSnapshot: {
+              city: normalizedAddress?.city || "",
+              state: normalizedAddress?.state || "",
+              pincode: normalizedAddress?.pincode || "",
+              country: "",
+            },
+            metadata: { bookingId: booking._id.toString() },
+            ip,
+            userAgent,
+          },
+        ],
+        { ordered: false }
+      );
+    } catch (consentError) {
+      await logError("api.bookings.create.consent_log", consentError, { userId: user.userId || "", bookingId: booking._id?.toString?.() || "" });
+    }
+
+    await writeAuditLog({
+      actorId: user.userId,
+      actorRole: user.role,
+      action: "booking.create",
+      targetType: "booking",
+      targetId: booking._id,
+      metadata: {
+        serviceId: service._id?.toString() || "",
+        workerId: workerId ? String(workerId) : "",
+        assignmentMode: data.assignmentMode,
+        paymentMethod: data.paymentMethod,
+        total: finalPriceBreakup.total,
+      },
+      req,
     });
 
     if (promo?._id) {

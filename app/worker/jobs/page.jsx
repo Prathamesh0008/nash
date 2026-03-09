@@ -39,7 +39,7 @@ export default function WorkerJobsPage() {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify({ status: nextStatus, note: `Worker moved status to ${nextStatus}` }),
+      body: JSON.stringify({ status: nextStatus, note: `Escort moved status to ${nextStatus}` }),
     });
 
     const data = await res.json();
@@ -60,7 +60,7 @@ export default function WorkerJobsPage() {
   return (
     <section className="space-y-4">
       <div className="panel">
-        <h1 className="text-2xl font-semibold">Worker Jobs</h1>
+        <h1 className="text-2xl font-semibold">Escort Jobs</h1>
         <p className="text-sm text-slate-400">Accept new requests, then manage assigned jobs through onway to working to completed.</p>
       </div>
 

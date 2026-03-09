@@ -53,6 +53,29 @@ const WorkerExtraServiceSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const CurrentLocationSchema = new mongoose.Schema(
+  {
+    lat: { type: Number, default: null },
+    lng: { type: Number, default: null },
+    accuracy: { type: Number, default: null },
+    speed: { type: Number, default: null },
+    heading: { type: Number, default: null },
+    recordedAt: { type: Date, default: null, index: true },
+    location: {
+      type: {
+        type: String,
+        enum: ["Point"],
+        default: undefined,
+      },
+      coordinates: {
+        type: [Number],
+        default: undefined,
+      },
+    },
+  },
+  { _id: false }
+);
+
 const WorkerProfileSchema = new mongoose.Schema(
   {
     userId: {
@@ -74,6 +97,7 @@ const WorkerProfileSchema = new mongoose.Schema(
     skills: { type: [String], default: [] },
     categories: { type: [String], default: [] },
     serviceAreas: { type: [ServiceAreaSchema], default: [] },
+    currentLocation: { type: CurrentLocationSchema, default: {} },
     pricing: {
       basePrice: { type: Number, default: 0, min: 0 },
       extraServices: { type: [WorkerExtraServiceSchema], default: [] },
@@ -109,6 +133,13 @@ const WorkerProfileSchema = new mongoose.Schema(
         default: "not_submitted",
         index: true,
       },
+      reviewPriority: {
+        type: String,
+        enum: ["normal", "high", "critical"],
+        default: "normal",
+        index: true,
+      },
+      reviewSlaHours: { type: Number, default: null },
       submittedAt: { type: Date, default: null, index: true },
       reviewedAt: { type: Date, default: null },
       reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
@@ -116,6 +147,7 @@ const WorkerProfileSchema = new mongoose.Schema(
       docsVersion: { type: Number, default: 1 },
       reuploadRequestedAt: { type: Date, default: null },
       reviewSlaDueAt: { type: Date, default: null, index: true },
+      assessment: { type: Object, default: {} },
       history: { type: [KycHistorySchema], default: [] },
     },
 
@@ -158,6 +190,7 @@ const WorkerProfileSchema = new mongoose.Schema(
 WorkerProfileSchema.index({ categories: 1, isOnline: 1 });
 WorkerProfileSchema.index({ "serviceAreas.pincode": 1, isOnline: 1 });
 WorkerProfileSchema.index({ "serviceAreas.location": "2dsphere" }, { sparse: true });
+WorkerProfileSchema.index({ "currentLocation.location": "2dsphere" }, { sparse: true });
 WorkerProfileSchema.index({ verificationStatus: 1, verificationFeePaid: 1 });
 
 export default mongoose.models.WorkerProfile ||

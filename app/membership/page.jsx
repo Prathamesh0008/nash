@@ -90,7 +90,7 @@ export default function MembershipPage() {
           </p>
           {String(active.planSnapshot?.code || "").toUpperCase() === "FAMILY" && (
             <Link href="/family-pass" className="inline-block rounded bg-amber-700 px-3 py-2 text-sm text-white hover:bg-amber-600">
-              Open Family Pass Members Page
+              Open VIP Pass Members Page
             </Link>
           )}
         </div>

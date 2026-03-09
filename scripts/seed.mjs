@@ -16,7 +16,7 @@ dotenv.config({ path: ".env.local" });
 dotenv.config();
 
 const MONGODB_URI = process.env.MONGODB_URI;
-const DB_NAME = process.env.MONGODB_DB || "home_service_platform";
+const DB_NAME = process.env.MONGODB_DB || "escort_service_platform";
 
 if (!MONGODB_URI) {
   throw new Error("Missing MONGODB_URI");
@@ -58,68 +58,68 @@ const workerNames = [
 
 const servicesData = [
   {
-    title: "Worker Visit Basic",
-    slug: "worker-visit-basic",
-    category: "All-Rounder Basic",
-    description: "General home visit support by all-rounder worker.",
-    basePrice: 399,
-    visitFee: 99,
+    title: "Companion Session Basic",
+    slug: "companion-session-basic",
+    category: "Companion Basic",
+    description: "Entry-level private companionship session.",
+    basePrice: 4999,
+    visitFee: 499,
     taxPercent: 18,
     addons: [
-      { title: "Extra task support", price: 249 },
-      { title: "Priority slot", price: 199 },
+      { title: "Priority confirmation", price: 799 },
+      { title: "Extended conversation time", price: 999 },
     ],
   },
   {
-    title: "Worker Visit Standard",
-    slug: "worker-visit-standard",
-    category: "All-Rounder Standard",
-    description: "Flexible at-home support for common household needs.",
-    basePrice: 449,
-    visitFee: 99,
+    title: "Companion Session Standard",
+    slug: "companion-session-standard",
+    category: "Companion Standard",
+    description: "Balanced session with verified escort companionship.",
+    basePrice: 6999,
+    visitFee: 699,
     taxPercent: 18,
     addons: [
-      { title: "Extended visit", price: 299 },
-      { title: "Quick revisit", price: 199 },
+      { title: "Late-night slot", price: 1299 },
+      { title: "Premium venue preference", price: 1499 },
     ],
   },
   {
-    title: "Worker Visit Plus",
-    slug: "worker-visit-plus",
-    category: "All-Rounder Plus",
-    description: "Longer support window for multi-task household assistance.",
-    basePrice: 799,
-    visitFee: 149,
+    title: "Companion Session Plus",
+    slug: "companion-session-plus",
+    category: "Companion Plus",
+    description: "Longer private session with premium companion support.",
+    basePrice: 9999,
+    visitFee: 999,
     taxPercent: 18,
     addons: [
-      { title: "Additional helper time", price: 299 },
-      { title: "Priority completion", price: 199 },
+      { title: "Travel extension", price: 1799 },
+      { title: "VIP request handling", price: 1999 },
     ],
   },
   {
-    title: "Worker Visit Priority",
-    slug: "worker-visit-priority",
-    category: "All-Rounder Priority",
-    description: "Priority assignment with faster response expectations.",
-    basePrice: 699,
-    visitFee: 149,
+    title: "Companion Session Priority",
+    slug: "companion-session-priority",
+    category: "Companion Priority",
+    description: "Fast-track assignment with high-priority response.",
+    basePrice: 11999,
+    visitFee: 1199,
     taxPercent: 18,
     addons: [
-      { title: "Urgent dispatch", price: 999 },
-      { title: "Extended support", price: 249 },
+      { title: "Urgent dispatch", price: 2499 },
+      { title: "Overnight extension", price: 3499 },
     ],
   },
   {
-    title: "Worker Visit Premium",
-    slug: "worker-visit-premium",
-    category: "All-Rounder Premium",
-    description: "Premium worker visit for high-priority household assistance.",
-    basePrice: 499,
-    visitFee: 129,
+    title: "Companion Session Premium",
+    slug: "companion-session-premium",
+    category: "Companion Premium",
+    description: "Premium verified escort experience with priority handling.",
+    basePrice: 14999,
+    visitFee: 1499,
     taxPercent: 18,
     addons: [
-      { title: "Extra support block", price: 349 },
-      { title: "Follow-up visit", price: 199 },
+      { title: "Dedicated support manager", price: 2499 },
+      { title: "Luxury venue option", price: 2999 },
     ],
   },
 ];
@@ -133,11 +133,11 @@ const areas = [
 ];
 
 const categories = [
-  "All-Rounder Basic",
-  "All-Rounder Standard",
-  "All-Rounder Plus",
-  "All-Rounder Priority",
-  "All-Rounder Premium",
+  "Companion Basic",
+  "Companion Standard",
+  "Companion Plus",
+  "Companion Priority",
+  "Companion Premium",
 ];
 
 async function seed() {
@@ -166,7 +166,7 @@ async function seed() {
 
   const admin = await User.create({
     name: "Admin",
-    email: process.env.ADMIN_EMAIL || "admin@nashworkforce.com",
+    email: process.env.ADMIN_EMAIL || "admin@nasheliteescorts.com",
     phone: "9999999999",
     passwordHash: await bcrypt.hash("Admin@123", 10),
     role: "admin",
@@ -176,7 +176,7 @@ async function seed() {
 
   const customer = await User.create({
     name: "Demo Customer",
-    email: "user@nashworkforce.com",
+    email: "user@nasheliteescorts.com",
     phone: "9000000001",
     passwordHash: await bcrypt.hash("User@123", 10),
     role: "user",
@@ -215,7 +215,7 @@ async function seed() {
 
     const workerUser = await User.create({
       name,
-      email: `worker${i + 1}@nashworkforce.com`,
+      email: `escort${i + 1}@nasheliteescorts.com`,
       phone: `98${String(10000000 + i).slice(0, 8)}`,
       passwordHash: await bcrypt.hash("Worker@123", 10),
       role: "worker",
@@ -229,8 +229,8 @@ async function seed() {
       userId: workerUser._id,
       profilePhoto: photos[0],
       galleryPhotos: photos,
-      bio: `${name} provides all-rounder home support with quick response and reliable service quality.`,
-      skills: [category, "On-time service", "Customer support"],
+      bio: `${name} offers verified companionship with private, respectful, and reliable service.`,
+      skills: [category, "Private etiquette", "Fast response"],
       categories: [category],
       serviceAreas: [primaryArea, secondaryArea],
       address: `${primaryArea.city} service hub`,
@@ -408,7 +408,7 @@ async function seed() {
   console.log("Seed complete");
   console.log(`Admin: ${admin.email} / Admin@123`);
   console.log(`User: ${customer.email} / User@123`);
-  console.log("Workers: worker1@nashworkforce.com .. worker20@nashworkforce.com / Worker@123");
+  console.log("Escorts: escort1@nasheliteescorts.com .. escort20@nasheliteescorts.com / Worker@123");
 
   await mongoose.disconnect();
 }

@@ -18,12 +18,12 @@ import {
 function normalizeProvider(provider, idx) {
   return {
     id: String(provider?.id || `worker-${idx + 1}`),
-    name: provider?.name || "Worker",
+    name: provider?.name || "Escort",
     city: provider?.city || "City unavailable",
     rating: Number(provider?.rating || 0),
     price: Number(provider?.ratePerHour || provider?.price || 0),
     image: provider?.image || provider?.profilePhoto || provider?.images?.[0] || "",
-    bio: provider?.bio || "Verified worker profile.",
+    bio: provider?.bio || "Verified escort profile.",
     tier: provider?.tier || (provider?.boosted ? "Diamond" : "Verified"),
     specialties: provider?.tags || provider?.categories || [],
   };
@@ -147,20 +147,20 @@ export default function HeroBanner({ providers = [] }) {
         <div className="relative z-10 max-w-2xl space-y-4">
           <div className="inline-flex items-center gap-2 rounded-full border border-purple-500/30 bg-gradient-to-r from-purple-600/20 to-pink-600/20 px-4 py-2">
             <Sparkles className="h-4 w-4 text-pink-300" />
-            <span className="text-sm font-semibold text-pink-300">Trusted Home Services</span>
+            <span className="text-sm font-semibold text-pink-300">Verified Escort Directory</span>
           </div>
           <h1 className="text-3xl font-bold text-white sm:text-5xl">
-            Book <span className="bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">Verified</span> Workers
+            Book <span className="bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">Verified</span> Escorts
           </h1>
           <p className="text-base text-gray-300 sm:text-lg">
-            Live profiles are not available right now. Check back shortly or browse all workers.
+            Live profiles are not available right now. Check back shortly or browse all escorts.
           </p>
           <div className="flex flex-wrap gap-3">
             <Link
               href="/workers"
               className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 px-6 py-3 font-bold text-white transition-all hover:from-pink-600 hover:to-purple-700"
             >
-              Browse Workers
+              Browse Escorts
               <ChevronRight className="h-4 w-4" />
             </Link>
             <Link
@@ -192,20 +192,20 @@ export default function HeroBanner({ providers = [] }) {
                 <div className="flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 backdrop-blur-sm shadow-lg">
                   <Sparkles className="h-4 w-4 text-pink-300" />
                   <span className="bg-gradient-to-r from-pink-300 to-purple-300 bg-clip-text text-sm font-bold text-transparent">
-                    Trusted Home Services
+                    Verified Escort Directory
                   </span>
                 </div>
               </div>
 
               <div className="space-y-4 text-center">
                 <h1 className="text-4xl font-black text-white">
-                  Book <span className="bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">Top Rated</span> Workers
+                  Book <span className="bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">Top Rated</span> Escorts
                 </h1>
 
               <div className="pt-1">
                 <div className="inline-flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-5 py-2.5 backdrop-blur-sm">
                   <MoveLeft className="h-4 w-4 text-gray-400" />
-                  <span className="text-sm text-gray-300">Swipe to explore verified worker profiles</span>
+                  <span className="text-sm text-gray-300">Swipe to explore verified escort profiles</span>
                   <MoveRight className="h-4 w-4 text-gray-400" />
                 </div>
               </div>
@@ -221,7 +221,7 @@ export default function HeroBanner({ providers = [] }) {
                 </div>
                 <div className="text-center">
                   <div className="text-lg font-bold text-white">{heroStats.workerCount}+</div>
-                  <div className="text-xs text-gray-400">Workers</div>
+                  <div className="text-xs text-gray-400">Escorts</div>
                 </div>
               </div>
             </div>
@@ -287,17 +287,17 @@ export default function HeroBanner({ providers = [] }) {
           <div className="mb-10">
             <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-purple-500/30 bg-gradient-to-r from-purple-600/20 to-pink-600/20 px-4 py-2 backdrop-blur-sm">
               <Sparkles className="h-4 w-4 text-pink-300" />
-              <span className="text-sm font-semibold text-pink-300">Verified Local Pros</span>
+              <span className="text-sm font-semibold text-pink-300">Verified Local Escorts</span>
             </div>
 
             <h1 className="mb-4 text-6xl font-bold text-white">
-              Book <span className="bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">Trusted</span> Home Services
+              Book <span className="bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">Trusted</span> Companionship
             </h1>
-            <p className="max-w-2xl text-xl text-gray-300">Find verified workers by area, rating and availability.</p>
+            <p className="max-w-2xl text-xl text-gray-300">Find verified escorts by area, rating, and availability.</p>
 
             <div className="mt-8 flex gap-8">
               {[
-                { icon: Users, value: `${heroStats.workerCount}+`, label: "Verified Workers" },
+                { icon: Users, value: `${heroStats.workerCount}+`, label: "Verified Escorts" },
                 { icon: Trophy, value: heroStats.avgRating, label: "Avg Rating" },
                 { icon: Globe, value: `${heroStats.cityCount}+`, label: "Cities" },
                 { icon: Zap, value: "Live", label: "Availability" },
@@ -366,7 +366,7 @@ export default function HeroBanner({ providers = [] }) {
                           <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
                           {featured[1]?.rating?.toFixed(1)}
                         </span>
-                        <span>| Wellness Pro</span>
+                        <span>| Verified Escort</span>
                       </div>
                     </div>
                     <div className="text-lg font-bold text-pink-400">INR {featured[1]?.price}/hr</div>
@@ -450,7 +450,7 @@ export default function HeroBanner({ providers = [] }) {
               href="/workers"
               className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 px-10 py-4 text-lg font-bold text-white transition-all hover:from-pink-600 hover:to-purple-700"
             >
-              View All {heroStats.workerCount || featured.length}+ Workers
+              View All {heroStats.workerCount || featured.length}+ Escorts
               <ChevronRight className="h-5 w-5" />
             </Link>
           </div>

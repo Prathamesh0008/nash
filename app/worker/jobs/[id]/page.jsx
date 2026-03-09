@@ -242,7 +242,7 @@ export default function WorkerJobDetailPage() {
       credentials: "include",
       body: JSON.stringify({
         status: nextStatus,
-        note: `Worker moved status to ${nextStatus}`,
+        note: `Escort moved status to ${nextStatus}`,
       }),
     });
     const data = await res.json().catch(() => ({}));

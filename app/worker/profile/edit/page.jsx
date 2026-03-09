@@ -84,7 +84,7 @@ export default function WorkerProfileEditPage() {
   return (
     <section className="mx-auto max-w-3xl space-y-4">
       <div className="panel">
-        <h1 className="text-2xl font-semibold">Edit Worker Profile</h1>
+        <h1 className="text-2xl font-semibold">Edit Escort Profile</h1>
         <p className="text-sm text-slate-400">Update bio, skills, categories and service area.</p>
       </div>
 

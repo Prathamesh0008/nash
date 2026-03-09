@@ -25,7 +25,7 @@ export default function WorkerDashboardReviewsPage() {
   return (
     <section className="space-y-4">
       <div className="panel">
-        <h1 className="text-2xl font-semibold">Worker Reviews</h1>
+        <h1 className="text-2xl font-semibold">Escort Reviews</h1>
         <p className="text-sm text-slate-400">Recent customer feedback for your completed jobs.</p>
         {msg && <p className="mt-2 text-sm text-slate-300">{msg}</p>}
       </div>

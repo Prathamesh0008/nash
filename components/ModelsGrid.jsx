@@ -5,7 +5,7 @@ export default function ModelsGrid({ workers = [] }) {
   if (!workers.length) {
     return (
       <div className="rounded-xl border border-white/10 bg-slate-900/40 p-6 text-sm text-slate-400">
-        No therapist profiles available.
+        No escort profiles available.
       </div>
     );
   }

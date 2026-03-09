@@ -10,6 +10,17 @@ const TicketReplySchema = new mongoose.Schema(
   { _id: false }
 );
 
+const TicketAuditEventSchema = new mongoose.Schema(
+  {
+    action: { type: String, required: true },
+    actorId: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+    actorRole: { type: String, enum: ["user", "worker", "admin", "system"], default: "system" },
+    note: { type: String, default: "" },
+    at: { type: Date, default: Date.now },
+  },
+  { _id: false }
+);
+
 const SupportTicketSchema = new mongoose.Schema(
   {
     ticketNo: { type: String, required: true, unique: true, index: true },
@@ -19,22 +30,28 @@ const SupportTicketSchema = new mongoose.Schema(
     subject: { type: String, required: true, trim: true },
     category: {
       type: String,
-      enum: ["booking", "payment", "payout", "account", "technical", "other"],
+      enum: ["booking", "payment", "payout", "account", "technical", "safety", "panic", "compliance", "other"],
       default: "other",
       index: true,
     },
-    priority: { type: String, enum: ["low", "medium", "high"], default: "medium" },
+    priority: { type: String, enum: ["low", "medium", "high", "critical"], default: "medium", index: true },
     message: { type: String, required: true, trim: true },
     attachments: { type: [String], default: [] },
     status: { type: String, enum: ["open", "in_progress", "resolved", "closed"], default: "open", index: true },
     assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+    slaFirstResponseDueAt: { type: Date, default: null, index: true },
+    firstResponseAt: { type: Date, default: null },
+    resolvedAt: { type: Date, default: null },
     lastReplyAt: { type: Date, default: Date.now, index: true },
     replies: { type: [TicketReplySchema], default: [] },
+    auditTrail: { type: [TicketAuditEventSchema], default: [] },
+    panicMeta: { type: Object, default: {} },
   },
   { timestamps: true }
 );
 
 SupportTicketSchema.index({ userId: 1, createdAt: -1 });
 SupportTicketSchema.index({ status: 1, createdAt: -1 });
+SupportTicketSchema.index({ priority: 1, status: 1, createdAt: -1 });
 
 export default mongoose.models.SupportTicket || mongoose.model("SupportTicket", SupportTicketSchema);

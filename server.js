@@ -1,11 +1,15 @@
 import { createServer } from "http";
 import next from "next";
 import { Server } from "socket.io";
+import dotenv from "dotenv";
 import { logError } from "./lib/monitoring.js";
 import { verifyTrackingToken } from "./lib/trackingToken.js";
 import dbConnect from "./lib/dbConnect.js";
 import Conversation from "./models/Conversation.js";
 import { AUTH_COOKIE_NAME, verifyAccessToken } from "./lib/auth.js";
+
+dotenv.config({ path: ".env.local" });
+dotenv.config();
 
 const dev = process.env.NODE_ENV !== "production";
 const socketAllowedOrigins = (process.env.SOCKET_ALLOWED_ORIGINS || process.env.NEXT_PUBLIC_APP_URL || "")
@@ -42,7 +46,9 @@ function parseCookieHeader(rawCookie = "") {
 }
 
 function getSocketClaims(socket) {
-  const bearer = asText(socket?.handshake?.headers?.authorization);
+  const headerAuthorization =
+    socket?.handshake?.headers?.authorization || socket?.request?.headers?.authorization;
+  const bearer = asText(headerAuthorization);
   let token = "";
 
   if (bearer.toLowerCase().startsWith("bearer ")) {
@@ -54,7 +60,8 @@ function getSocketClaims(socket) {
   }
 
   if (!token) {
-    const cookies = parseCookieHeader(socket?.handshake?.headers?.cookie);
+    const rawCookie = socket?.handshake?.headers?.cookie || socket?.request?.headers?.cookie;
+    const cookies = parseCookieHeader(rawCookie);
     token = asText(cookies[AUTH_COOKIE_NAME]);
   }
 

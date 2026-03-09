@@ -17,7 +17,7 @@ export default function WorkerReportsPage() {
   return (
     <section className="space-y-4">
       <div className="panel">
-        <h1 className="text-2xl font-semibold">Worker Reports</h1>
+        <h1 className="text-2xl font-semibold">Escort Reports</h1>
         <p className="text-sm text-slate-400">Reports where you are reporter or target.</p>
       </div>
 

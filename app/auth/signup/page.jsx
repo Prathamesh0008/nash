@@ -203,8 +203,8 @@ export default function SignupPage() {
                   onChange={(e) => setForm({ ...form, role: e.target.value })}
                   disabled={loading}
                 >
-                  <option value="user">👤 Customer</option>
-                  <option value="worker">👥 Worker</option>
+                  <option value="user">Customer</option>
+                  <option value="worker">Escort Provider</option>
                 </select>
               </div>
             </div>
@@ -290,7 +290,7 @@ export default function SignupPage() {
             <div className="mt-4 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs">
               <p className="flex items-center gap-2 text-amber-400">
                 <Briefcase className="h-4 w-4" />
-                <span className="font-medium">Worker Account</span>
+                <span className="font-medium">Escort Provider Account</span>
               </p>
               <p className="mt-1 text-slate-300">
                 You&apos;ll need to complete onboarding with KYC documents after signup.
@@ -317,9 +317,7 @@ export default function SignupPage() {
               Customer
             </span>
             <span className="flex items-center gap-1">
-              <Briefcase className="h-3 w-3" />
-              Worker
-            </span>
+              <Briefcase className="h-3 w-3" />Escort</span>
             <span className="flex items-center gap-1">
               <Shield className="h-3 w-3" />
               Secure

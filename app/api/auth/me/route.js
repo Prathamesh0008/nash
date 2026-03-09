@@ -24,6 +24,7 @@ export async function GET() {
     referralCode: dbUser.referralCode || "",
     referralStats: dbUser.referralStats || { totalReferrals: 0, totalRewards: 0 },
     preferences: dbUser.preferences || { favoriteWorkerIds: [], savedSearchFilters: [], recentSearches: [] },
+    currentLocation: dbUser.currentLocation || null,
   };
 
   if (dbUser.role === "worker") {

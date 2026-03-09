@@ -6,6 +6,18 @@ import User from "@/models/User";
 import Booking from "@/models/Booking";
 import { requireAuth, applyRefreshCookies } from "@/lib/apiAuth";
 import { notifyAdmins, createNotification } from "@/lib/notify";
+import { scanProhibitedContent } from "@/lib/prohibitedDetection";
+import { createRiskSignal } from "@/lib/riskSignals";
+import { writeAuditLog } from "@/lib/audit";
+
+const ALLOWED_CATEGORIES = ["booking", "payment", "payout", "account", "technical", "safety", "panic", "compliance", "other"];
+const ALLOWED_PRIORITIES = ["low", "medium", "high", "critical"];
+const FIRST_RESPONSE_SLA_MINUTES = {
+  critical: Math.max(1, Number(process.env.SUPPORT_SLA_CRITICAL_MINUTES || 15)),
+  high: Math.max(5, Number(process.env.SUPPORT_SLA_HIGH_MINUTES || 60)),
+  medium: Math.max(10, Number(process.env.SUPPORT_SLA_MEDIUM_MINUTES || 240)),
+  low: Math.max(30, Number(process.env.SUPPORT_SLA_LOW_MINUTES || 720)),
+};
 
 function buildTicketNo() {
   const stamp = Date.now().toString(36).toUpperCase();
@@ -36,6 +48,13 @@ export async function GET(req) {
     ...ticket,
     user: userMap.get(ticket.userId?.toString()) || null,
     assignedAdmin: userMap.get(ticket.assignedTo?.toString()) || null,
+    slaRemainingMs: ticket?.slaFirstResponseDueAt ? new Date(ticket.slaFirstResponseDueAt).getTime() - Date.now() : null,
+    slaBreached:
+      ticket?.slaFirstResponseDueAt &&
+      !ticket?.firstResponseAt &&
+      ["open", "in_progress"].includes(ticket.status)
+        ? new Date(ticket.slaFirstResponseDueAt).getTime() < Date.now()
+        : false,
   }));
 
   const res = NextResponse.json({ ok: true, tickets: rows });
@@ -62,6 +81,32 @@ export async function POST(req) {
     return NextResponse.json({ ok: false, error: "Message must be at least 10 characters" }, { status: 400 });
   }
 
+  const moderation = scanProhibitedContent(`${subject}\n${message}`, {
+    channel: "support_ticket",
+    actorRole: user.role,
+  });
+  if (moderation.matched) {
+    await createRiskSignal({
+      userId: user.userId,
+      signalType: "support_policy_violation",
+      severity: moderation.severity,
+      reasons: moderation.reasons,
+      meta: {
+        category,
+        shouldBlock: moderation.shouldBlock,
+      },
+      actorId: user.userId,
+      actorRole: user.role,
+      req,
+    });
+    if (moderation.shouldBlock) {
+      return NextResponse.json(
+        { ok: false, error: "Your request contains prohibited content and was blocked by safety policy." },
+        { status: 400 }
+      );
+    }
+  }
+
   let normalizedBookingId = null;
   if (bookingId) {
     if (!mongoose.Types.ObjectId.isValid(bookingId)) {
@@ -79,18 +124,41 @@ export async function POST(req) {
     normalizedBookingId = bookingId;
   }
 
+  const isPanic = category === "panic" || body.panic === true;
+  const normalizedCategory = isPanic ? "panic" : ALLOWED_CATEGORIES.includes(category) ? category : "other";
+  const normalizedPriority = isPanic ? "critical" : ALLOWED_PRIORITIES.includes(priority) ? priority : "medium";
+  const now = new Date();
+  const slaMinutes = FIRST_RESPONSE_SLA_MINUTES[normalizedPriority] || FIRST_RESPONSE_SLA_MINUTES.medium;
+  const slaFirstResponseDueAt = new Date(now.getTime() + slaMinutes * 60 * 1000);
+
   const ticket = await SupportTicket.create({
     ticketNo: buildTicketNo(),
     userId: user.userId,
     userRole: user.role,
     bookingId: normalizedBookingId,
     subject,
-    category: ["booking", "payment", "payout", "account", "technical", "other"].includes(category) ? category : "other",
-    priority: ["low", "medium", "high"].includes(priority) ? priority : "medium",
+    category: normalizedCategory,
+    priority: normalizedPriority,
     message,
     attachments,
     status: "open",
-    lastReplyAt: new Date(),
+    slaFirstResponseDueAt,
+    lastReplyAt: now,
+    auditTrail: [
+      {
+        action: "ticket_created",
+        actorId: user.userId,
+        actorRole: user.role,
+        note: isPanic ? "Panic-mode ticket created" : "Support ticket created",
+        at: now,
+      },
+    ],
+    panicMeta: isPanic
+      ? {
+          source: "support_form",
+          panic: true,
+        }
+      : {},
   });
 
   await createNotification({
@@ -106,10 +174,31 @@ export async function POST(req) {
   await notifyAdmins({
     actorId: user.userId,
     type: "status",
-    title: "New support ticket",
-    body: `${ticket.ticketNo} | ${ticket.subject}`,
+    title: isPanic ? "PANIC support ticket" : "New support ticket",
+    body: `${ticket.ticketNo} | ${ticket.subject} | Priority: ${ticket.priority.toUpperCase()}`,
     href: "/admin/support",
-    meta: { ticketId: ticket._id.toString(), ticketNo: ticket.ticketNo, category: ticket.category },
+    meta: {
+      ticketId: ticket._id.toString(),
+      ticketNo: ticket.ticketNo,
+      category: ticket.category,
+      priority: ticket.priority,
+      slaFirstResponseDueAt: ticket.slaFirstResponseDueAt?.toISOString?.() || null,
+    },
+  });
+
+  await writeAuditLog({
+    actorId: user.userId,
+    actorRole: user.role,
+    action: "support.ticket.create",
+    targetType: "support_ticket",
+    targetId: ticket._id,
+    metadata: {
+      ticketNo: ticket.ticketNo,
+      category: ticket.category,
+      priority: ticket.priority,
+      panic: isPanic,
+    },
+    req,
   });
 
   const res = NextResponse.json({ ok: true, ticket });

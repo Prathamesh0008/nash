@@ -292,13 +292,13 @@ export default function AdminWorkerRow({ w, onChangeStatus }) {
                 {w.status === 'active' && (
                   <span className="text-xs text-green-300 flex items-center gap-1">
                     <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                    Worker is approved and active
+                    Escort is approved and active
                   </span>
                 )}
                 {w.status === 'rejected' && (
                   <span className="text-xs text-red-300 flex items-center gap-1">
                     <span className="w-2 h-2 bg-red-500 rounded-full"></span>
-                    Worker is rejected
+                    Escort is rejected
                   </span>
                 )}
                 {w.status === 'pending' && (
@@ -359,7 +359,7 @@ export default function AdminWorkerRow({ w, onChangeStatus }) {
             </div>
             
             <div className="mt-3 text-xs text-white/50">
-              Click a button to change the worker status. The current status is disabled.
+              Click a button to change the escort status. The current status is disabled.
             </div>
           </div>
         </div>

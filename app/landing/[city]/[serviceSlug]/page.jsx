@@ -17,10 +17,10 @@ export async function generateMetadata({ params }) {
   await dbConnect();
   const service = await Service.findOne({ slug: serviceSlug, active: true }).select("title description").lean();
   const cityTitle = toTitleCity(city);
-  const serviceTitle = service?.title || "Wellness Home Service";
+  const serviceTitle = service?.title || "Escort Service";
   return {
-    title: `${serviceTitle} in ${cityTitle} | Verified Therapists`,
-    description: `Book ${serviceTitle} in ${cityTitle} with verified therapists and transparent pricing.`,
+    title: `${serviceTitle} in ${cityTitle} | Verified Escorts`,
+    description: `Book ${serviceTitle} in ${cityTitle} with verified escorts and transparent pricing.`,
     alternates: {
       canonical: `/landing/${city}/${serviceSlug}`,
     },
@@ -65,7 +65,7 @@ export default async function CityServiceLandingPage({ params }) {
     <section className="space-y-4">
       <div className="panel">
         <h1 className="text-3xl font-semibold">{service.title} in {cityTitle}</h1>
-        <p className="mt-1 text-sm text-slate-400">Compare verified therapists in {cityTitle} by rating and availability.</p>
+        <p className="mt-1 text-sm text-slate-400">Compare verified escorts in {cityTitle} by rating and availability.</p>
         <div className="mt-3 flex flex-wrap gap-2">
           <Link href={`/service/${service.slug}?city=${encodeURIComponent(cityTitle)}`} className="rounded bg-sky-700 px-3 py-2 text-sm text-white hover:bg-sky-600">
             View full service page
@@ -77,13 +77,13 @@ export default async function CityServiceLandingPage({ params }) {
       </div>
 
       <div className="panel">
-        <h2 className="text-xl font-semibold">Top verified therapists in {cityTitle}</h2>
-        <p className="text-sm text-slate-400">{workers.length} therapist(s) found</p>
+        <h2 className="text-xl font-semibold">Top verified escorts in {cityTitle}</h2>
+        <p className="text-sm text-slate-400">{workers.length} escort profile(s) found</p>
         <div className="mt-3 grid gap-2 md:grid-cols-2">
           {workers.map((worker) => (
             <article key={worker.userId} className="rounded border border-slate-700 bg-slate-900/40 p-3 text-sm">
-              <p className="font-semibold">{userMap.get(String(worker.userId)) || "Worker"}</p>
-              <p className="text-slate-400">Rating {Number(worker.ratingAvg || 0).toFixed(1)} | Jobs {worker.jobsCompleted || 0}</p>
+              <p className="font-semibold">{userMap.get(String(worker.userId)) || "Escort"}</p>
+              <p className="text-slate-400">Rating {Number(worker.ratingAvg || 0).toFixed(1)} | Sessions {worker.jobsCompleted || 0}</p>
               <p className="text-slate-400">Areas: {(worker.serviceAreas || []).map((area) => `${area.city}-${area.pincode}`).join(", ")}</p>
               <div className="mt-2 flex gap-2">
                 <Link href={`/workers/${worker.userId}`} className="rounded bg-slate-800 px-2 py-1 hover:bg-slate-700">Profile</Link>

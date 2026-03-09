@@ -64,7 +64,7 @@ export async function GET() {
         ok: false,
         memberOnly: true,
         redirectHref: "/membership?plan=FAMILY",
-        error: "This page is only for Family Pass members.",
+        error: "This page is only for VIP Pass members.",
         currentPlan: activeMembership
           ? {
               code: String(activeMembership?.planSnapshot?.code || activePlan?.code || "").trim().toUpperCase(),
@@ -84,7 +84,7 @@ export async function GET() {
       ok: true,
       activeMembership,
       nearbyMembers: [],
-      note: "Add a default address to see nearest Family Pass members.",
+      note: "Add a default address to see nearest VIP Pass members.",
     });
     return applyRefreshCookies(res, refreshedResponse);
   }
@@ -121,7 +121,7 @@ export async function GET() {
       ok: true,
       activeMembership,
       nearbyMembers: [],
-      note: "No nearby Family Pass members found yet.",
+      note: "No nearby VIP Pass members found yet.",
     });
     return applyRefreshCookies(res, refreshedResponse);
   }
@@ -169,7 +169,7 @@ export async function GET() {
       pincode: myAddress?.pincode || "",
     },
     nearbyMembers,
-    priorityNote: "Family Pass members receive priority in service allocation and response handling.",
+    priorityNote: "VIP Pass members receive priority in service allocation and response handling.",
   });
   return applyRefreshCookies(res, refreshedResponse);
 }

@@ -10,10 +10,15 @@ const AuditLogSchema = new mongoose.Schema(
     metadata: { type: Object, default: {} },
     ip: { type: String, default: "" },
     userAgent: { type: String, default: "" },
+    eventAt: { type: Date, default: Date.now, index: true },
+    prevHash: { type: String, default: "" },
+    entryHash: { type: String, default: undefined },
+    immutable: { type: Boolean, default: true },
   },
   { timestamps: true }
 );
 
 AuditLogSchema.index({ createdAt: -1 });
+AuditLogSchema.index({ entryHash: 1 }, { unique: true, sparse: true });
 
 export default mongoose.models.AuditLog || mongoose.model("AuditLog", AuditLogSchema);

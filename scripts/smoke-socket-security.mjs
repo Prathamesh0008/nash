@@ -65,6 +65,10 @@ class SessionClient {
     return [...this.cookies.entries()].map(([k, v]) => `${k}=${v}`).join("; ");
   }
 
+  getCookie(name) {
+    return this.cookies.get(name) || "";
+  }
+
   async request(path, options = {}) {
     const method = options.method || "GET";
     const headers = { ...(options.headers || {}) };
@@ -101,7 +105,8 @@ async function login(session, email, password) {
   logPass("user login");
 }
 
-function connectSocket({ cookieHeader = "" } = {}) {
+function connectSocket({ cookieHeader = "", token = "" } = {}) {
+  const authToken = String(token || "").trim();
   return new Promise((resolve, reject) => {
     const socket = io(BASE_URL, {
       transports: ["websocket", "polling"],
@@ -109,7 +114,11 @@ function connectSocket({ cookieHeader = "" } = {}) {
       reconnection: false,
       timeout: 7000,
       forceNew: true,
-      extraHeaders: cookieHeader ? { Cookie: cookieHeader } : {},
+      auth: authToken ? { token: authToken } : undefined,
+      extraHeaders: {
+        ...(cookieHeader ? { Cookie: cookieHeader } : {}),
+        ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+      },
     });
 
     const timer = setTimeout(() => {
@@ -245,7 +254,10 @@ async function run() {
   ensure(conversationId, "conversationId missing");
   logPass("conversation prepared");
 
-  const authedSocket = await connectSocket({ cookieHeader: userSession.cookieHeader() });
+  const authedSocket = await connectSocket({
+    cookieHeader: userSession.cookieHeader(),
+    token: userSession.getCookie("auth"),
+  });
   try {
     logPass("authenticated socket connected");
 

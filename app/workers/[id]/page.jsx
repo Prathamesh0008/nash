@@ -82,7 +82,7 @@ export default function WorkerProfilePage() {
       const res = await fetch(`/api/workers/${workerId}`);
       const data = await res.json();
       if (!data.ok) {
-        setError(data.error || "Worker not found");
+        setError(data.error || "Escort not found");
         return;
       }
       setWorker(data.worker);
@@ -156,7 +156,7 @@ export default function WorkerProfilePage() {
               href="/workers"
               className="mt-4 inline-block rounded-lg bg-gradient-to-r from-fuchsia-600 to-violet-600 px-4 py-2 text-sm text-white"
             >
-              Browse Workers
+              Browse Escorts
             </Link>
           </div>
         </div>
@@ -170,7 +170,7 @@ export default function WorkerProfilePage() {
         <div className="mx-auto max-w-4xl px-4 py-8">
           <div className="flex flex-col items-center justify-center py-12">
             <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-700 border-t-fuchsia-500"></div>
-            <p className="mt-4 text-sm text-slate-400">Loading worker profile...</p>
+            <p className="mt-4 text-sm text-slate-400">Loading escort profile...</p>
           </div>
         </div>
       </div>
@@ -190,7 +190,7 @@ export default function WorkerProfilePage() {
           <div className="fixed inset-0 z-50 bg-black/90 p-4" onClick={() => setSelectedImage(null)}>
             <div className="mx-auto flex h-full w-full max-w-5xl flex-col justify-center">
               <div className="mb-2 flex items-center justify-between text-white">
-                <p className="text-sm">Worker Gallery</p>
+                <p className="text-sm">Escort Gallery</p>
                 <button
                   onClick={() => setSelectedImage(null)}
                   className="rounded bg-white/20 px-2 py-1 text-xs hover:bg-white/30"
@@ -236,7 +236,7 @@ export default function WorkerProfilePage() {
               <div>
                 <div className="flex flex-wrap items-center gap-2">
                   <h1 className="text-2xl font-bold text-white sm:text-3xl">
-                    {worker.user?.name || "Worker"}
+                    {worker.user?.name || "Escort"}
                   </h1>
                   {worker.badges?.verified && (
                     <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 px-2 py-1 text-xs text-emerald-400">
@@ -265,7 +265,7 @@ export default function WorkerProfilePage() {
                   </span>
                   <span className="flex items-center gap-1 text-slate-400">
                     <Briefcase className="h-4 w-4" />
-                    {worker.jobsCompleted} jobs
+                    {worker.jobsCompleted} sessions
                   </span>
                   <span className="flex items-center gap-1 text-slate-400">
                     <Clock className="h-4 w-4" />
@@ -395,11 +395,11 @@ export default function WorkerProfilePage() {
                   </div>
                 </div>
 
-                {/* Service Areas */}
+                {/* Coverage Areas */}
                 <div className="rounded-xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02] p-4 sm:p-6">
                   <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold text-white">
                     <MapPin className="h-5 w-5 text-fuchsia-400" />
-                    Service Areas
+                    Coverage Areas
                   </h2>
                   <div className="space-y-2">
                     {(worker.serviceAreas || []).length > 0 ? (
@@ -411,7 +411,7 @@ export default function WorkerProfilePage() {
                         </div>
                       ))
                     ) : (
-                      <p className="text-sm text-slate-400">No service areas specified</p>
+                      <p className="text-sm text-slate-400">No coverage areas specified</p>
                     )}
                   </div>
                 </div>
@@ -584,7 +584,7 @@ export default function WorkerProfilePage() {
                       <textarea
                         className="w-full rounded-lg border border-white/10 bg-slate-900 p-3 text-sm text-white placeholder:text-slate-500 focus:border-fuchsia-500/50 focus:outline-none"
                         rows={3}
-                        placeholder="Share your experience with this worker..."
+                        placeholder="Share your experience with this escort..."
                         value={reviewForm.comment}
                         onChange={(e) => setReviewForm((prev) => ({ ...prev, comment: e.target.value }))}
                       />
@@ -661,7 +661,7 @@ export default function WorkerProfilePage() {
                         
                         {review.reply?.text && (
                           <div className="mt-2 rounded-lg bg-slate-800/50 p-2">
-                            <p className="text-xs font-medium text-fuchsia-400">Worker Reply:</p>
+                            <p className="text-xs font-medium text-fuchsia-400">Escort Reply:</p>
                             <p className="mt-1 text-xs text-slate-300">{review.reply.text}</p>
                           </div>
                         )}
@@ -779,7 +779,7 @@ export default function WorkerProfilePage() {
                 className="flex items-center justify-center gap-2 text-xs text-slate-400 hover:text-white"
               >
                 <Flag className="h-3 w-3" />
-                Report this worker
+                Report this escort
               </Link>
             </div>
           </div>

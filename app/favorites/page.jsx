@@ -29,7 +29,7 @@ export default function FavoritesPage() {
       const workersRes = await fetch(`/api/workers?ids=${ids.join(",")}`, { credentials: "include" });
       const workersData = await workersRes.json().catch(() => ({}));
       if (!workersRes.ok || !workersData.ok) {
-        setMsg(workersData.error || "Failed to load worker details");
+        setMsg(workersData.error || "Failed to load escort details");
         setLoading(false);
         return;
       }
@@ -42,22 +42,22 @@ export default function FavoritesPage() {
   return (
     <section className="space-y-4">
       <div className="panel">
-        <h1 className="text-2xl font-semibold">Favorite Workers</h1>
-        <p className="text-sm text-slate-400">Quick access to workers you saved.</p>
+        <h1 className="text-2xl font-semibold">Favorite Escorts</h1>
+        <p className="text-sm text-slate-400">Quick access to escorts you saved.</p>
       </div>
 
       {loading && <p className="text-slate-400">Loading favorites...</p>}
       {msg && <p className="rounded bg-rose-950 p-2 text-sm text-rose-300">{msg}</p>}
 
       {!loading && !msg && workers.length === 0 && (
-        <p className="rounded bg-slate-900/40 p-3 text-sm text-slate-400">No favorites yet. Add from worker profile.</p>
+        <p className="rounded bg-slate-900/40 p-3 text-sm text-slate-400">No favorites yet. Add from escort profile.</p>
       )}
 
       <div className="grid-auto">
         {workers.map((worker) => (
           <article key={worker.id} className="panel space-y-2">
             <h2 className="font-semibold">{worker.name}</h2>
-            <p className="text-sm text-slate-400">Rating {Number(worker.ratingAvg || 0).toFixed(1)} | Jobs {worker.jobsCompleted || 0}</p>
+            <p className="text-sm text-slate-400">Rating {Number(worker.ratingAvg || 0).toFixed(1)} | Sessions {worker.jobsCompleted || 0}</p>
             <p className="text-sm text-slate-400">Areas: {(worker.serviceAreas || []).map((a) => `${a.city}-${a.pincode}`).join(", ")}</p>
             <div className="flex gap-2">
               <Link href={`/workers/${worker.id}`} className="rounded bg-slate-800 px-3 py-2 text-sm hover:bg-slate-700">Profile</Link>

@@ -3,6 +3,9 @@ import dbConnect from "@/lib/dbConnect";
 import WorkerProfile from "@/models/WorkerProfile";
 import Payment from "@/models/Payment";
 import { requireAuth, applyRefreshCookies } from "@/lib/apiAuth";
+import { runKycAssessment } from "@/lib/kycAssessment";
+import { createRiskSignal } from "@/lib/riskSignals";
+import ConsentEvidenceLog from "@/models/ConsentEvidenceLog";
 
 const DEFAULT_VERIFICATION_FEE = Number(process.env.VERIFICATION_FEE || 299);
 
@@ -66,6 +69,13 @@ export async function POST(req) {
   const now = new Date();
   const hasSubmittedDocs = Boolean(profile?.docs?.idProof && profile?.docs?.selfie);
   const shouldEnterReviewQueue = hasSubmittedDocs;
+  const kycAssessment = shouldEnterReviewQueue
+    ? runKycAssessment({
+        idProofUrl: profile?.docs?.idProof || "",
+        selfieUrl: profile?.docs?.selfie || "",
+      })
+    : null;
+  const reviewSlaHours = shouldEnterReviewQueue ? Number(kycAssessment?.recommendedSlaHours || 48) : null;
 
   profile.verificationFeePaid = true;
   profile.verificationFeeAmount = amount;
@@ -74,21 +84,58 @@ export async function POST(req) {
   profile.accountStatus = hasSubmittedDocs ? "ONBOARDED" : profile.accountStatus || "REGISTERED";
   profile.kyc = profile.kyc || {};
   profile.kyc.queueStatus = shouldEnterReviewQueue ? "pending_review" : "not_submitted";
+  profile.kyc.reviewPriority = shouldEnterReviewQueue ? kycAssessment.reviewPriority || "normal" : "normal";
+  profile.kyc.reviewSlaHours = reviewSlaHours;
   profile.kyc.submittedAt = shouldEnterReviewQueue ? profile.kyc.submittedAt || now : profile.kyc.submittedAt || null;
-  profile.kyc.reviewSlaDueAt = shouldEnterReviewQueue ? new Date(now.getTime() + 48 * 60 * 60 * 1000) : null;
+  profile.kyc.reviewSlaDueAt = shouldEnterReviewQueue && reviewSlaHours ? new Date(now.getTime() + reviewSlaHours * 60 * 60 * 1000) : null;
   profile.kyc.rejectionReason = "";
   profile.kyc.reuploadRequestedAt = null;
+  profile.kyc.assessment = shouldEnterReviewQueue ? kycAssessment : profile.kyc.assessment || {};
   profile.kyc.history = Array.isArray(profile.kyc.history) ? profile.kyc.history : [];
   if (shouldEnterReviewQueue) {
     profile.kyc.history.push({
       action: "submitted",
-      reason: "Verification fee paid and documents sent to KYC queue",
+      reason: `Verification fee paid and documents sent to KYC queue | risk:${kycAssessment.riskLevel} auto:${kycAssessment.autoDecision}`,
       actorId: user.userId,
       at: now,
     });
   }
   await profile.save();
 
-  const res = NextResponse.json({ ok: true, payment, profile });
+  if (shouldEnterReviewQueue) {
+    await ConsentEvidenceLog.create({
+      userId: user.userId,
+      userRole: user.role,
+      evidenceType: "kyc_age_check",
+      accepted: !Array.isArray(kycAssessment.flags) || !kycAssessment.flags.includes("possible_underage"),
+      statement: "Verification fee flow captured KYC age/consent evidence.",
+      source: "onboarding_kyc",
+      metadata: {
+        riskLevel: kycAssessment.riskLevel,
+        autoDecision: kycAssessment.autoDecision,
+        flags: kycAssessment.flags || [],
+      },
+      ip: req?.headers?.get?.("x-forwarded-for")?.split(",")?.[0]?.trim?.() || "",
+      userAgent: req?.headers?.get?.("user-agent") || "",
+    });
+  }
+
+  if (shouldEnterReviewQueue && ["high", "critical"].includes(kycAssessment.riskLevel)) {
+    await createRiskSignal({
+      userId: user.userId,
+      signalType: "kyc_risk",
+      severity: kycAssessment.riskLevel,
+      reasons: Array.isArray(kycAssessment.flags) ? kycAssessment.flags : ["kyc_risk_detected"],
+      meta: {
+        verificationFeePaid: true,
+        queueStatus: profile.kyc.queueStatus,
+      },
+      actorId: user.userId,
+      actorRole: user.role,
+      req,
+    });
+  }
+
+  const res = NextResponse.json({ ok: true, payment, profile, kycAssessment });
   return applyRefreshCookies(res, refreshedResponse);
 }

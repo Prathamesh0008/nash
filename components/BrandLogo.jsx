@@ -11,9 +11,9 @@ export default function BrandLogo({ compact = false }) {
       {!compact && (
         <div className="flex flex-col">
           <span className="bg-gradient-to-r from-fuchsia-300 via-violet-300 to-fuchsia-300 bg-clip-text text-xl font-bold text-transparent md:text-2xl">
-            Nash Wellness
+            Nash Elite Escorts
           </span>
-          <span className="text-xs uppercase tracking-[0.2em] text-white/60">Home Spa Services</span>
+          <span className="text-xs uppercase tracking-[0.2em] text-white/60">Private Companion Services</span>
         </div>
       )}
     </Link>

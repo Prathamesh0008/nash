@@ -81,15 +81,15 @@ function estimateArrivalMinutes({ distanceKm, responseTimeAvg }) {
 
 function buildPriorityNote({ mode, fallbackReason }) {
   if (mode === "geo") {
-    return "Family Pass priority queue active. Ranked by true map distance (km), availability, and performance.";
+    return "VIP Pass priority queue active. Ranked by true map distance (km), availability, and performance.";
   }
   if (fallbackReason === "user_geo_missing") {
-    return "Family Pass priority queue active. Your geo coordinates are missing. Use current location for true map ranking.";
+    return "VIP Pass priority queue active. Your geo coordinates are missing. Use current location for true map ranking.";
   }
   if (fallbackReason === "worker_geo_missing") {
-    return "Family Pass priority queue active. Some workers do not have geo coordinates yet, so area fallback ranking is used.";
+    return "VIP Pass priority queue active. Some providers do not have geo coordinates yet, so area fallback ranking is used.";
   }
-  return "Family Pass priority queue active. No geo-distance match found for selected filters, fallback ranking used.";
+  return "VIP Pass priority queue active. No geo-distance match found for selected filters, fallback ranking used.";
 }
 
 export async function GET(req) {
@@ -119,7 +119,7 @@ export async function GET(req) {
         ok: false,
         memberOnly: true,
         redirectHref: "/membership?plan=FAMILY",
-        error: "This endpoint is only for Family Pass members.",
+        error: "This endpoint is only for VIP Pass members.",
         currentPlan: activeMembership
           ? {
               code: String(activeMembership?.planSnapshot?.code || activePlan?.code || "").trim().toUpperCase(),

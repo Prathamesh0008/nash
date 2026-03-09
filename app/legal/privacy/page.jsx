@@ -6,9 +6,9 @@ const sections = [
   {
     title: "1. Scope Of This Policy",
     points: [
-      "This Privacy Policy explains how Nash Wellness collects, uses, stores, and protects personal data.",
-      "It applies to customers, workers, and visitors using our website, apps, APIs, support, and chat features.",
-      "By using Nash Wellness, you agree to the data practices described in this policy.",
+      "This Privacy Policy explains how Nash Elite Escorts collects, uses, stores, and protects personal data.",
+      "It applies to customers, escorts, and visitors using our website, apps, APIs, support, and chat features.",
+      "By using Nash Elite Escorts, you agree to the data practices described in this policy.",
     ],
   },
   {
@@ -18,7 +18,7 @@ const sections = [
       "Booking data: service selection, address, slot timing, notes, order history, and status timeline.",
       "Payment data: transaction identifiers, payment status, refund status, wallet entries, and invoices.",
       "Communication data: support tickets, in-app chat messages, and notification records.",
-      "Worker data: onboarding details, service areas, pricing, documents, verification status, and performance metrics.",
+      "Escort data: onboarding details, service areas, pricing, documents, verification status, and performance metrics.",
       "Device/technical data: IP, browser, logs, and operational telemetry used for security and reliability.",
     ],
   },
@@ -26,7 +26,7 @@ const sections = [
     title: "3. How We Use Information",
     points: [
       "To create and manage accounts, verify identity, and operate secure login sessions.",
-      "To process bookings, match workers, track service status, and provide live operational updates.",
+      "To process bookings, match escorts, track service status, and provide live operational updates.",
       "To process payments, refunds, wallet adjustments, and financial reconciliation.",
       "To deliver support, send alerts/notifications, and resolve disputes.",
       "To detect fraud, abuse, policy violations, and suspicious activity.",
@@ -61,14 +61,14 @@ const sections = [
     title: "7. Payments And Financial Data",
     points: [
       "Online payments are processed through supported payment providers and platform payment APIs.",
-      "Nash Wellness stores payment references and status data; full card credentials are not stored by us unless legally required.",
+      "Nash Elite Escorts stores payment references and status data; full card credentials are not stored by us unless legally required.",
       "Refund, chargeback, and wallet records are retained for audit, taxation, and compliance obligations.",
     ],
   },
   {
     title: "8. Data Sharing",
     points: [
-      "We share limited data with workers/customers as needed to fulfill confirmed bookings and contact rules.",
+      "We share limited data with escorts/customers as needed to fulfill confirmed bookings and contact rules.",
       "We share necessary data with payment providers, infrastructure vendors, communication services, and fraud/security systems.",
       "We may disclose data when required by law, court order, regulator request, or lawful investigation.",
       "We do not sell personal data as part of our core business model.",
@@ -108,7 +108,7 @@ const sections = [
   {
     title: "13. International Access",
     points: [
-      "If you access Nash Wellness from outside primary operating regions, local laws may differ.",
+      "If you access Nash Elite Escorts from outside primary operating regions, local laws may differ.",
       "By using the platform, you understand your data may be processed in jurisdictions where our services operate.",
     ],
   },
@@ -128,7 +128,7 @@ export default function PrivacyPage() {
       <div className="panel">
         <h1 className="text-2xl font-semibold">Privacy Policy</h1>
         <p className="mt-1 text-sm text-slate-400">
-          How Nash Wellness handles personal data for bookings, chat, payments, and worker operations.
+          How Nash Elite Escorts handles personal data for bookings, chat, payments, and escort operations.
         </p>
         <p className="mt-2 text-xs text-slate-500">Last updated: {LAST_UPDATED}</p>
       </div>

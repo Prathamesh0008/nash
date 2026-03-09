@@ -28,6 +28,9 @@ export async function PATCH(req, context) {
   }
 
   const now = new Date();
+  const existing = await WorkerProfile.findOne({ userId: id }).select("kyc.assessment").lean();
+  const recommendedSlaHours = Number(existing?.kyc?.assessment?.recommendedSlaHours || 48);
+  const reviewPriority = existing?.kyc?.assessment?.reviewPriority || "normal";
   const update = {
     verificationStatus: MAP[status],
     ...(reason ? { verificationNote: reason } : {}),
@@ -46,14 +49,17 @@ export async function PATCH(req, context) {
       : MAP[status] === "PENDING_REVIEW"
         ? {
           "kyc.queueStatus": "pending_review",
+          "kyc.reviewPriority": reviewPriority,
+          "kyc.reviewSlaHours": recommendedSlaHours,
           "kyc.submittedAt": now,
           "kyc.reviewedAt": null,
           "kyc.reviewedBy": null,
           "kyc.rejectionReason": "",
-          "kyc.reviewSlaDueAt": new Date(now.getTime() + 48 * 60 * 60 * 1000),
+          "kyc.reviewSlaDueAt": new Date(now.getTime() + recommendedSlaHours * 60 * 60 * 1000),
           }
         : {
             "kyc.queueStatus": "rejected",
+            "kyc.reviewPriority": "normal",
             "kyc.reviewedAt": now,
             "kyc.reviewedBy": user.userId,
             "kyc.rejectionReason": reason || "Rejected by admin",

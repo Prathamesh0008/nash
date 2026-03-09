@@ -49,6 +49,29 @@ const RecentSearchSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const CurrentLocationSchema = new mongoose.Schema(
+  {
+    lat: { type: Number, default: null },
+    lng: { type: Number, default: null },
+    accuracy: { type: Number, default: null },
+    speed: { type: Number, default: null },
+    heading: { type: Number, default: null },
+    recordedAt: { type: Date, default: null, index: true },
+    location: {
+      type: {
+        type: String,
+        enum: ["Point"],
+        default: undefined,
+      },
+      coordinates: {
+        type: [Number],
+        default: undefined,
+      },
+    },
+  },
+  { _id: false }
+);
+
 const UserSchema = new mongoose.Schema(
   {
     role: {
@@ -99,6 +122,7 @@ const UserSchema = new mongoose.Schema(
       savedSearchFilters: { type: [SavedSearchFilterSchema], default: [] },
       recentSearches: { type: [RecentSearchSchema], default: [] },
     },
+    currentLocation: { type: CurrentLocationSchema, default: {} },
     refreshVersion: { type: Number, default: 0 },
     lastSeenAt: { type: Date, default: null },
     notifyEmail: { type: Boolean, default: true },
@@ -109,5 +133,6 @@ const UserSchema = new mongoose.Schema(
 UserSchema.index({ role: 1, status: 1 });
 UserSchema.index({ phone: 1 }, { sparse: true });
 UserSchema.index({ "addresses.location": "2dsphere" }, { sparse: true });
+UserSchema.index({ "currentLocation.location": "2dsphere" }, { sparse: true });
 
 export default mongoose.models.User || mongoose.model("User", UserSchema);

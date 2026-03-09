@@ -6,6 +6,8 @@ import { requireAuth, applyRefreshCookies } from "@/lib/apiAuth";
 
 const DEFAULT_LIMIT = 100;
 const ALLOWED_QUEUE_STATUS = ["not_submitted", "pending_review", "in_review", "approved", "rejected", "reupload_required"];
+const ALLOWED_PRIORITIES = ["normal", "high", "critical"];
+const PRIORITY_WEIGHT = { normal: 1, high: 2, critical: 3 };
 
 export async function GET(req) {
   await dbConnect();
@@ -15,6 +17,7 @@ export async function GET(req) {
   const { searchParams } = new URL(req.url);
   const queueStatus = String(searchParams.get("queueStatus") || "").trim();
   const overdueOnly = searchParams.get("overdue") === "1";
+  const reviewPriority = String(searchParams.get("priority") || "").trim();
   const limit = Math.min(Math.max(Number(searchParams.get("limit") || DEFAULT_LIMIT), 1), 300);
 
   const filter = {};
@@ -25,9 +28,12 @@ export async function GET(req) {
     filter["kyc.reviewSlaDueAt"] = { $lte: new Date() };
     filter["kyc.queueStatus"] = { $in: ["pending_review", "in_review"] };
   }
+  if (reviewPriority && ALLOWED_PRIORITIES.includes(reviewPriority)) {
+    filter["kyc.reviewPriority"] = reviewPriority;
+  }
 
   const workers = await WorkerProfile.find(filter)
-    .sort({ "kyc.reviewSlaDueAt": 1, createdAt: -1 })
+    .sort({ "kyc.reviewPriority": -1, "kyc.reviewSlaDueAt": 1, createdAt: -1 })
     .limit(limit)
     .lean();
 
@@ -36,19 +42,36 @@ export async function GET(req) {
   const userMap = new Map(users.map((u) => [u._id.toString(), u]));
 
   const now = Date.now();
-  const rows = workers.map((worker) => {
+  const rows = workers
+    .map((worker) => {
     const dueAt = worker?.kyc?.reviewSlaDueAt ? new Date(worker.kyc.reviewSlaDueAt).getTime() : null;
     const slaRemainingMs = dueAt ? dueAt - now : null;
+    const priority = worker?.kyc?.reviewPriority || "normal";
     return {
       ...worker,
       user: userMap.get(String(worker.userId)) || null,
       kyc: {
         ...(worker.kyc || {}),
+        reviewPriority: priority,
         slaRemainingMs,
         slaBreached: typeof slaRemainingMs === "number" ? slaRemainingMs < 0 : false,
+        assessmentSummary: {
+          riskLevel: worker?.kyc?.assessment?.riskLevel || "unknown",
+          autoDecision: worker?.kyc?.assessment?.autoDecision || "unknown",
+          flags: Array.isArray(worker?.kyc?.assessment?.flags) ? worker.kyc.assessment.flags : [],
+          docOcrScore: Number(worker?.kyc?.assessment?.docOcr?.score || 0),
+          faceMatchScore: Number(worker?.kyc?.assessment?.faceMatch?.score || 0),
+        },
       },
     };
-  });
+    })
+    .sort((a, b) => {
+      const weightDiff = (PRIORITY_WEIGHT[b?.kyc?.reviewPriority || "normal"] || 1) - (PRIORITY_WEIGHT[a?.kyc?.reviewPriority || "normal"] || 1);
+      if (weightDiff !== 0) return weightDiff;
+      const aDue = a?.kyc?.reviewSlaDueAt ? new Date(a.kyc.reviewSlaDueAt).getTime() : Number.MAX_SAFE_INTEGER;
+      const bDue = b?.kyc?.reviewSlaDueAt ? new Date(b.kyc.reviewSlaDueAt).getTime() : Number.MAX_SAFE_INTEGER;
+      return aDue - bDue;
+    });
 
   const summary = rows.reduce(
     (acc, item) => {
@@ -56,6 +79,8 @@ export async function GET(req) {
       acc.total += 1;
       acc.byQueueStatus[status] = (acc.byQueueStatus[status] || 0) + 1;
       if (item?.kyc?.slaBreached) acc.slaBreached += 1;
+      const priority = item?.kyc?.reviewPriority || "normal";
+      acc.byPriority[priority] = (acc.byPriority[priority] || 0) + 1;
       return acc;
     },
     {
@@ -68,6 +93,11 @@ export async function GET(req) {
         approved: 0,
         rejected: 0,
         reupload_required: 0,
+      },
+      byPriority: {
+        normal: 0,
+        high: 0,
+        critical: 0,
       },
     }
   );

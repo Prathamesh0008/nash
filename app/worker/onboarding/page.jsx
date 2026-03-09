@@ -276,7 +276,7 @@ export default function WorkerOnboardingPage() {
 
   return (
     <section className="mx-auto max-w-3xl panel space-y-4">
-      <h1 className="text-2xl font-semibold">Worker Onboarding</h1>
+      <h1 className="text-2xl font-semibold">Escort Onboarding</h1>
       <p className="text-sm text-slate-400">Step 1 profile + docs. Step 2 verification fee payment.</p>
       {loadingDraft && <p className="text-xs text-slate-400">Loading saved profile draft...</p>}
       <div className="rounded border border-slate-700 bg-slate-900/40 p-3">

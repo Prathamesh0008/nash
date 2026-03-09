@@ -162,7 +162,7 @@ export default function ContactUsPage() {
       <div className="panel space-y-2">
         <h1 className="text-2xl font-semibold">Contact Us</h1>
         <p className="text-sm text-slate-300">
-          Reach Nash Wellness support for booking, payment, account, worker, and technical help.
+          Reach Nash Elite Escorts support for booking, payment, account, escort, and technical help.
         </p>
         <p className="text-xs text-slate-500">
           Logged-in users can raise tickets directly. For immediate emergencies, contact local emergency services first.

@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { MapPin, RefreshCw, Search, Star, Zap } from "lucide-react";
+import { LocateFixed, MapPin, RefreshCw, Search, Star, Zap } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 function WorkerCard({ worker }) {
@@ -18,7 +18,7 @@ function WorkerCard({ worker }) {
         {photo ? (
           <Image
             src={photo}
-            alt={worker.name || "Worker"}
+            alt={worker.name || "Escort"}
             width={64}
             height={64}
             unoptimized
@@ -31,7 +31,7 @@ function WorkerCard({ worker }) {
         )}
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="truncate text-base font-semibold text-slate-100">{worker.name || "Worker"}</h3>
+            <h3 className="truncate text-base font-semibold text-slate-100">{worker.name || "Escort"}</h3>
             {worker.isBoosted && (
               <span className="rounded-full border border-amber-500/40 bg-amber-500/15 px-2 py-0.5 text-[11px] font-medium text-amber-200">
                 Priority
@@ -43,7 +43,7 @@ function WorkerCard({ worker }) {
               <Star className="h-3.5 w-3.5 text-amber-300" />
               {rating.toFixed(1)}
             </span>
-            <span>{jobsCompleted} jobs</span>
+            <span>{jobsCompleted} sessions</span>
             <span className="text-emerald-300">Online</span>
           </div>
         </div>
@@ -51,7 +51,7 @@ function WorkerCard({ worker }) {
 
       <div className="space-y-2 text-sm">
         <p className="line-clamp-2 text-slate-300">
-          {skills.length ? skills.join(", ") : "All-round worker support available."}
+          {skills.length ? skills.join(", ") : "Verified companionship support available."}
         </p>
         <p className="flex items-start gap-1 text-xs text-slate-400">
           <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" />
@@ -59,6 +59,11 @@ function WorkerCard({ worker }) {
             {areas.length ? areas.join(", ") : "Area details will be shared after booking confirmation."}
           </span>
         </p>
+        {typeof worker.distanceKm === "number" && (
+          <p className="text-xs text-emerald-300">
+            Nearby: {worker.distanceKm.toFixed(1)} km
+          </p>
+        )}
       </div>
 
       <div className="mt-auto flex gap-2 pt-1">
@@ -74,6 +79,7 @@ function WorkerCard({ worker }) {
 }
 
 export default function WorkersPage() {
+  const DEFAULT_NEARBY_RADIUS_KM = 25;
   const [workers, setWorkers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -82,21 +88,78 @@ export default function WorkersPage() {
   const [selectedCity, setSelectedCity] = useState("all");
   const [sortBy, setSortBy] = useState("recommended");
   const [priorityOnly, setPriorityOnly] = useState(false);
+  const [nearbyOnly, setNearbyOnly] = useState(false);
+  const [userLocation, setUserLocation] = useState(null);
+  const [locationLoading, setLocationLoading] = useState(false);
+  const [locationError, setLocationError] = useState("");
+
+  const requestUserLocation = () =>
+    new Promise((resolve) => {
+      if (typeof navigator === "undefined" || !navigator.geolocation) {
+        setLocationError("Location access is not supported in this browser.");
+        resolve(null);
+        return;
+      }
+      setLocationLoading(true);
+      setLocationError("");
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const coords = {
+            lat: Number(position.coords.latitude),
+            lng: Number(position.coords.longitude),
+          };
+          setUserLocation(coords);
+          setLocationLoading(false);
+          resolve(coords);
+        },
+        (geoError) => {
+          const message =
+            geoError?.code === 1
+              ? "Location permission denied. Allow location to use Nearby filter."
+              : geoError?.code === 2
+                ? "Unable to detect your location right now."
+                : "Location request timed out. Try again.";
+          setLocationError(message);
+          setLocationLoading(false);
+          resolve(null);
+        },
+        { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
+      );
+    });
 
   const loadWorkers = async ({ silent = false } = {}) => {
     try {
       if (silent) setRefreshing(true);
       else setLoading(true);
       setError("");
-      const res = await fetch("/api/workers", { cache: "no-store" });
+      if (nearbyOnly && !(userLocation?.lat && userLocation?.lng)) {
+        setError("Enable location access to use Nearby filter.");
+        setLoading(false);
+        setRefreshing(false);
+        return;
+      }
+      const sp = new URLSearchParams();
+      if (userLocation?.lat && userLocation?.lng) {
+        sp.set("lat", String(userLocation.lat));
+        sp.set("lng", String(userLocation.lng));
+      }
+      if (nearbyOnly) {
+        sp.set("nearby", "1");
+        sp.set("maxDistanceKm", String(DEFAULT_NEARBY_RADIUS_KM));
+      }
+      if (sortBy === "nearby" && userLocation?.lat && userLocation?.lng) {
+        sp.set("sort", "nearby");
+      }
+      const qs = sp.toString();
+      const res = await fetch(`/api/workers${qs ? `?${qs}` : ""}`, { cache: "no-store" });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data?.ok) {
-        setError(data?.error || "Failed to load workers.");
+        setError(data?.error || "Failed to load escorts.");
         return;
       }
       setWorkers(Array.isArray(data.workers) ? data.workers : []);
     } catch {
-      setError("Network error while loading workers.");
+      setError("Network error while loading escorts.");
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -105,7 +168,7 @@ export default function WorkersPage() {
 
   useEffect(() => {
     loadWorkers();
-  }, []);
+  }, [nearbyOnly, userLocation?.lat, userLocation?.lng]);
 
   const cityOptions = useMemo(() => {
     const unique = new Set();
@@ -121,6 +184,10 @@ export default function WorkersPage() {
     const q = searchQuery.trim().toLowerCase();
     const rows = workers.filter((worker) => {
       if (priorityOnly && !worker.isBoosted) return false;
+      if (nearbyOnly) {
+        if (typeof worker.distanceKm !== "number") return false;
+        if (worker.distanceKm > DEFAULT_NEARBY_RADIUS_KM) return false;
+      }
 
       if (selectedCity !== "all") {
         const hasCity = (worker.serviceAreas || []).some(
@@ -144,6 +211,13 @@ export default function WorkersPage() {
     });
 
     rows.sort((a, b) => {
+      if (sortBy === "nearby") {
+        const aHas = typeof a.distanceKm === "number";
+        const bHas = typeof b.distanceKm === "number";
+        if (aHas !== bHas) return aHas ? -1 : 1;
+        if (aHas && bHas && a.distanceKm !== b.distanceKm) return a.distanceKm - b.distanceKm;
+        return Number(b.ratingAvg || 0) - Number(a.ratingAvg || 0);
+      }
       if (sortBy === "rating") return Number(b.ratingAvg || 0) - Number(a.ratingAvg || 0);
       if (sortBy === "jobs") return Number(b.jobsCompleted || 0) - Number(a.jobsCompleted || 0);
       if (sortBy === "name") return String(a.name || "").localeCompare(String(b.name || ""));
@@ -162,6 +236,9 @@ export default function WorkersPage() {
 
   const totalWorkers = workers.length;
   const priorityWorkers = workers.filter((worker) => worker.isBoosted).length;
+  const nearbyWorkers = workers.filter(
+    (worker) => typeof worker.distanceKm === "number" && worker.distanceKm <= DEFAULT_NEARBY_RADIUS_KM
+  ).length;
   const averageRating =
     workers.length > 0
       ? (workers.reduce((sum, worker) => sum + Number(worker.ratingAvg || 0), 0) / workers.length).toFixed(1)
@@ -172,9 +249,9 @@ export default function WorkersPage() {
       <div className="panel">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold text-slate-100">Workers</h1>
+            <h1 className="text-2xl font-semibold text-slate-100">Escorts</h1>
             <p className="text-sm text-slate-400">
-              Explore verified all-round workers. Booking requests are open anytime.
+              Explore verified escorts. Booking requests are open anytime.
             </p>
           </div>
           <button
@@ -187,13 +264,29 @@ export default function WorkersPage() {
           </button>
         </div>
 
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => requestUserLocation()}
+            disabled={locationLoading}
+            className="inline-flex items-center gap-2 rounded-lg app-btn-secondary px-3 py-2 text-xs font-medium disabled:opacity-60"
+          >
+            <LocateFixed className={`h-4 w-4 ${locationLoading ? "animate-spin" : ""}`} />
+            {userLocation ? "Update My Location" : "Use My Location"}
+          </button>
+          {userLocation && (
+            <span className="text-xs text-emerald-300">Location enabled</span>
+          )}
+          {!userLocation && <span className="text-xs text-slate-400">Enable location for nearby escorts.</span>}
+          {locationError && <span className="text-xs text-rose-300">{locationError}</span>}
+        </div>
+
         <div className="mt-4 grid gap-2 sm:grid-cols-3">
           <div className="rounded-xl border border-white/10 bg-slate-900/40 p-3">
-            <p className="text-xs text-slate-400">Online Workers</p>
+            <p className="text-xs text-slate-400">Online Escorts</p>
             <p className="mt-1 text-xl font-semibold text-slate-100">{totalWorkers}</p>
           </div>
           <div className="rounded-xl border border-white/10 bg-slate-900/40 p-3">
-            <p className="text-xs text-slate-400">Priority Workers</p>
+            <p className="text-xs text-slate-400">Priority Escorts</p>
             <p className="mt-1 inline-flex items-center gap-1 text-xl font-semibold text-amber-200">
               <Zap className="h-4 w-4" />
               {priorityWorkers}
@@ -204,6 +297,11 @@ export default function WorkersPage() {
             <p className="mt-1 text-xl font-semibold text-slate-100">{averageRating}</p>
           </div>
         </div>
+        {userLocation && (
+          <p className="mt-2 text-xs text-slate-400">
+            Nearby in {DEFAULT_NEARBY_RADIUS_KM} km: <span className="text-emerald-300">{nearbyWorkers}</span>
+          </p>
+        )}
       </div>
 
       <div className="panel space-y-3">
@@ -213,7 +311,7 @@ export default function WorkersPage() {
             <input
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder="Search name, area, skill..."
+              placeholder="Search name, area, specialty..."
               className="h-11 w-full rounded-lg border border-white/15 bg-slate-950/60 pl-9 pr-3 text-sm text-slate-100"
             />
           </label>
@@ -236,6 +334,7 @@ export default function WorkersPage() {
             className="h-11 rounded-lg border border-white/15 bg-slate-950/60 px-3 text-sm text-slate-100"
           >
             <option value="recommended">Recommended</option>
+            <option value="nearby" disabled={!userLocation}>Nearby</option>
             <option value="rating">Top Rating</option>
             <option value="jobs">Most Jobs</option>
             <option value="name">Name A-Z</option>
@@ -250,7 +349,27 @@ export default function WorkersPage() {
               onChange={(event) => setPriorityOnly(event.target.checked)}
               className="h-4 w-4 rounded border border-white/20 bg-slate-950/70"
             />
-            Show priority workers only
+            Show priority escorts only
+          </label>
+          <label className="inline-flex items-center gap-2 text-sm text-slate-300">
+            <input
+              type="checkbox"
+              checked={nearbyOnly}
+              onChange={async (event) => {
+                const checked = event.target.checked;
+                if (!checked) {
+                  setNearbyOnly(false);
+                  return;
+                }
+                if (!userLocation) {
+                  const coords = await requestUserLocation();
+                  if (!coords) return;
+                }
+                setNearbyOnly(true);
+              }}
+              className="h-4 w-4 rounded border border-white/20 bg-slate-950/70"
+            />
+            Nearby only ({DEFAULT_NEARBY_RADIUS_KM} km)
           </label>
           <button
             onClick={() => {
@@ -258,6 +377,7 @@ export default function WorkersPage() {
               setSelectedCity("all");
               setSortBy("recommended");
               setPriorityOnly(false);
+              setNearbyOnly(false);
             }}
             className="rounded-lg app-btn-secondary px-3 py-2 text-xs font-medium"
           >
@@ -285,7 +405,7 @@ export default function WorkersPage() {
 
       {!loading && !error && filteredWorkers.length === 0 && (
         <div className="panel text-center text-sm text-slate-300">
-          No workers match these filters right now.
+          No escorts match these filters right now.
         </div>
       )}
 

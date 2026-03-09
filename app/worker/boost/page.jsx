@@ -41,7 +41,7 @@ export default function WorkerBoostPage() {
   return (
     <section className="grid gap-4 lg:grid-cols-2">
       <form onSubmit={buy} className="panel space-y-3">
-        <h1 className="text-2xl font-semibold">Worker Boost</h1>
+        <h1 className="text-2xl font-semibold">Escort Boost</h1>
         <p className="text-sm text-slate-400">Paid ranking by area + category with slot limit.</p>
 
         <select className="w-full rounded border border-slate-700 bg-slate-900 p-2" value={form.planId} onChange={(e) => setForm({ ...form, planId: e.target.value })} required>
@@ -52,7 +52,7 @@ export default function WorkerBoostPage() {
         </select>
 
         <input className="w-full rounded border border-slate-700 bg-slate-900 p-2" placeholder="Area (Nerul)" value={form.area} onChange={(e) => setForm({ ...form, area: e.target.value })} />
-        <input className="w-full rounded border border-slate-700 bg-slate-900 p-2" placeholder="Category (Massage, Spa, Wellness)" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} />
+        <input className="w-full rounded border border-slate-700 bg-slate-900 p-2" placeholder="Category (Companion, Premium, VIP)" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} />
         <select className="w-full rounded border border-slate-700 bg-slate-900 p-2" value={form.paymentMethod} onChange={(e) => setForm({ ...form, paymentMethod: e.target.value })}>
           <option value="online">Online</option>
           <option value="wallet">Wallet</option>

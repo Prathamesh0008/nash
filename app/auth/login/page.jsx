@@ -222,7 +222,7 @@ export default function LoginPage() {
             </span>
             <span className="flex items-center gap-1">
               <Shield className="h-3 w-3" />
-              Worker
+              Escort
             </span>
             <span className="flex items-center gap-1">
               <Home className="h-3 w-3" />

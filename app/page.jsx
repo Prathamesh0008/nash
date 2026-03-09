@@ -19,36 +19,36 @@ import {
 
 const quickAccessCards = [
   {
-    title: "Instant Home Booking",
-    desc: "Choose massage/spa service, slot, and address in one fast flow.",
+    title: "Instant Private Booking",
+    desc: "Choose escort service, slot, and location in one fast flow.",
     href: "/booking/new",
   },
   {
     title: "Live Tracking",
-    desc: "Track therapist movement with live status, speed, and update freshness.",
+    desc: "Track provider movement with live status, speed, and update freshness.",
     href: "/orders",
   },
   {
-    title: "Chat With Therapist",
-    desc: "Connect instantly for arrival notes and service preferences.",
+    title: "Chat With Provider",
+    desc: "Connect instantly for arrival notes and session preferences.",
     href: "/chat",
   },
   {
-    title: "Family Pass Priority",
-    desc: "Unlock priority queue and nearby high-response therapist options.",
+    title: "VIP Pass Priority",
+    desc: "Unlock priority queue and nearby high-response escort options.",
     href: "/family-pass",
   },
 ];
 
 const bookingJourney = [
   {
-    title: "Select Therapist",
-    desc: "Pick a verified massage/spa therapist by rating, area, and skills.",
+    title: "Select Escort",
+    desc: "Pick a verified escort by rating, area, and specialties.",
     icon: Sparkles,
   },
   {
     title: "Pick Slot",
-    desc: "Choose date, time, and home-service address instantly.",
+    desc: "Choose date, time, and preferred meeting location instantly.",
     icon: CalendarCheck2,
   },
   {
@@ -58,15 +58,15 @@ const bookingJourney = [
   },
   {
     title: "Track Arrival Live",
-    desc: "See live location, ETA, and route progress till therapist arrival.",
+    desc: "See live location, ETA, and route progress till escort arrival.",
     icon: Clock3,
   },
 ];
 
 const trustPillars = [
   {
-    title: "Verified Wellness Pros",
-    desc: "Every therapist profile is verified before going live for booking.",
+    title: "Verified Escort Profiles",
+    desc: "Every provider profile is verified before going live for booking.",
     tone: "from-emerald-500/15 to-emerald-900/10 border-emerald-400/25",
   },
   {
@@ -94,7 +94,7 @@ const liveTrackingHighlights = [
   },
   {
     title: "Distance + ETA",
-    desc: "Know how far therapist is and expected arrival window.",
+    desc: "Know how far your provider is and expected arrival window.",
     icon: Route,
   },
   {
@@ -115,7 +115,7 @@ function mapWorkerToProvider(worker, idx) {
 
   return {
     id: String(worker?.id || worker?.userId || `worker-${idx + 1}`),
-    name: worker?.name || "Therapist",
+    name: worker?.name || "Escort",
     city,
     location,
     rating: Number(worker?.ratingAvg || 0),
@@ -123,7 +123,7 @@ function mapWorkerToProvider(worker, idx) {
     verified: String(worker?.verificationStatus || "").toUpperCase() === "APPROVED",
     available: worker?.isOnline !== false,
     images,
-    bio: worker?.bio || (skills.length ? skills.slice(0, 3).join(", ") : "Verified wellness therapist profile."),
+    bio: worker?.bio || (skills.length ? skills.slice(0, 3).join(", ") : "Verified escort provider profile."),
     tags: categories.length ? categories : skills.slice(0, 3),
     ratePerHour: basePrice,
     profileHref: worker?.id ? `/workers/${worker.id}` : "/workers",
@@ -191,7 +191,7 @@ export default function HomePage() {
         <PageContainer>
           <div className="mb-6 grid gap-3 sm:grid-cols-3">
             <article className="rounded-xl border border-white/10 bg-slate-900/45 p-3">
-              <p className="text-xs text-slate-400">Live Therapists</p>
+              <p className="text-xs text-slate-400">Live Escorts</p>
               <p className="mt-1 text-xl font-semibold text-white">{liveStats.online}</p>
             </article>
             <article className="rounded-xl border border-white/10 bg-slate-900/45 p-3">
@@ -205,7 +205,7 @@ export default function HomePage() {
           </div>
 
           <h2 className="text-2xl font-semibold text-white mb-6">
-            Top Wellness Therapists
+            Top Escort Providers
           </h2>
           {loadingProviders && <p className="mb-3 text-sm text-white/60">Loading live providers...</p>}
           {!loadingProviders && providersError && <p className="mb-3 text-sm text-rose-300">{providersError}</p>}
@@ -213,15 +213,15 @@ export default function HomePage() {
           <div className="mt-4 rounded-2xl border border-white/10 bg-gradient-to-r from-slate-950/80 via-slate-900/70 to-slate-950/80 p-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <p className="text-sm font-semibold text-white">Membership + Family Pass</p>
-                <p className="text-xs text-slate-400">Unlock priority slots, faster support, and better therapist matching.</p>
+                <p className="text-sm font-semibold text-white">Membership + VIP Pass</p>
+                <p className="text-xs text-slate-400">Unlock priority slots, faster support, and better escort matching.</p>
               </div>
               <div className="flex items-center gap-2">
                 <Link href="/membership" className="rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-xs font-semibold text-slate-100 hover:bg-white/10">
                   View Plans
                 </Link>
                 <Link href="/family-pass" className="rounded-lg bg-gradient-to-r from-fuchsia-600 to-violet-600 px-3 py-2 text-xs font-semibold text-white hover:brightness-110">
-                  Open Family Pass
+                  Open VIP Pass
                 </Link>
               </div>
             </div>
@@ -250,7 +250,7 @@ export default function HomePage() {
         <PageContainer>
           <div className="panel space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <h2 className="text-xl font-semibold text-white">How Home Service Booking Works</h2>
+              <h2 className="text-xl font-semibold text-white">How Escort Booking Works</h2>
               <Link href="/booking/new" className="inline-flex items-center gap-1 text-sm text-emerald-300 hover:text-emerald-200">
                 Start Booking
                 <ArrowRight className="h-4 w-4" />
@@ -317,15 +317,15 @@ export default function HomePage() {
                   <Zap className="h-3.5 w-3.5" />
                   Ready for instant booking
                 </p>
-                <p className="mt-1 text-lg font-semibold text-white">Need massage or spa support today? Start now.</p>
-                <p className="text-sm text-slate-300">Choose a therapist and send your home-service booking request in one flow.</p>
+                <p className="mt-1 text-lg font-semibold text-white">Need a verified escort today? Start now.</p>
+                <p className="text-sm text-slate-300">Choose a provider and send your private booking request in one flow.</p>
               </div>
               <div className="flex items-center gap-2">
                 <Link href="/booking/new" className="rounded-xl bg-gradient-to-r from-fuchsia-600 to-pink-600 px-4 py-2 text-sm font-semibold text-white hover:brightness-110">
-                  Book Therapist
+                  Book Escort
                 </Link>
                 <Link href="/family-pass" className="rounded-xl border border-white/20 bg-white/[0.05] px-4 py-2 text-sm font-semibold text-slate-100 hover:bg-white/[0.1]">
-                  Family Pass
+                  VIP Pass
                 </Link>
               </div>
             </div>

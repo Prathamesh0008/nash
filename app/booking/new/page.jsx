@@ -62,10 +62,10 @@ function toFriendlyBookingError(message = "") {
   const text = String(message || "").trim();
   if (!text) return "Booking failed";
   if (text.includes("does not serve this area")) {
-    return "Selected worker does not serve this area. Use worker area button or choose another worker.";
+    return "Selected escort does not serve this area. Use escort area button or choose another escort.";
   }
   if (text.includes("does not support this service category")) {
-    return "Selected worker profile does not match this booking setup. Try another worker or continue with flexible assignment.";
+    return "Selected escort profile does not match this booking setup. Try another escort or continue with flexible assignment.";
   }
   if (text.includes("Too many booking attempts")) {
     return "Too many attempts. Wait a few minutes and retry.";
@@ -141,7 +141,7 @@ export default function BookingNewPage() {
       }
       setWorkerPreview({
         id: query.workerId,
-        name: data.worker?.user?.name || "Selected Worker",
+        name: data.worker?.user?.name || "Selected Escort",
         areas: data.worker?.serviceAreas || [],
         pricing: data.worker?.pricing || { basePrice: 0, extraServices: [] },
         badges: data.worker?.badges || {},
@@ -311,7 +311,7 @@ export default function BookingNewPage() {
       city: workerPrimaryArea.city || prev.city,
       pincode: workerPrimaryArea.pincode || prev.pincode,
     }));
-    setStatus("Address city/pincode updated from selected worker service area.");
+    setStatus("Address city/pincode updated from selected escort service area.");
     setError("");
   };
 
@@ -417,13 +417,13 @@ export default function BookingNewPage() {
   const requestCallback = async () => {
     if (!query.workerId || callbackLoading) return;
     setCallbackLoading(true);
-    const subject = "Callback request for selected worker";
+    const subject = "Callback request for selected escort";
     const message = [
-      `Customer requested callback for worker ${workerPreview?.name || query.workerId}.`,
-      "Request type: all-rounder support visit.",
+      `Customer requested callback for escort ${workerPreview?.name || query.workerId}.`,
+      "Request type: private companionship booking.",
       `Requested slot: ${form.date} ${form.time}.`,
       `Location: ${form.city}, ${form.pincode}.`,
-      "Reason: strict selected worker not available.",
+      "Reason: strict selected escort not available.",
     ].join(" ");
 
     const res = await fetch("/api/support/tickets", {
@@ -482,7 +482,7 @@ export default function BookingNewPage() {
         return (pincode && rowPincode === pincode) || (city && rowCity === city);
       });
       if (!serves) {
-        setError("Selected worker does not serve this entered area. Use worker area or disable strict mode.");
+        setError("Selected escort does not serve this entered area. Use escort area or disable strict mode.");
         return;
       }
     }
@@ -557,9 +557,9 @@ export default function BookingNewPage() {
               <Calendar className="h-6 w-6 text-white sm:h-7 sm:w-7" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-white sm:text-2xl">Book a Service</h1>
+              <h1 className="text-xl font-bold text-white sm:text-2xl">Book an Escort</h1>
               <p className="text-xs text-slate-400 sm:text-sm">
-                Fill in the details to schedule your service
+                Fill in the details to schedule your booking
               </p>
             </div>
           </div>
@@ -595,7 +595,7 @@ export default function BookingNewPage() {
               <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 sm:p-6">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                   <div>
-                    <p className="text-sm font-medium text-amber-400">Selected Worker</p>
+                    <p className="text-sm font-medium text-amber-400">Selected Escort</p>
                     <h3 className="text-lg font-semibold text-white">{workerPreview?.name || query.workerId}</h3>
                     
                     {workerPreview?.quality && (
@@ -648,7 +648,7 @@ export default function BookingNewPage() {
                     {/* Service Areas */}
                     {(workerPreview?.areas || []).length > 0 && (
                       <p className="mt-3 text-xs text-slate-400">
-                        <span className="font-medium">Service areas:</span>{" "}
+                        <span className="font-medium">Coverage areas:</span>{" "}
                         {workerPreview.areas.map((row) => `${row.city}-${row.pincode}`).join(", ")}
                       </p>
                     )}
@@ -671,7 +671,7 @@ export default function BookingNewPage() {
                       className="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-slate-200 transition hover:border-fuchsia-400/50 hover:text-white"
                     >
                       <Navigation className="h-3 w-3" />
-                      Use Worker Area
+                      Use Escort Area
                     </button>
                   )}
                   
@@ -685,13 +685,13 @@ export default function BookingNewPage() {
                       }}
                       className="h-3 w-3 rounded border-amber-600 bg-amber-800 text-amber-500"
                     />
-                    <span>Strict worker mode</span>
+                    <span>Strict escort mode</span>
                   </label>
                 </div>
 
                 {!strictWorkerOnly && (
                   <p className="mt-2 text-xs text-amber-400/70">
-                    Alternate worker allowed if selected worker is unavailable
+                    Alternate escort allowed if selected escort is unavailable
                   </p>
                 )}
               </div>
@@ -700,7 +700,7 @@ export default function BookingNewPage() {
             {/* Manual Assist Card */}
             {manualAssist && query.workerId && (
               <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 sm:p-6">
-                <h4 className="mb-3 text-sm font-medium text-amber-400">Worker Unavailable</h4>
+                <h4 className="mb-3 text-sm font-medium text-amber-400">Escort Unavailable</h4>
                 
                 {(manualAssist.nearestSlots || []).length > 0 ? (
                   <>
@@ -719,7 +719,7 @@ export default function BookingNewPage() {
                     </div>
                   </>
                 ) : (
-                  <p className="text-xs text-slate-400">No nearby slots found for this worker</p>
+                  <p className="text-xs text-slate-400">No nearby slots found for this escort</p>
                 )}
 
                 <div className="mt-4 flex flex-wrap gap-2">
@@ -728,12 +728,12 @@ export default function BookingNewPage() {
                       type="button"
                       onClick={() => {
                         setStrictWorkerOnly(false);
-                        setStatus("Alternate worker enabled. Click Confirm Booking again.");
+                        setStatus("Alternate escort enabled. Click Confirm Booking again.");
                         setError("");
                       }}
                       className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs text-white hover:bg-emerald-500"
                     >
-                      Allow Alternate Worker
+                      Allow Alternate Escort
                     </button>
                   )}
                   
@@ -782,7 +782,7 @@ export default function BookingNewPage() {
             <div className="rounded-xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02] p-4 sm:p-6">
               <div className="mb-4 flex items-center gap-2">
                 <MapPin className="h-5 w-5 text-fuchsia-400" />
-                <h2 className="text-lg font-semibold text-white">Service Address</h2>
+                <h2 className="text-lg font-semibold text-white">Booking Address</h2>
               </div>
 
               {/* Saved Addresses */}
@@ -986,7 +986,7 @@ export default function BookingNewPage() {
             {/* Notes */}
             <div className="rounded-xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02] p-4 sm:p-6">
               <label className="mb-2 block text-sm font-medium text-slate-300">
-                Notes for Worker
+                Notes for Escort
               </label>
               <textarea
                 className="w-full rounded-lg border border-white/10 bg-slate-900 p-3 text-sm text-white placeholder:text-slate-500 focus:border-fuchsia-500/50 focus:outline-none"

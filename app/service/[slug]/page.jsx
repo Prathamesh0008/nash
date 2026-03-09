@@ -33,7 +33,7 @@ export default function ServiceDetailPage() {
       <div className="panel">
         <h1 className="text-2xl font-semibold">{data.service?.title || "Service Details"}</h1>
         <p className="text-sm text-slate-400">
-          {data.service?.description || "Choose therapists by area, rating, and availability for home service."}
+          {data.service?.description || "Choose verified escorts by area, rating, and availability."}
         </p>
 
         <div className="mt-4 grid gap-3 md:grid-cols-3">
@@ -45,7 +45,7 @@ export default function ServiceDetailPage() {
         </div>
       </div>
 
-      {loading && <p className="text-slate-400">Loading workers...</p>}
+      {loading && <p className="text-slate-400">Loading escorts...</p>}
 
       <div className="grid-auto">
         {data.workers.map((worker) => (
@@ -54,17 +54,17 @@ export default function ServiceDetailPage() {
               <h2 className="text-lg font-semibold">{worker.name}</h2>
               {worker.featured && <span className="rounded bg-amber-600 px-2 py-1 text-xs">Featured</span>}
             </div>
-            <p className="text-sm text-slate-400">Rating {Number(worker.ratingAvg || 0).toFixed(1)} | Jobs {worker.jobsCompleted}</p>
+            <p className="text-sm text-slate-400">Rating {Number(worker.ratingAvg || 0).toFixed(1)} | Sessions {worker.jobsCompleted}</p>
             <div className="grid grid-cols-2 gap-2">
               {(worker.galleryPhotos || []).slice(0, 4).map((photo, i) => (
                 <div key={`${worker.id}-${i}`} className="relative h-24 overflow-hidden rounded border border-slate-700 bg-slate-900">
-                  <Image src={photo} alt="worker" fill className="object-cover" unoptimized />
+                  <Image src={photo} alt="escort" fill className="object-cover" unoptimized />
                 </div>
               ))}
             </div>
             <div className="flex gap-2">
               <Link href={`/booking/new?serviceId=${data.service?._id}&workerId=${worker.id}`} className="rounded bg-sky-700 px-3 py-2 text-sm text-white hover:bg-sky-600">
-                Book This Therapist
+                Book This Escort
               </Link>
               <Link href={`/workers/${worker.id}`} className="rounded bg-slate-800 px-3 py-2 text-sm hover:bg-slate-700">
                 Profile

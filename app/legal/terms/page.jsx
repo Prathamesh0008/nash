@@ -6,9 +6,9 @@ const sections = [
   {
     title: "1. Acceptance Of Terms",
     points: [
-      "By creating an account, accessing, or using Nash Wellness, you agree to these Terms & Conditions.",
+      "By creating an account, accessing, or using Nash Elite Escorts, you agree to these Terms & Conditions.",
       "If you do not agree, you must stop using the platform and related services.",
-      "These terms apply to customers, workers, and any person using Nash Wellness features.",
+      "These terms apply to customers, escorts, and any person using Nash Elite Escorts features.",
     ],
   },
   {
@@ -16,14 +16,14 @@ const sections = [
     points: [
       "You must provide accurate information during signup, booking, and profile updates.",
       "You are responsible for account security, device safety, and all activities under your account.",
-      "Nash Wellness may suspend accounts with false identity, fraud signals, or policy breaches.",
+      "Nash Elite Escorts may suspend accounts with false identity, fraud signals, or policy breaches.",
     ],
   },
   {
     title: "3. Platform Scope",
     points: [
-      "Nash Wellness is a platform for booking wellness, massage, and spa home services.",
-      "Service availability depends on city coverage, worker verification, slot timing, and operational limits.",
+      "Nash Elite Escorts is a platform for booking verified escort and companionship services.",
+      "Service availability depends on city coverage, escort verification, slot timing, and operational limits.",
       "Estimated arrival times and assignment speed are dynamic and may change due to traffic or demand.",
     ],
   },
@@ -31,7 +31,7 @@ const sections = [
     title: "4. Bookings And Assignment",
     points: [
       "A booking request is confirmed only after successful validation and system acceptance.",
-      "Worker assignment may be manual or automatic based on area fit, availability, and policy rules.",
+      "Escort assignment may be manual or automatic based on area fit, availability, and policy rules.",
       "Users must provide correct service address, contact details, and access instructions.",
     ],
   },
@@ -54,16 +54,16 @@ const sections = [
   {
     title: "7. Safety And Conduct",
     points: [
-      "Users and workers must maintain safe, respectful, and lawful behavior during all interactions.",
+      "Users and escorts must maintain safe, respectful, and lawful behavior during all interactions.",
       "Harassment, threats, discrimination, or requests for illegal activity are strictly prohibited.",
-      "If safety is at risk, Nash Wellness may pause the job, lock accounts, and preserve records for review.",
+      "If safety is at risk, Nash Elite Escorts may pause the job, lock accounts, and preserve records for review.",
     ],
   },
   {
-    title: "8. Worker Obligations",
+    title: "8. Escort Obligations",
     points: [
-      "Workers must complete onboarding, document verification, and platform compliance before going live.",
-      "Workers must maintain accurate service area, schedule, pricing, and profile details.",
+      "Escorts must complete onboarding, document verification, and platform compliance before going live.",
+      "Escorts must maintain accurate service area, schedule, pricing, and profile details.",
       "No-show, misrepresentation, repeated poor conduct, or policy violations may trigger penalties or deactivation.",
     ],
   },
@@ -71,7 +71,7 @@ const sections = [
     title: "9. Communication And Content",
     points: [
       "Chat and support channels are provided for service coordination and platform support.",
-      "Nash Wellness may retain communication records for quality, safety, fraud checks, and legal requirements.",
+      "Nash Elite Escorts may retain communication records for quality, safety, fraud checks, and legal requirements.",
       "Users must not upload or send abusive, unlawful, or infringing content.",
     ],
   },
@@ -86,7 +86,7 @@ const sections = [
   {
     title: "11. Suspension And Termination",
     points: [
-      "Nash Wellness may suspend, restrict, or terminate access for policy, legal, or risk-related reasons.",
+      "Nash Elite Escorts may suspend, restrict, or terminate access for policy, legal, or risk-related reasons.",
       "Outstanding dues, penalties, open disputes, or compliance obligations may survive account closure.",
       "We may retain required records for legal, financial, and anti-fraud obligations.",
     ],
@@ -94,8 +94,8 @@ const sections = [
   {
     title: "12. Liability Limitation",
     points: [
-      "Service timelines, worker availability, and technical uptime are provided on a best-effort basis.",
-      "Nash Wellness is not liable for indirect, incidental, consequential, or punitive damages.",
+      "Service timelines, escort availability, and technical uptime are provided on a best-effort basis.",
+      "Nash Elite Escorts is not liable for indirect, incidental, consequential, or punitive damages.",
       "Maximum liability, where legally permitted, is limited to amounts paid for the relevant booking.",
     ],
   },
@@ -110,7 +110,7 @@ const sections = [
   {
     title: "14. Updates To Terms",
     points: [
-      "Nash Wellness may update these Terms to reflect operational, legal, or security changes.",
+      "Nash Elite Escorts may update these Terms to reflect operational, legal, or security changes.",
       "The updated version becomes effective when published on this page.",
       "Continued platform use after updates means you accept the revised Terms.",
     ],
@@ -123,7 +123,7 @@ export default function TermsPage() {
       <div className="panel">
         <h1 className="text-2xl font-semibold">Terms & Conditions</h1>
         <p className="mt-1 text-sm text-slate-400">
-          Rules and legal conditions for customers, workers, and platform usage.
+          Rules and legal conditions for customers, escorts, and platform usage.
         </p>
         <p className="mt-2 text-xs text-slate-500">Last updated: {LAST_UPDATED}</p>
       </div>

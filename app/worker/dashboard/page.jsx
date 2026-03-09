@@ -117,7 +117,7 @@ export default function WorkerDashboardPage() {
       ]);
 
       if (!meRes.ok || !meData?.ok) {
-        setError(meData?.error || "Failed to load worker profile.");
+        setError(meData?.error || "Failed to load escort profile.");
         return;
       }
 
@@ -255,7 +255,7 @@ export default function WorkerDashboardPage() {
     <section className="space-y-4">
       <div className="panel flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold">Worker Dashboard</h1>
+          <h1 className="text-2xl font-semibold">Escort Dashboard</h1>
           <p className="text-sm text-slate-400">
             Verification: {profile?.verificationStatus || "INCOMPLETE"} | Fee Paid: {String(profile?.verificationFeePaid || false)}
           </p>

@@ -84,6 +84,7 @@ export default function AdminSupportPage() {
 
   const getPriorityIcon = (priority) => {
     switch(priority?.toLowerCase()) {
+      case 'critical': return <AlertTriangle className="h-4 w-4" />;
       case 'high': return <AlertTriangle className="h-4 w-4" />;
       case 'medium': return <AlertCircle className="h-4 w-4" />;
       case 'low': return <Flag className="h-4 w-4" />;
@@ -93,6 +94,7 @@ export default function AdminSupportPage() {
 
   const getPriorityColor = (priority) => {
     switch(priority?.toLowerCase()) {
+      case 'critical': return 'text-rose-300 bg-rose-700/30';
       case 'high': return 'text-rose-400 bg-rose-500/20';
       case 'medium': return 'text-amber-400 bg-amber-500/20';
       case 'low': return 'text-emerald-400 bg-emerald-500/20';

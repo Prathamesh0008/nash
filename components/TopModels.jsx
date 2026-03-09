@@ -10,8 +10,8 @@ export default function TopModels({ providers = [] }) {
   return (
     <section className="py-10">
       <div className="mx-auto max-w-7xl px-4">
-        <h2 className="text-2xl font-semibold text-white">Featured Therapists</h2>
-        <p className="mt-1 text-sm text-slate-400">Top profiles available for home wellness sessions.</p>
+        <h2 className="text-2xl font-semibold text-white">Featured Escorts</h2>
+        <p className="mt-1 text-sm text-slate-400">Top verified profiles available for private sessions.</p>
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {top.map((row) => (
             <article key={row.id} className="rounded-xl border border-white/10 bg-slate-900/40 p-4">

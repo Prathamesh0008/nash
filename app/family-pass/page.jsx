@@ -83,7 +83,7 @@ export default function FamilyPassPage() {
     setFindingWorkers(false);
     if (!res.ok || !json.ok) {
       setNearestWorkers([]);
-      setWorkerNote(json.error || "Failed to find nearest workers.");
+      setWorkerNote(json.error || "Failed to find nearest escorts.");
       setWorkerMode("");
       setWorkerFallbackReason("");
       setPriorityQueueVisible(false);
@@ -137,7 +137,7 @@ export default function FamilyPassPage() {
           setWorkerNote(json.error || "Failed to save current location.");
           return;
         }
-        setWorkerNote("Current location saved. Re-running nearest worker search...");
+        setWorkerNote("Current location saved. Re-running nearest escort search...");
         await loadNearestWorkers(workerFilters);
       },
       (err) => {
@@ -170,7 +170,7 @@ export default function FamilyPassPage() {
         setData((prev) => ({
           ...prev,
           allowed: false,
-          error: json.error || "This page is only for Family Pass members.",
+          error: json.error || "This page is only for VIP Pass members.",
           redirectHref: json.redirectHref || "/membership?plan=FAMILY",
           currentPlan: json.currentPlan || null,
         }));
@@ -208,7 +208,7 @@ export default function FamilyPassPage() {
         <div className="mx-auto max-w-6xl px-4 py-8">
           <div className="flex flex-col items-center justify-center py-12">
             <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-700 border-t-fuchsia-500"></div>
-            <p className="mt-4 text-sm text-slate-400">Loading Family Pass...</p>
+            <p className="mt-4 text-sm text-slate-400">Loading VIP Pass...</p>
           </div>
         </div>
       </div>
@@ -224,8 +224,8 @@ export default function FamilyPassPage() {
               <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-rose-500/20 sm:h-20 sm:w-20">
                 <Users className="h-8 w-8 text-rose-400 sm:h-10 sm:w-10" />
               </div>
-              <h1 className="text-2xl font-bold text-white sm:text-3xl">Family Pass Lounge</h1>
-              <p className="mt-2 text-sm text-rose-400 sm:text-base">{data.error || "Only Family Pass members can access this page."}</p>
+              <h1 className="text-2xl font-bold text-white sm:text-3xl">VIP Pass Lounge</h1>
+              <p className="mt-2 text-sm text-rose-400 sm:text-base">{data.error || "Only VIP Pass members can access this page."}</p>
               
               {data.currentPlan && (
                 <div className="mt-4 rounded-lg bg-amber-500/10 p-3 text-sm text-amber-400">
@@ -235,7 +235,7 @@ export default function FamilyPassPage() {
               )}
               
               <p className="mt-4 text-sm text-slate-400 sm:text-base">
-                Upgrade to Family Pass to unlock nearest member network and faster service priority.
+                Upgrade to VIP Pass to unlock nearest member network and faster service priority.
               </p>
               
               <div className="mt-6 flex flex-col gap-3 sm:flex-row">
@@ -244,7 +244,7 @@ export default function FamilyPassPage() {
                   className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-amber-600 to-orange-600 px-6 py-3 text-sm font-semibold text-white transition hover:opacity-90 sm:px-8"
                 >
                   <Sparkles className="h-4 w-4" />
-                  Upgrade To Family Pass
+                  Upgrade To VIP Pass
                 </Link>
                 <Link
                   href="/membership"
@@ -272,7 +272,7 @@ export default function FamilyPassPage() {
                 <Award className="h-6 w-6 text-white sm:h-7 sm:w-7" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-white sm:text-2xl">Family Pass Members Nearby</h1>
+                <h1 className="text-xl font-bold text-white sm:text-2xl">VIP Pass Members Nearby</h1>
                 <p className="text-xs text-slate-400 sm:text-sm">
                   Your location: {data.me?.city || "-"}, {data.me?.pincode || "-"}
                 </p>
@@ -310,15 +310,15 @@ export default function FamilyPassPage() {
           </div>
         )}
 
-        {/* Nearest Workers Section */}
+        {/* Nearest Escorts Section */}
         <div className="mb-6 rounded-xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02] p-4 sm:mb-8 sm:p-6">
           <div className="mb-4 flex items-center gap-2">
             <Users className="h-5 w-5 text-fuchsia-400" />
-            <h2 className="text-lg font-semibold text-white sm:text-xl">Nearest Workers For Fast Service</h2>
+            <h2 className="text-lg font-semibold text-white sm:text-xl">Nearest Escorts For Fast Service</h2>
           </div>
           
           <p className="mb-4 text-xs text-slate-400 sm:text-sm">
-            We rank workers by proximity + availability + rating + response speed.
+            We rank escorts by proximity + availability + rating + response speed.
           </p>
 
           {/* Location Button */}
@@ -374,7 +374,7 @@ export default function FamilyPassPage() {
               className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-fuchsia-600 to-violet-600 px-4 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
             >
               <RefreshCw className={`h-4 w-4 ${findingWorkers ? 'animate-spin' : ''}`} />
-              {findingWorkers ? "Finding..." : "Find Nearest Workers"}
+              {findingWorkers ? "Finding..." : "Find Nearest Escorts"}
             </button>
           </div>
 
@@ -387,7 +387,7 @@ export default function FamilyPassPage() {
 
           {priorityQueueVisible && (
             <div className="mb-4 rounded-lg bg-emerald-500/10 p-3 text-xs text-emerald-400">
-              Family Pass priority queue is active. Lower queue position means faster assignment.
+              VIP Pass priority queue is active. Lower queue position means faster assignment.
             </div>
           )}
 
@@ -409,7 +409,7 @@ export default function FamilyPassPage() {
             </div>
           )}
 
-          {/* Workers Grid */}
+          {/* Escorts Grid */}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {nearestWorkers.map((worker) => (
               <article key={worker.workerId} className="group rounded-lg border border-white/10 bg-slate-900/40 p-4 transition hover:border-fuchsia-500/30">
@@ -435,7 +435,7 @@ export default function FamilyPassPage() {
                   
                   <p className="flex items-center gap-1 text-slate-400">
                     <Star className="h-3 w-3" />
-                    Rating {worker.ratingAvg} | {worker.jobsCompleted} jobs
+                    Rating {worker.ratingAvg} | {worker.jobsCompleted} sessions
                   </p>
                   
                   <p className="flex items-center gap-1 text-amber-400">
@@ -467,7 +467,7 @@ export default function FamilyPassPage() {
           {!workerNote && nearestWorkers.length === 0 && (
             <div className="flex flex-col items-center justify-center py-8 text-center">
               <Users className="h-12 w-12 text-slate-600" />
-              <p className="mt-2 text-sm text-slate-400">No nearest workers found for selected filters.</p>
+              <p className="mt-2 text-sm text-slate-400">No nearest escorts found for selected filters.</p>
             </div>
           )}
         </div>
@@ -476,7 +476,7 @@ export default function FamilyPassPage() {
         <div className="rounded-xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02] p-4 sm:p-6">
           <div className="mb-4 flex items-center gap-2">
             <UserPlus className="h-5 w-5 text-fuchsia-400" />
-            <h2 className="text-lg font-semibold text-white sm:text-xl">Nearby Family Pass Members</h2>
+            <h2 className="text-lg font-semibold text-white sm:text-xl">Nearby VIP Pass Members</h2>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -495,7 +495,7 @@ export default function FamilyPassPage() {
                 <p className="mt-1 text-xs text-amber-400">{member.proximity}</p>
                 
                 <p className="mt-2 text-xs text-slate-500">
-                  Family Pass till {formatDate(member.familyPassEndsAt)}
+                  VIP Pass till {formatDate(member.familyPassEndsAt)}
                 </p>
               </article>
             ))}
@@ -504,7 +504,7 @@ export default function FamilyPassPage() {
           {data.nearbyMembers.length === 0 && (
             <div className="flex flex-col items-center justify-center py-8 text-center">
               <Users className="h-12 w-12 text-slate-600" />
-              <p className="mt-2 text-sm text-slate-400">No nearby Family Pass members found yet.</p>
+              <p className="mt-2 text-sm text-slate-400">No nearby VIP Pass members found yet.</p>
             </div>
           )}
         </div>

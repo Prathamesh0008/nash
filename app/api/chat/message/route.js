@@ -6,6 +6,9 @@ import Message from "@/models/Message";
 import { requireAuth, applyRefreshCookies } from "@/lib/apiAuth";
 import User from "@/models/User";
 import { createNotification } from "@/lib/notify";
+import { scanProhibitedContent } from "@/lib/prohibitedDetection";
+import { createRiskSignal } from "@/lib/riskSignals";
+import { writeAuditLog } from "@/lib/audit";
 
 export async function POST(req) {
   await dbConnect();
@@ -26,6 +29,29 @@ export async function POST(req) {
 
   if (text.length > 2000) {
     return NextResponse.json({ ok: false, error: "Message too long" }, { status: 400 });
+  }
+
+  const moderation = scanProhibitedContent(text, { channel: "chat_message", actorRole: user.role });
+  if (moderation.matched) {
+    await createRiskSignal({
+      userId: user.userId,
+      signalType: "chat_policy_violation",
+      severity: moderation.severity,
+      reasons: moderation.reasons,
+      meta: {
+        conversationId,
+        shouldBlock: moderation.shouldBlock,
+      },
+      actorId: user.userId,
+      actorRole: user.role,
+      req,
+    });
+    if (moderation.shouldBlock) {
+      return NextResponse.json(
+        { ok: false, error: "Message blocked due to prohibited request content." },
+        { status: 400 }
+      );
+    }
   }
 
   const convo = await Conversation.findById(conversationId);
@@ -62,6 +88,22 @@ export async function POST(req) {
       body: text.length > 100 ? `${text.slice(0, 100)}...` : text,
       href: `/chat/${conversationId}`,
       meta: { conversationId: conversationId.toString(), messageId: message._id.toString() },
+    });
+  }
+
+  if (moderation.matched) {
+    await writeAuditLog({
+      actorId: user.userId,
+      actorRole: user.role,
+      action: "chat.message.flagged",
+      targetType: "message",
+      targetId: message._id,
+      metadata: {
+        conversationId: conversationId.toString(),
+        severity: moderation.severity,
+        reasons: moderation.reasons,
+      },
+      req,
     });
   }
 

@@ -21,6 +21,7 @@ export async function PATCH(req, context) {
   const body = await req.json().catch(() => ({}));
   const action = body.action;
   const reason = String(body.reason || "").trim();
+  const overrideRisk = body.overrideRisk === true;
 
   if (!["approve", "reject", "reupload"].includes(action)) {
     return NextResponse.json({ ok: false, error: "Invalid action" }, { status: 400 });
@@ -54,6 +55,37 @@ export async function PATCH(req, context) {
         { status: 400 }
       );
     }
+    const autoDecision = String(existing?.kyc?.assessment?.autoDecision || "").trim();
+    const flags = Array.isArray(existing?.kyc?.assessment?.flags) ? existing.kyc.assessment.flags : [];
+    if (flags.includes("possible_underage")) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "KYC flagged possible_underage. Approval is blocked. Use reupload/reject workflow.",
+          assessmentFlags: flags,
+        },
+        { status: 400 }
+      );
+    }
+    if (autoDecision === "reject" && !overrideRisk) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "KYC auto-assessment marked this profile as reject risk. Set overrideRisk=true with review reason to proceed.",
+          assessmentFlags: flags,
+        },
+        { status: 400 }
+      );
+    }
+    if (autoDecision === "reject" && overrideRisk && !reason) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "overrideRisk approvals require an admin reason.",
+        },
+        { status: 400 }
+      );
+    }
   }
 
   const now = new Date();
@@ -70,6 +102,7 @@ export async function PATCH(req, context) {
           "kyc.rejectionReason": "",
           "kyc.reuploadRequestedAt": null,
           "kyc.reviewSlaDueAt": null,
+          "kyc.reviewPriority": "normal",
         }
       : action === "reject"
         ? {
@@ -83,6 +116,7 @@ export async function PATCH(req, context) {
             "kyc.rejectionReason": reason,
             "kyc.reuploadRequestedAt": null,
             "kyc.reviewSlaDueAt": null,
+            "kyc.reviewPriority": "normal",
           }
         : {
             verificationStatus: "INCOMPLETE",
@@ -95,6 +129,7 @@ export async function PATCH(req, context) {
             "kyc.rejectionReason": reason,
             "kyc.reuploadRequestedAt": now,
             "kyc.reviewSlaDueAt": null,
+            "kyc.reviewPriority": "high",
           };
 
   const worker = await WorkerProfile.findOneAndUpdate(
@@ -169,7 +204,16 @@ export async function PATCH(req, context) {
     action: "worker.verification.action",
     targetType: "worker",
     targetId: id,
-    metadata: { action, reason },
+    metadata: {
+      action,
+      reason,
+      overrideRisk,
+      assessment: {
+        riskLevel: worker?.kyc?.assessment?.riskLevel || "unknown",
+        autoDecision: worker?.kyc?.assessment?.autoDecision || "unknown",
+        flags: Array.isArray(worker?.kyc?.assessment?.flags) ? worker.kyc.assessment.flags : [],
+      },
+    },
     req,
   });
 

@@ -7,9 +7,9 @@ export default function ProfileForm() {
   return (
     <section className="mx-auto max-w-3xl space-y-4 px-4 py-10">
       <div className="rounded-2xl border border-white/10 bg-slate-950/60 p-6">
-        <h1 className="text-2xl font-semibold text-white">Therapist Onboarding</h1>
+        <h1 className="text-2xl font-semibold text-white">Escort Onboarding</h1>
         <p className="mt-2 text-sm text-slate-400">
-          Complete worker onboarding to publish your profile and start receiving bookings.
+          Complete escort onboarding to publish your profile and start receiving bookings.
         </p>
       </div>
 

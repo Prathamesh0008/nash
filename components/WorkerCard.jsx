@@ -16,7 +16,7 @@ export default function WorkerCard({ w }) {
       <div className="flex gap-4">
         <Image
           src={imageSrc}
-          alt={w.name || "Worker"}
+          alt={w.name || "Escort"}
           width={80}
           height={80}
           unoptimized
@@ -24,7 +24,7 @@ export default function WorkerCard({ w }) {
         />
 
         <div className="flex-1 min-w-0">
-          <div className="font-semibold text-lg truncate">{w.name || "Worker"}</div>
+          <div className="font-semibold text-lg truncate">{w.name || "Escort"}</div>
           <div className="text-sm text-white/60">{w.city || "Unknown city"}</div>
           <div className="text-sm mt-1 text-white/80 line-clamp-1">
             <b>Services:</b> {w.services?.join(", ") || "Not specified"}

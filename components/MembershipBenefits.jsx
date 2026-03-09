@@ -14,7 +14,7 @@ const benefits = [
   {
     icon: Clock3,
     title: "Lower Wait Time",
-    description: "Access quicker therapist assignment in supported service areas.",
+    description: "Access quicker escort assignment in supported service areas.",
   },
   {
     icon: CheckCircle,
@@ -29,7 +29,7 @@ export default function MembershipBenefits() {
       <div className="rounded-2xl border border-white/10 bg-slate-950/60 p-5">
         <h2 className="text-xl font-semibold text-white">Membership Benefits</h2>
         <p className="mt-1 text-sm text-slate-400">
-          Designed for frequent wellness bookings with predictable savings and faster service.
+          Designed for frequent private bookings with predictable savings and faster service.
         </p>
       </div>
 

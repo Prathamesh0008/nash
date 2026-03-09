@@ -94,7 +94,7 @@ export default function ChatHomePage() {
       setWorkers(
         (data.workers || []).map((row) => ({
           id: String(row.id),
-          name: row.name || "Therapist",
+          name: row.name || "Escort",
           city: row.serviceAreas?.[0]?.city || "",
           rating: Number(row.ratingAvg || 0),
         }))
@@ -165,7 +165,7 @@ export default function ChatHomePage() {
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-white sm:text-3xl">Messages</h1>
-                <p className="text-sm text-slate-400">Real-time chat with therapists and support</p>
+                <p className="text-sm text-slate-400">Real-time chat with escorts and support</p>
               </div>
             </div>
             <button
@@ -190,7 +190,7 @@ export default function ChatHomePage() {
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
               <input
                 className="w-full rounded-lg border border-white/10 bg-slate-900 py-3 pl-10 pr-3 text-sm text-white placeholder:text-slate-500 focus:border-fuchsia-500/50 focus:outline-none"
-                placeholder="Search therapist by name or city"
+                placeholder="Search escort by name or city"
                 value={workerSearch}
                 onChange={(e) => setWorkerSearch(e.target.value)}
               />
@@ -202,7 +202,7 @@ export default function ChatHomePage() {
               onChange={(e) => setWorkerId(e.target.value)}
               disabled={workersLoading}
             >
-              <option value="">{workersLoading ? "Loading therapists..." : "Select therapist"}</option>
+              <option value="">{workersLoading ? "Loading escorts..." : "Select escort"}</option>
               {filteredWorkers.map((row) => (
                 <option key={row.id} value={row.id}>
                   {row.name} {row.city ? `(${row.city})` : ""}
@@ -213,7 +213,7 @@ export default function ChatHomePage() {
 
           {workerId && (
             <p className="mt-2 text-xs text-slate-400">
-              Selected worker ID: <span className="text-slate-300">{workerId}</span>
+              Selected escort ID: <span className="text-slate-300">{workerId}</span>
             </p>
           )}
 
@@ -227,7 +227,7 @@ export default function ChatHomePage() {
               {starting ? "Starting..." : "Start Chat"}
             </button>
             <Link href="/workers" className="rounded-lg border border-white/15 bg-white/5 px-4 py-3 text-xs font-semibold text-slate-100">
-              Browse Therapists
+              Browse Escorts
             </Link>
           </div>
 
@@ -268,7 +268,7 @@ export default function ChatHomePage() {
                 <MessageCircle className="h-8 w-8 text-slate-600 sm:h-12 sm:w-12" />
               </div>
               <p className="mt-4 text-sm text-slate-400">No conversations yet</p>
-              <p className="text-xs text-slate-500">Select a therapist above and start chatting</p>
+              <p className="text-xs text-slate-500">Select an escort above and start chatting</p>
             </div>
           )}
 

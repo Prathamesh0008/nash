@@ -9,6 +9,7 @@ import PromoCode from "@/models/PromoCode";
 import Referral from "@/models/Referral";
 import SupportTicket from "@/models/SupportTicket";
 import Service from "@/models/Service";
+import PanicAlert from "@/models/PanicAlert";
 import { requireAuth, applyRefreshCookies } from "@/lib/apiAuth";
 
 export async function GET() {
@@ -29,6 +30,7 @@ export async function GET() {
     bookingStatusAgg,
     pendingWorkerReviews,
     openSupportTickets,
+    openPanicAlerts,
     bookingsLast7Days,
     avgTicketAgg,
     dailyBookingsAgg,
@@ -60,6 +62,7 @@ export async function GET() {
     Booking.aggregate([{ $group: { _id: "$status", count: { $sum: 1 } } }]),
     WorkerProfile.countDocuments({ "kyc.queueStatus": { $in: ["pending_review", "in_review"] } }),
     SupportTicket.countDocuments({ status: { $in: ["open", "in_progress"] } }),
+    PanicAlert.countDocuments({ status: { $in: ["open", "acknowledged", "in_progress", "escalated"] } }),
     Booking.countDocuments({ createdAt: { $gte: last7Days } }),
     Booking.aggregate([
       { $match: { status: { $ne: "cancelled" } } },
@@ -204,6 +207,7 @@ export async function GET() {
       paidBookingRate,
       pendingWorkerReviews,
       openSupportTickets,
+      openPanicAlerts,
       bookingsLast7Days,
       avgTicketSize,
       dailyBookings,
