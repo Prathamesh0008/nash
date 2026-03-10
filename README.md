@@ -41,6 +41,12 @@ npm install
 cp .env.example .env.local
 ```
 
+On Windows PowerShell:
+
+```powershell
+Copy-Item .env.example .env.local
+```
+
 3. Seed DB (creates admin + user + 20 escorts + services + plans + bookings)
 
 ```bash
@@ -64,5 +70,6 @@ npm run dev
 - Payment is in demo mode for now (`PAYMENT_PROVIDER=demo`)
 - Rate limiter store can be switched to Mongo for multi-instance deployments (`RATE_LIMIT_STORE=mongo`)
 - Evidence/docs are URL-based for now; cloudinary signed upload can be plugged in next
+- Run production checks locally: `npm run check`
 - Critical E2E smoke: `npm run smoke:e2e-critical`
 - Socket security smoke: `npm run smoke:socket-security`

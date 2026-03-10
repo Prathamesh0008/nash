@@ -15,4 +15,4 @@ Premium service marketplace built with Next.js and Tailwind CSS.
 - Tailwind CSS
 
 ## Status
-UI & frontend architecture complete. Backend integration coming next.
+Frontend + backend APIs are integrated and production-capable.

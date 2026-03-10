@@ -7,6 +7,9 @@
     "dev": "node server.js",
     "build": "next build",
     "start": "NODE_ENV=production node server.js",
+    "lint": "eslint app components lib models scripts server.js --ext .js,.jsx",
+    "lint:all": "eslint . --ext .js,.jsx --ignore-pattern .history/**",
+    "check": "npm run lint && npm run build",
     "migrate:gender": "node scripts/migrate-gender.mjs",
     "smoke:chat-notifications": "node scripts/smoke-chat-notifications.mjs",
     "smoke:socket-security": "node scripts/smoke-socket-security.mjs",
@@ -38,7 +41,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "babel-plugin-react-compiler": "1.0.0",
-    "baseline-browser-mapping": "^2.9.19",
+    "baseline-browser-mapping": "^2.10.0",
     "eslint": "^9",
     "eslint-config-next": "16.0.10",
     "tailwindcss": "^4"

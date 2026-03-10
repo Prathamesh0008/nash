@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { LocateFixed, MapPin, RefreshCw, Search, Star, Zap } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 function WorkerCard({ worker }) {
   const photo = worker.profilePhoto || worker.galleryPhotos?.[0] || "";
@@ -127,7 +127,7 @@ export default function WorkersPage() {
       );
     });
 
-  const loadWorkers = async ({ silent = false } = {}) => {
+  const loadWorkers = useCallback(async ({ silent = false } = {}) => {
     try {
       if (silent) setRefreshing(true);
       else setLoading(true);
@@ -164,11 +164,11 @@ export default function WorkersPage() {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [DEFAULT_NEARBY_RADIUS_KM, nearbyOnly, sortBy, userLocation?.lat, userLocation?.lng]);
 
   useEffect(() => {
     loadWorkers();
-  }, [nearbyOnly, userLocation?.lat, userLocation?.lng]);
+  }, [loadWorkers]);
 
   const cityOptions = useMemo(() => {
     const unique = new Set();
@@ -232,7 +232,7 @@ export default function WorkersPage() {
     });
 
     return rows;
-  }, [workers, searchQuery, selectedCity, sortBy, priorityOnly]);
+  }, [DEFAULT_NEARBY_RADIUS_KM, workers, searchQuery, selectedCity, sortBy, priorityOnly, nearbyOnly]);
 
   const totalWorkers = workers.length;
   const priorityWorkers = workers.filter((worker) => worker.isBoosted).length;
