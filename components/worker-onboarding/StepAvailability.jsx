@@ -1,7 +1,5 @@
 "use client";
 
-const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-
 export default function StepAvailability({
   form,
   setForm,
@@ -12,74 +10,14 @@ export default function StepAvailability({
 }) {
   const a = form.availability || {};
 
-  function toggleDay(day) {
-    const set = new Set(a.workingDays || []);
-    set.has(day) ? set.delete(day) : set.add(day);
-
-    setForm({
-      ...form,
-      availability: { ...a, workingDays: [...set] },
-    });
-  }
-
   return (
     <div className="space-y-4">
       <h2 className="text-xl font-bold">Availability</h2>
-
-      {/* WORKING DAYS */}
-      <div>
-        <div className="text-sm font-medium mb-2">Working Days</div>
-        <div className="flex flex-wrap gap-2">
-          {DAYS.map((d) => {
-            const active = (a.workingDays || []).includes(d);
-            return (
-              <button
-                type="button"
-                key={d}
-                onClick={() => toggleDay(d)}
-                className={`px-3 py-1 rounded-full border text-sm transition ${
-                  active ? "bg-black text-white" : "bg-white"
-                }`}
-              >
-                {d}
-              </button>
-            );
-          })}
-        </div>
+      <div className="rounded border border-emerald-300 bg-emerald-50 p-3 text-sm text-emerald-900">
+        Worker availability is fixed to 24/7. There are no off-days or daily time windows.
       </div>
 
-      {/* TIME + OPTIONS */}
       <div className="grid sm:grid-cols-2 gap-4">
-        <div>
-          <label className="text-sm font-medium">Time From</label>
-          <input
-            type="time"
-            className="w-full border rounded p-2 mt-1"
-            value={a.timeFrom || "09:00"}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                availability: { ...a, timeFrom: e.target.value },
-              })
-            }
-          />
-        </div>
-
-        <div>
-          <label className="text-sm font-medium">Time To</label>
-          <input
-            type="time"
-            className="w-full border rounded p-2 mt-1"
-            value={a.timeTo || "18:00"}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                availability: { ...a, timeTo: e.target.value },
-              })
-            }
-          />
-        </div>
-
         <div>
           <label className="text-sm font-medium">
             Service Radius (km)

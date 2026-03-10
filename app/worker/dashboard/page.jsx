@@ -17,25 +17,6 @@ import {
   X,
 } from "lucide-react";
 
-const DAYS = [
-  { day: 0, label: "Sun" },
-  { day: 1, label: "Mon" },
-  { day: 2, label: "Tue" },
-  { day: 3, label: "Wed" },
-  { day: 4, label: "Thu" },
-  { day: 5, label: "Fri" },
-  { day: 6, label: "Sat" },
-];
-
-function getDefaultWeekly() {
-  return DAYS.map((row) => ({
-    day: row.day,
-    start: "09:00",
-    end: "18:00",
-    isOff: row.day === 0,
-  }));
-}
-
 function toLocalInputValue(isoValue) {
   const date = new Date(isoValue);
   if (Number.isNaN(date.getTime())) return "";
@@ -68,9 +49,7 @@ export default function WorkerDashboardPage() {
   const [online, setOnline] = useState(false);
 
   const [schedule, setSchedule] = useState({
-    weekly: getDefaultWeekly(),
     blockedSlots: [],
-    minNoticeMinutes: 30,
   });
 
   const [loading, setLoading] = useState(true);
@@ -131,11 +110,7 @@ export default function WorkerDashboardPage() {
 
       setOnline(Boolean(availData?.isOnline ?? meData.user?.workerProfile?.isOnline));
       setSchedule({
-        weekly: availData?.availabilityCalendar?.weekly?.length
-          ? availData.availabilityCalendar.weekly
-          : getDefaultWeekly(),
         blockedSlots: availData?.availabilityCalendar?.blockedSlots || [],
-        minNoticeMinutes: Number(availData?.availabilityCalendar?.minNoticeMinutes || 30),
       });
     } catch {
       setError("Network error while loading dashboard.");
@@ -176,13 +151,6 @@ export default function WorkerDashboardPage() {
     } finally {
       setTogglingOnline(false);
     }
-  };
-
-  const updateDay = (day, key, value) => {
-    setSchedule((prev) => ({
-      ...prev,
-      weekly: prev.weekly.map((row) => (row.day === day ? { ...row, [key]: value } : row)),
-    }));
   };
 
   const addBlockedSlot = () => {
@@ -227,9 +195,7 @@ export default function WorkerDashboardPage() {
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
-          weekly: schedule.weekly,
           blockedSlots: schedule.blockedSlots,
-          minNoticeMinutes: Number(schedule.minNoticeMinutes || 0),
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -237,7 +203,7 @@ export default function WorkerDashboardPage() {
         setNotice(data.error || "Failed to save availability.", "error");
         return;
       }
-      setNotice("Availability calendar saved.", "success");
+      setNotice("Availability settings saved.", "success");
       await load({ silent: true });
     } finally {
       setSavingSchedule(false);
@@ -301,60 +267,12 @@ export default function WorkerDashboardPage() {
       </div>
 
       <div className="panel space-y-3">
-        <h2 className="text-lg font-semibold">Availability Calendar</h2>
+        <h2 className="text-lg font-semibold">Availability</h2>
+        <p className="rounded border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-300">
+          You are available 24/7 whenever you are online. No off-days or daily time limits are applied.
+        </p>
 
-        <div className="grid gap-2 md:grid-cols-7">
-          {DAYS.map((dayRow) => {
-            const row = schedule.weekly.find((item) => item.day === dayRow.day) || {
-              day: dayRow.day,
-              start: "09:00",
-              end: "18:00",
-              isOff: false,
-            };
-
-            return (
-              <div key={dayRow.day} className="rounded border border-slate-700 bg-slate-900/30 p-2">
-                <p className="mb-2 text-xs font-semibold uppercase text-slate-400">{dayRow.label}</p>
-                <label className="mb-2 flex items-center gap-2 text-xs text-slate-300">
-                  <input
-                    type="checkbox"
-                    checked={Boolean(row.isOff)}
-                    onChange={(e) => updateDay(dayRow.day, "isOff", e.target.checked)}
-                  />
-                  Off day
-                </label>
-                <input
-                  type="time"
-                  value={row.start || "09:00"}
-                  disabled={row.isOff}
-                  onChange={(e) => updateDay(dayRow.day, "start", e.target.value)}
-                  className="mb-2 w-full rounded border border-slate-700 bg-slate-900 p-1 text-xs disabled:opacity-60"
-                />
-                <input
-                  type="time"
-                  value={row.end || "18:00"}
-                  disabled={row.isOff}
-                  onChange={(e) => updateDay(dayRow.day, "end", e.target.value)}
-                  className="w-full rounded border border-slate-700 bg-slate-900 p-1 text-xs disabled:opacity-60"
-                />
-              </div>
-            );
-          })}
-        </div>
-
-        <div className="grid gap-2 md:grid-cols-[1fr_1fr_auto]">
-          <input
-            type="number"
-            min={0}
-            max={1440}
-            value={schedule.minNoticeMinutes}
-            onChange={(e) =>
-              setSchedule((prev) => ({ ...prev, minNoticeMinutes: Number(e.target.value || 0) }))
-            }
-            className="rounded border border-slate-700 bg-slate-900 p-2 text-sm"
-            placeholder="Min notice in minutes"
-          />
-
+        <div className="grid gap-2 md:grid-cols-[1fr_auto]">
           <input
             type="datetime-local"
             value={blockedInput}
@@ -396,7 +314,7 @@ export default function WorkerDashboardPage() {
           className="inline-flex items-center justify-center gap-2 rounded bg-sky-700 px-3 py-2 text-sm text-white hover:bg-sky-600 disabled:opacity-60"
         >
           <Save className="h-4 w-4" />
-          {savingSchedule ? "Saving..." : "Save Availability Calendar"}
+          {savingSchedule ? "Saving..." : "Save Availability"}
         </button>
       </div>
 

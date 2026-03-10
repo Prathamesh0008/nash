@@ -172,7 +172,7 @@ function getRoleConfig(role) {
 
 export default function MainNav() {
   const SCROLL_DOWN_THRESHOLD = 120;
-  const SCROLL_UP_THRESHOLD = 8;
+  const SCROLL_UP_THRESHOLD = 48;
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout, loading } = useAuth();
@@ -281,12 +281,9 @@ export default function MainNav() {
 
   // Close menus on route change
   useEffect(() => {
-    const raf = window.requestAnimationFrame(() => {
-      setProfileMenuOpen(false);
-      setMobileMenuOpen(false);
-      setShowCompactSearch(false);
-    });
-    return () => window.cancelAnimationFrame(raf);
+    setProfileMenuOpen(false);
+    setMobileMenuOpen(false);
+    setShowCompactSearch(false);
   }, [pathname]);
 
   // Click outside handler for profile menu

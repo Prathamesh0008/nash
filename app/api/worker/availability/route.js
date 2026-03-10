@@ -3,7 +3,7 @@ import dbConnect from "@/lib/dbConnect";
 import WorkerProfile from "@/models/WorkerProfile";
 import { requireAuth, applyRefreshCookies } from "@/lib/apiAuth";
 import { availabilitySchema, parseOrThrow } from "@/lib/validators";
-import { getDefaultWeekly, sanitizeBlockedSlots } from "@/lib/availability";
+import { sanitizeBlockedSlots } from "@/lib/availability";
 
 function toAvailabilityPayload(profile) {
   const calendar = profile?.availabilityCalendar || {};
@@ -11,8 +11,7 @@ function toAvailabilityPayload(profile) {
     isOnline: Boolean(profile?.isOnline),
     availabilityCalendar: {
       timezone: calendar.timezone || "Asia/Kolkata",
-      minNoticeMinutes: Number(calendar.minNoticeMinutes || 30),
-      weekly: Array.isArray(calendar.weekly) && calendar.weekly.length ? calendar.weekly : getDefaultWeekly(),
+      mode: "always_available",
       blockedSlots: sanitizeBlockedSlots(calendar.blockedSlots || []).map((row) => row.toISOString()),
     },
   };
@@ -56,18 +55,13 @@ export async function PATCH(req) {
     }
 
     const existingCalendar = profile.availabilityCalendar || {};
-    const weekly = Array.isArray(data.weekly) && data.weekly.length ? data.weekly : existingCalendar.weekly || getDefaultWeekly();
     const blockedSlots = Array.isArray(data.blockedSlots)
       ? sanitizeBlockedSlots(data.blockedSlots)
       : sanitizeBlockedSlots(existingCalendar.blockedSlots || []);
 
     profile.availabilityCalendar = {
       timezone: existingCalendar.timezone || "Asia/Kolkata",
-      minNoticeMinutes:
-        typeof data.minNoticeMinutes === "number"
-          ? data.minNoticeMinutes
-          : Number(existingCalendar.minNoticeMinutes || 30),
-      weekly,
+      mode: "always_available",
       blockedSlots,
     };
     profile.lastActiveAt = new Date();

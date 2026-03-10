@@ -6,8 +6,6 @@ export default function StepReviewSubmit({
   onSave,
   onCancel,
 }) {
-  const a = form.availability || {};
-
   return (
     <div className="space-y-4">
       <h2 className="text-xl font-bold">Review</h2>
@@ -24,9 +22,8 @@ export default function StepReviewSubmit({
 
       <div className="border rounded p-4 bg-gray-50">
         <div className="font-semibold mb-2">Availability</div>
-        <div className="text-sm">Days: {(a.workingDays || []).join(", ") || "Not specified"}</div>
-        <div className="text-sm">Time: {a.timeFrom || "--"} - {a.timeTo || "--"}</div>
-        <div className="text-sm">Emergency: {a.emergencyAvailable ? "Yes" : "No"}</div>
+        <div className="text-sm">Mode: 24/7 available (no off-days, no time window)</div>
+        <div className="text-sm">Emergency: {form.availability?.emergencyAvailable ? "Yes" : "No"}</div>
         <div className="text-sm">Service Radius: {form.serviceRadiusKm || "--"} km</div>
       </div>
 

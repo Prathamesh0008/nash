@@ -42,7 +42,7 @@ export async function PATCH(req, context) {
   if (!booking) return NextResponse.json({ ok: false, error: "Booking not found" }, { status: 404 });
 
   if (!isWorkerAvailableForSlot(worker, booking.slotTime)) {
-    return NextResponse.json({ ok: false, error: "Worker is not available for this slot as per schedule" }, { status: 409 });
+    return NextResponse.json({ ok: false, error: "Worker is not available for this slot" }, { status: 409 });
   }
 
   const slotConflict = await Booking.findOne({

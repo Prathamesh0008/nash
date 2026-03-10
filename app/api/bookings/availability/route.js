@@ -182,7 +182,7 @@ export async function GET(req) {
         return { ...row, available: false, reason: "Selected worker does not support this service" };
       }
       if (!isWorkerAvailableForSlot(worker, slotDate, now)) {
-        return { ...row, available: false, reason: "Selected worker is unavailable as per schedule" };
+        return { ...row, available: false, reason: "Selected worker is unavailable for this slot" };
       }
       if (workerConflictKeys.has(slotKey)) {
         return { ...row, available: false, reason: "Selected worker already has another booking" };

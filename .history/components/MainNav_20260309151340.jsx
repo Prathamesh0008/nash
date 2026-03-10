@@ -65,6 +65,7 @@ function MainTab({ href, label, icon: Icon, pathname, isScrolled, onClick }) {
 }
 
 function getRoleConfig(role) {
+  // ... (keep your existing roleConfig function exactly as is)
   if (role === "admin") {
     return {
       brandHref: "/admin/dashboard",
@@ -137,31 +138,31 @@ function getRoleConfig(role) {
     };
   }
 
-  // Default role (customer/guest)
   return {
     brandHref: "/",
     badge: "Premium",
-    topLinks: [{ href: "/workers", label: "Escorts" }],
-    tabs: [
-      { href: "/", label: "Home", icon: Home },
-      { href: "/womens", label: "Womens", icon: Venus },
-      { href: "/mens", label: "Mens", icon: Mars },
-      { href: "/services", label: "Services", icon: BriefcaseBusiness },
-      { href: "/workers", label: "Escorts", icon: Users },
-      { href: "/orders", label: "Orders", icon: Wrench },
-      { href: "/chat", label: "Chat", icon: Video },
-    ],
-    quickTags: [
-      { href: "/workers", label: "Verified Escorts" },
-      { href: "/workers?sort=rating", label: "Top Rated" },
-      { href: "/booking/new", label: "Quick Booking" },
-      { href: "/membership", label: "Membership" },
-      { href: "/favorites", label: "Favorites" },
-      { href: "/contact-us", label: "Contact Us" },
-      { href: "/faq", label: "FAQ" },
-      { href: "/landing", label: "City Pages" },
-      { href: "/search", label: "More..." },
-    ],
+      topLinks: [{ href: "/workers", label: "Escorts" }],
+      tabs: [
+        { href: "/", label: "Home", icon: Home },
+        { href: "/womens", label: "Womens", icon: Venus },
+        { href: "/mens", label: "Mens", icon: Mars },
+        { href: "/services", label: "Services", icon: BriefcaseBusiness },
+        { href: "/workers", label: "Escorts", icon: Users },
+        { href: "/orders", label: "Orders", icon: Wrench },
+        { href: "/chat", label: "Chat", icon: Video },
+      ],
+      quickTags: [
+        { href: "/workers", label: "Verified Escorts" },
+        { href: "/workers?sort=rating", label: "Top Rated" },
+        { href: "/booking/new", label: "Quick Booking" },
+        { href: "/membership", label: "Membership" },
+        { href: "/family-pass", label: "VIP Pass" },
+        { href: "/favorites", label: "Favorites" },
+        { href: "/contact-us", label: "Contact Us" },
+        { href: "/faq", label: "FAQ" },
+        { href: "/landing", label: "City Pages" },
+        { href: "/search", label: "More..." },
+      ],
     showSearch: true,
     searchHint: "Search escorts, companionship services, locations...",
     regionsHref: "/workers",
@@ -172,7 +173,7 @@ function getRoleConfig(role) {
 
 export default function MainNav() {
   const SCROLL_DOWN_THRESHOLD = 120;
-  const SCROLL_UP_THRESHOLD = 8;
+  const SCROLL_UP_THRESHOLD = 48;
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout, loading } = useAuth();
@@ -193,10 +194,9 @@ export default function MainNav() {
         ? "Admin"
         : "Customer";
 
-  // Scroll effect with hysteresis + rAF throttle to avoid sticky header flicker
+  // Scroll effect with hysteresis + rAF throttle to avoid sticky header flicker.
   useEffect(() => {
     let ticking = false;
-    
     const updateByScroll = () => {
       const scrollPosition = window.scrollY;
 
@@ -207,9 +207,8 @@ export default function MainNav() {
         return scrollPosition > SCROLL_DOWN_THRESHOLD;
       });
 
-      // Close compact search when scrolling down
-      if (scrollPosition > SCROLL_DOWN_THRESHOLD && showCompactSearch) {
-        setShowCompactSearch(false);
+      if (scrollPosition > SCROLL_DOWN_THRESHOLD) {
+        setShowCompactSearch((prev) => (prev ? false : prev));
       }
     };
 
@@ -223,12 +222,10 @@ export default function MainNav() {
       }
     };
 
-    // Initial check
     updateByScroll();
-    
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [showCompactSearch, SCROLL_DOWN_THRESHOLD, SCROLL_UP_THRESHOLD]);
+  }, []);
 
   // Focus search input when compact search opens
   useEffect(() => {
@@ -292,19 +289,17 @@ export default function MainNav() {
   // Click outside handler for profile menu
   useEffect(() => {
     if (!profileMenuOpen) return;
-    
     const onClickOutside = (event) => {
       if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
         setProfileMenuOpen(false);
       }
     };
-    
     document.addEventListener("mousedown", onClickOutside);
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, [profileMenuOpen]);
 
   return (
-    <header className={`sticky top-0 z-50 border-b border-white/10 bg-black/95 backdrop-blur-xl transition-all duration-300 ${
+    <header className={`sticky top-0 z-50 border-b border-white/10 bg-black/95 backdrop-blur-xl transition-all duration-400 ${
       isScrolled ? "shadow-lg" : ""
     }`}>
       {/* Main Top Bar */}
@@ -482,7 +477,7 @@ export default function MainNav() {
             <div className="no-scrollbar flex items-center gap-2 overflow-x-auto py-2">
               {roleConfig.quickTags.map((tag) => (
                 <Link
-                  key={tag.href}
+                  key={tag.label}
                   href={tag.href}
                   className="whitespace-nowrap rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-1.5 text-xs font-medium text-slate-200 transition hover:border-fuchsia-400/50 hover:text-white lg:text-sm"
                 >
@@ -628,7 +623,7 @@ export default function MainNav() {
             <div className="flex flex-wrap gap-2">
               {roleConfig.quickTags.slice(0, 6).map((tag) => (
                 <Link
-                  key={tag.href}
+                  key={tag.label}
                   href={tag.href}
                   onClick={() => setMobileMenuOpen(false)}
                   className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs text-slate-200"
@@ -687,7 +682,7 @@ export default function MainNav() {
                 <div className="grid grid-cols-3 gap-2">
                   <button
                     type="submit"
-                    className="rounded-xl cursor-pointer bg-gradient-to-r from-fuchsia-600 to-pink-600 px-3 py-2 text-sm font-semibold text-white"
+                    className="rounded-xl cursor-pointer bg-gradient-to-r from-fuchsia-600  to-pink-600 px-3 py-2 text-sm font-semibold text-white"
                   >
                     Search
                   </button>

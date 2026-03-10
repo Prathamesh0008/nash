@@ -687,7 +687,7 @@ export async function POST(req) {
           let reason = "Selected worker is unavailable for this slot.";
           if (!servesArea) reason = "Selected worker does not serve this area.";
           else if (!supportsCategory) reason = "Selected worker does not support this service category.";
-          else if (!isAvailable) reason = "Selected worker is unavailable as per schedule for this slot.";
+          else if (!isAvailable) reason = "Selected worker is unavailable for this slot.";
           else if (hasConflict) reason = "Selected worker already has a booking at this slot.";
 
           return NextResponse.json(

@@ -80,7 +80,7 @@ export async function PATCH(req, context) {
   }
   if (!isWorkerAvailableForSlot(profile, booking.slotTime)) {
     return NextResponse.json(
-      { ok: false, error: "This booking slot is outside your current availability schedule" },
+      { ok: false, error: "This booking slot is currently unavailable" },
       { status: 403 }
     );
   }

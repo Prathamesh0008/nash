@@ -43,9 +43,6 @@ const emptyForm = {
   speciality: "",
 
   availability: {
-    workingDays: [],
-    timeFrom: "09:00",
-    timeTo: "18:00",
     emergencyAvailable: false,
   },
   serviceRadiusKm: "",
