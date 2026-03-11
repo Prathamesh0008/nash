@@ -39,6 +39,8 @@ export default function StepDocuments({
         <UploadImage
           label="Selfie"
           onUploaded={(url) => updateDoc("selfie", url)}
+          enableCamera
+          cameraFacing="user"
         />
 
         {docs.selfie && <Image src={docs.selfie} alt="Selfie" width={128} height={128} unoptimized className="w-32 rounded border" />}

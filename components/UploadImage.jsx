@@ -3,7 +3,13 @@
 import { useState } from "react";
 import { uploadToCloudinary } from "@/lib/uploadToCloudinary";
 
-export default function UploadImage({ label, onUploaded, multiple = false }) {
+export default function UploadImage({
+  label,
+  onUploaded,
+  multiple = false,
+  enableCamera = false,
+  cameraFacing = "user",
+}) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -33,13 +39,24 @@ export default function UploadImage({ label, onUploaded, multiple = false }) {
     <div className="space-y-2">
       <label className="text-sm font-medium">{label}</label>
 
-      <input
-        type="file"
-        accept="image/*"
-        multiple={multiple}
-        onChange={handleChange}
-        className="block w-full text-sm"
-      />
+      <div className="space-y-2">
+        <input
+          type="file"
+          accept="image/*"
+          multiple={multiple}
+          onChange={handleChange}
+          className="block w-full text-sm"
+        />
+        {!multiple && enableCamera && (
+          <input
+            type="file"
+            accept="image/*"
+            capture={cameraFacing}
+            onChange={handleChange}
+            className="block w-full text-sm"
+          />
+        )}
+      </div>
 
       {loading && <p className="text-xs text-gray-500">Uploading...</p>}
       {error && <p className="text-xs text-red-500">{error}</p>}

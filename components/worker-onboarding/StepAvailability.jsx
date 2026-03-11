@@ -14,7 +14,7 @@ export default function StepAvailability({
     <div className="space-y-4">
       <h2 className="text-xl font-bold">Availability</h2>
       <div className="rounded border border-emerald-300 bg-emerald-50 p-3 text-sm text-emerald-900">
-        Worker availability is fixed to 24/7. There are no off-days or daily time windows.
+        Escort availability is fixed to 24/7. There are no off-days or daily time windows.
       </div>
 
       <div className="grid sm:grid-cols-2 gap-4">

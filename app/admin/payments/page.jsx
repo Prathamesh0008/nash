@@ -209,7 +209,7 @@ export default function AdminPaymentsPage() {
             </div>
             
             <div>
-              <label className="mb-1 block text-xs text-slate-400">Provider</label>
+              <label className="mb-1 block text-xs text-slate-400">Escort</label>
               <input 
                 className="w-full rounded-lg border border-white/10 bg-slate-900 p-3 text-sm text-white placeholder:text-slate-500 focus:border-fuchsia-500/50 focus:outline-none"
                 placeholder="e.g., demo, razorpay" 
@@ -321,7 +321,7 @@ export default function AdminPaymentsPage() {
                   <div className="flex items-center gap-2 rounded-lg bg-slate-900/40 p-2">
                     <Banknote className="h-4 w-4 text-fuchsia-400 shrink-0" />
                     <div className="text-sm">
-                      <p className="text-white">Provider ID</p>
+                      <p className="text-white">Escort ID</p>
                       <p className="text-xs text-slate-400 truncate">{payment.providerPaymentId || "-"}</p>
                     </div>
                   </div>

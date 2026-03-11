@@ -60,7 +60,7 @@ const sections = [
   {
     title: "7. Payments And Financial Data",
     points: [
-      "Online payments are processed through supported payment providers and platform payment APIs.",
+      "Online payments are processed through supported payment escorts and platform payment APIs.",
       "Nash Elite Escorts stores payment references and status data; full card credentials are not stored by us unless legally required.",
       "Refund, chargeback, and wallet records are retained for audit, taxation, and compliance obligations.",
     ],
@@ -69,7 +69,7 @@ const sections = [
     title: "8. Data Sharing",
     points: [
       "We share limited data with escorts/customers as needed to fulfill confirmed bookings and contact rules.",
-      "We share necessary data with payment providers, infrastructure vendors, communication services, and fraud/security systems.",
+      "We share necessary data with payment escorts, infrastructure vendors, communication services, and fraud/security systems.",
       "We may disclose data when required by law, court order, regulator request, or lawful investigation.",
       "We do not sell personal data as part of our core business model.",
     ],

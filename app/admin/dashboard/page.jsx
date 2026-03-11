@@ -202,7 +202,7 @@ export default function AdminDashboardPage() {
           <>
             <div className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               <StatCard icon={Users} label="Users" value={safe.usersCount} tone="blue" />
-              <StatCard icon={Briefcase} label="Workers" value={safe.workersCount} tone="purple" />
+              <StatCard icon={Briefcase} label="Escorts" value={safe.workersCount} tone="purple" />
               <StatCard icon={TrendingUp} label="Bookings (7d)" value={safe.bookingsLast7Days} tone="emerald" />
               <StatCard icon={DollarSign} label="Revenue" value={`INR ${safe.revenue}`} tone="amber" />
               <StatCard icon={CreditCard} label="Avg Ticket" value={`INR ${safe.avgTicketSize}`} tone="blue" />
@@ -251,7 +251,7 @@ export default function AdminDashboardPage() {
               <section className="rounded-xl border border-white/10 bg-slate-900/50 p-4">
                 <div className="mb-3 flex items-center gap-2">
                   <TrendingUp className="h-4 w-4 text-fuchsia-300" />
-                  <h2 className="text-sm font-semibold text-white">Worker Onboarding Funnel</h2>
+                  <h2 className="text-sm font-semibold text-white">Escort Onboarding Funnel</h2>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   {onboardingRows.map((row) => (
@@ -318,7 +318,7 @@ export default function AdminDashboardPage() {
               </div>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-7">
                 <Link href="/admin/orders" className="rounded bg-slate-800 px-3 py-2 text-sm hover:bg-slate-700">Orders</Link>
-                <Link href="/admin/workers" className="rounded bg-slate-800 px-3 py-2 text-sm hover:bg-slate-700">Workers</Link>
+                <Link href="/admin/workers" className="rounded bg-slate-800 px-3 py-2 text-sm hover:bg-slate-700">Escorts</Link>
                 <Link href="/admin/users" className="rounded bg-slate-800 px-3 py-2 text-sm hover:bg-slate-700">Users</Link>
                 <Link href="/admin/payments" className="rounded bg-slate-800 px-3 py-2 text-sm hover:bg-slate-700">Payments</Link>
                 <Link href="/admin/payouts" className="rounded bg-slate-800 px-3 py-2 text-sm hover:bg-slate-700">Payouts</Link>

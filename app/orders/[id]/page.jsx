@@ -580,7 +580,7 @@ export default function OrderDetailPage() {
             {/* Live Tracking Card */}
             <div className="rounded-xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02] p-4 sm:rounded-2xl sm:p-6">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-white">Live Worker Tracking</h2>
+                <h2 className="text-lg font-semibold text-white">Live Escort Tracking</h2>
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
@@ -618,7 +618,7 @@ export default function OrderDetailPage() {
               {!canShowTracking && !trackingLoading && !trackingError && (
                 <div className="mt-4 flex items-center gap-2 rounded-lg bg-slate-800/50 p-4">
                   <MapPin className="h-5 w-5 text-slate-500" />
-                  <p className="text-sm text-slate-400">Live tracking starts when worker begins travel.</p>
+                  <p className="text-sm text-slate-400">Live tracking starts when escort begins travel.</p>
                 </div>
               )}
               
@@ -680,9 +680,9 @@ export default function OrderDetailPage() {
 
             {/* Worker Unavailable Card */}
             <div className="rounded-xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02] p-4 sm:rounded-2xl sm:p-6">
-              <h2 className="text-lg font-semibold text-white">Worker Unavailable?</h2>
+              <h2 className="text-lg font-semibold text-white">Escort Unavailable?</h2>
               <p className="mt-1 text-sm text-slate-400">
-                If assigned worker is not responding or cannot attend, request auto reassignment.
+                If assigned escort is not responding or cannot attend, request auto reassignment.
               </p>
               
               <textarea
@@ -843,7 +843,7 @@ export default function OrderDetailPage() {
                 className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-fuchsia-600 to-violet-600 px-4 py-3 text-sm font-semibold text-white transition hover:opacity-90"
               >
                 <MessageCircle className="h-4 w-4" />
-                Open Chat with Worker
+                Open Chat with Escort
               </Link>
             )}
           </div>

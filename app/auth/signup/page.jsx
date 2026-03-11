@@ -204,7 +204,7 @@ export default function SignupPage() {
                   disabled={loading}
                 >
                   <option value="user">Customer</option>
-                  <option value="worker">Escort Provider</option>
+                  <option value="worker">Escort Escort</option>
                 </select>
               </div>
             </div>
@@ -290,7 +290,7 @@ export default function SignupPage() {
             <div className="mt-4 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs">
               <p className="flex items-center gap-2 text-amber-400">
                 <Briefcase className="h-4 w-4" />
-                <span className="font-medium">Escort Provider Account</span>
+                <span className="font-medium">Escort Escort Account</span>
               </p>
               <p className="mt-1 text-slate-300">
                 You&apos;ll need to complete onboarding with KYC documents after signup.

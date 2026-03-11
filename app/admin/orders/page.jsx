@@ -220,7 +220,7 @@ export default function AdminOrdersPage() {
               <div>
                 <h1 className="text-xl font-bold text-white sm:text-2xl">Admin Orders</h1>
                 <p className="text-xs text-slate-400 sm:text-sm">
-                  Assign/reassign worker and manage order flow
+                  Assign/reassign escort and manage order flow
                 </p>
               </div>
             </div>
@@ -395,7 +395,7 @@ export default function AdminOrdersPage() {
                           {order.worker?.name || "Unassigned"}
                         </p>
                         <p className="text-xs text-slate-400 truncate">
-                          {order.worker ? order.worker.userId?.slice(-6) : "No worker assigned"}
+                          {order.worker ? order.worker.userId?.slice(-6) : "No escort assigned"}
                         </p>
                       </div>
                     </div>
@@ -429,7 +429,7 @@ export default function AdminOrdersPage() {
                       value={selectedWorker[order._id] || ""} 
                       onChange={(e) => setSelectedWorker((prev) => ({ ...prev, [order._id]: e.target.value }))}
                     >
-                      <option value="">Select worker</option>
+                      <option value="">Select escort</option>
                       {workers.map((worker) => (
                         <option key={worker.userId} value={worker.userId}>
                           {worker.user?.name || worker.userId}

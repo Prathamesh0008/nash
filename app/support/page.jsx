@@ -175,7 +175,7 @@ export default function SupportPage() {
       <div className="grid gap-4 lg:grid-cols-2">
         <form onSubmit={submit} className="panel space-y-3">
           <h1 className="text-2xl font-semibold">Support / Reports</h1>
-          <p className="text-sm text-slate-400">User and worker both can report with evidence links.</p>
+          <p className="text-sm text-slate-400">User and escort both can report with evidence links.</p>
 
           <select className="w-full p-2.5 text-sm" value={form.bookingId} onChange={(e) => setForm({ ...form, bookingId: e.target.value })} required>
             <option value="">Select booking</option>

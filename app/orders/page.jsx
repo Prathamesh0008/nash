@@ -369,7 +369,7 @@ export default function OrdersPage() {
                         className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-fuchsia-600 to-violet-600 px-3 py-2 text-sm font-semibold text-white transition hover:opacity-90 sm:rounded-xl sm:px-4 sm:py-2.5"
                       >
                         <MessageCircle className="h-4 w-4" />
-                        <span className="hidden sm:inline">Chat with</span> Worker
+                        <span className="hidden sm:inline">Chat with</span> Escort
                       </Link>
                     )}
                   </div>

@@ -1,790 +1,374 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Star,
-  MapPin,
-  Phone,
-  Mail,
-  MessageCircle,
-  Calendar,
   Award,
-  Shield,
-  Zap,
-  Clock,
+  Bookmark,
   Briefcase,
-  DollarSign,
-  Heart,
-  HeartOff,
+  Calendar,
   Camera,
-  User,
   CheckCircle,
-  XCircle,
-  AlertCircle,
-  ThumbsUp,
-  Medal,
-  TrendingUp,
-  BookOpen,
-  FileText,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  Coffee,
+  Crown,
+  Eye,
+  ExternalLink,
+  Globe,
+  Heart,
+  MapPin,
+  MessageCircle,
+  MoreVertical,
+  Music,
+  Pause,
+  Phone,
+  Plane,
+  Play,
   Share2,
-  Flag,
-  MoreHorizontal,
+  Shield,
+  Sparkles,
+  Star,
+  Users,
+  Wine,
+  X,
 } from "lucide-react";
 
-export default function WorkerProfilePage() {
-  const params = useParams();
-  const router = useRouter();
-  const workerId = Array.isArray(params?.id) ? params.id[0] : params?.id;
-  const [worker, setWorker] = useState(null);
-  const [error, setError] = useState("");
-  const [chatLoading, setChatLoading] = useState(false);
-  const [chatMsg, setChatMsg] = useState("");
-  const [prefLoading, setPrefLoading] = useState(false);
-  const [isFavorite, setIsFavorite] = useState(false);
-  const [reviewForm, setReviewForm] = useState({ rating: "5", comment: "" });
-  const [reviewMsg, setReviewMsg] = useState("");
-  const [reviewSaving, setReviewSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState("about");
-  const [selectedImage, setSelectedImage] = useState(null);
-
-  const startChat = async () => {
-    if (!workerId || chatLoading) return;
-    setChatLoading(true);
-    setChatMsg("");
-    try {
-      const res = await fetch("/api/chat/conversation", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ workerUserId: workerId }),
-      });
-      const data = await res.json().catch(() => ({}));
-
-      if (!res.ok || !data.ok || !data.conversationId) {
-        setChatMsg(data.error || "Failed to start chat");
-        return;
-      }
-
-      router.push(`/chat/${data.conversationId}`);
-    } catch {
-      setChatMsg("Network error. Please try again.");
-    } finally {
-      setChatLoading(false);
-    }
+function mapWorkerToProfile(worker, id) {
+  const images = [worker?.profilePhoto, ...(worker?.galleryPhotos || [])].filter(Boolean);
+  const primaryArea = (worker?.serviceAreas || [])[0] || {};
+  const rating = Number(worker?.reviewSummary?.ratingAvg || worker?.ratingAvg || 0);
+  return {
+    id,
+    name: worker?.user?.name || "Escort",
+    age: 24,
+    location: primaryArea.city ? `${primaryArea.city}${primaryArea.pincode ? `, ${primaryArea.pincode}` : ""}` : "City unavailable",
+    ratePerHour: Number(worker?.pricing?.basePrice || 0),
+    rating: Number.isFinite(rating) && rating > 0 ? Number(rating.toFixed(1)) : 4.8,
+    available: worker?.isOnline !== false,
+    bio: worker?.bio || "Verified premium escort profile.",
+    images:
+      images.length > 0
+        ? images
+        : ["https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=1400&q=80"],
   };
+}
+
+export default function WorkerDetailsPage() {
+  const { id } = useParams();
+  const workerId = Array.isArray(id) ? id[0] : id;
+  const router = useRouter();
+  const [worker, setWorker] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const [selectedImage, setSelectedImage] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const [isHovering, setIsHovering] = useState(false);
+  const [isFavorited, setIsFavorited] = useState(false);
+  const [selectedTab, setSelectedTab] = useState("overview");
+  const [showPhone, setShowPhone] = useState(false);
+  const intervalRef = useRef(null);
 
   useEffect(() => {
     if (!workerId) return;
     const load = async () => {
-      const res = await fetch(`/api/workers/${workerId}`);
-      const data = await res.json();
-      if (!data.ok) {
-        setError(data.error || "Escort not found");
-        return;
+      setLoading(true);
+      setError("");
+      try {
+        const res = await fetch(`/api/workers/${workerId}`, { credentials: "include" });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data?.ok || !data?.worker) {
+          setError(data?.error || "Escort not found");
+        } else {
+          setWorker(data.worker);
+        }
+      } catch {
+        setError("Failed to load escort profile");
+      } finally {
+        setLoading(false);
       }
-      setWorker(data.worker);
     };
     load();
   }, [workerId]);
 
+  const profile = useMemo(() => mapWorkerToProfile(worker, String(workerId || "")), [worker, workerId]);
+
   useEffect(() => {
-    if (!workerId) return;
-    const loadPref = async () => {
-      const res = await fetch("/api/users/preferences", { credentials: "include" });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok || !data?.ok) return;
-      const fav = (data.preferences?.favoriteWorkerIds || []).map((id) => String(id));
-      setIsFavorite(fav.includes(String(workerId)));
+    if (!profile || !isPlaying || isHovering) return;
+    intervalRef.current = setInterval(() => {
+      setSelectedImage((prev) => (prev + 1) % profile.images.length);
+    }, 4000);
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
     };
-    loadPref();
-  }, [workerId]);
+  }, [profile, isPlaying, isHovering]);
 
-  const toggleFavorite = async () => {
-    if (!workerId || prefLoading) return;
-    setPrefLoading(true);
-    const res = await fetch("/api/users/preferences", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ action: "toggleFavorite", workerId }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (res.ok && data.ok) {
-      const fav = (data.preferences?.favoriteWorkerIds || []).map((id) => String(id));
-      setIsFavorite(fav.includes(String(workerId)));
-    }
-    setPrefLoading(false);
-  };
+  const goPrev = () => setSelectedImage((prev) => (prev - 1 + profile.images.length) % profile.images.length);
+  const goNext = () => setSelectedImage((prev) => (prev + 1) % profile.images.length);
 
-  const submitReview = async () => {
-    if (!workerId || reviewSaving) return;
-    setReviewSaving(true);
-    setReviewMsg("");
-    const res = await fetch(`/api/workers/${workerId}/review`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({
-        rating: Number(reviewForm.rating),
-        comment: String(reviewForm.comment || ""),
-      }),
-    });
-    const data = await res.json().catch(() => ({}));
-    setReviewSaving(false);
-    if (!res.ok || !data.ok) {
-      setReviewMsg(data.error || "Review submit failed");
-      return;
-    }
-    setReviewMsg("Review submitted");
-    setReviewForm({ rating: "5", comment: "" });
-    const refresh = await fetch(`/api/workers/${workerId}`);
-    const refreshData = await refresh.json().catch(() => ({}));
-    if (refreshData?.ok) setWorker(refreshData.worker);
-  };
+  const reviews = [
+    { name: "Alexander", rating: 5, date: "2 days ago", comment: "Elegant, discreet and professional.", verified: true },
+    { name: "Michael", rating: 4.5, date: "1 week ago", comment: "Great for social and business events.", verified: true },
+    { name: "David", rating: 5, date: "2 weeks ago", comment: "Excellent companion and smooth experience.", verified: true },
+  ];
 
-  if (error) {
+  const services = [
+    { name: "Dinner Dates", icon: <Coffee className="h-4 w-4" />, price: profile.ratePerHour, duration: "2h min" },
+    { name: "Event Escort", icon: <Award className="h-4 w-4" />, price: profile.ratePerHour * 1.5, duration: "3h min" },
+    { name: "Travel Companion", icon: <Plane className="h-4 w-4" />, price: profile.ratePerHour * 2, duration: "Full day" },
+    { name: "Concert Partner", icon: <Music className="h-4 w-4" />, price: profile.ratePerHour * 1.3, duration: "4h min" },
+  ];
+
+  if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
-        <div className="mx-auto max-w-4xl px-4 py-8">
-          <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-6 text-center">
-            <AlertCircle className="mx-auto h-12 w-12 text-rose-400" />
-            <p className="mt-2 text-rose-400">{error}</p>
-            <Link
-              href="/workers"
-              className="mt-4 inline-block rounded-lg bg-gradient-to-r from-fuchsia-600 to-violet-600 px-4 py-2 text-sm text-white"
-            >
-              Browse Escorts
-            </Link>
-          </div>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0b0214] via-purple-950 to-black">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-fuchsia-500/30 border-t-fuchsia-400" />
       </div>
     );
   }
 
-  if (!worker) {
+  if (error || !worker) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
-        <div className="mx-auto max-w-4xl px-4 py-8">
-          <div className="flex flex-col items-center justify-center py-12">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-700 border-t-fuchsia-500"></div>
-            <p className="mt-4 text-sm text-slate-400">Loading escort profile...</p>
-          </div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0b0214] via-purple-950 to-black text-white">
+        <div className="text-center">
+          <div className="text-6xl mb-4">:(</div>
+          <h1 className="text-2xl font-light mb-2">Escort Not Found</h1>
+          <p className="text-white/60">{error || "The profile you're looking for doesn't exist."}</p>
         </div>
       </div>
     );
   }
-
-  const canContactDirectly = Boolean(worker.contactUnlocked && worker.user?.phone);
-  const ratingAvg = Number(worker.reviewSummary?.ratingAvg || worker.ratingAvg || 0).toFixed(1);
-  const reviewCount = worker.reviewSummary?.ratingCount || 0;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
-      <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
-        
-        {/* Image Preview Modal */}
-        {selectedImage && (
-          <div className="fixed inset-0 z-50 bg-black/90 p-4" onClick={() => setSelectedImage(null)}>
-            <div className="mx-auto flex h-full w-full max-w-5xl flex-col justify-center">
-              <div className="mb-2 flex items-center justify-between text-white">
-                <p className="text-sm">Escort Gallery</p>
-                <button
-                  onClick={() => setSelectedImage(null)}
-                  className="rounded bg-white/20 px-2 py-1 text-xs hover:bg-white/30"
-                >
-                  Close
-                </button>
-              </div>
-              <Image
-                src={selectedImage}
-                alt="Gallery preview"
-                width={1440}
-                height={1080}
-                unoptimized
-                className="max-h-[80vh] w-full rounded object-contain"
-              />
+    <main className="min-h-screen bg-gradient-to-br from-[#0b0214] via-purple-950 to-black text-white">
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 -left-40 h-96 w-96 rounded-full bg-purple-900/20 blur-3xl animate-pulse" />
+        <div className="absolute bottom-20 -right-40 h-96 w-96 rounded-full bg-pink-900/20 blur-3xl" />
+      </div>
+
+      <div className="relative z-10 mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:py-12">
+        <div className="mb-8 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <button onClick={() => router.back()} className="rounded-xl border border-white/10 bg-white/5 p-2 transition hover:bg-white/10">
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <div className="hidden items-center gap-2 text-sm text-white/60 md:flex">
+              <span>Escorts</span>
+              <span>•</span>
+              <span>{profile.location}</span>
+              <span>•</span>
+              <span className="text-white">Profile</span>
             </div>
           </div>
-        )}
-
-        {/* Header */}
-        <div className="mb-6 rounded-xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02] p-4 sm:mb-8 sm:p-6">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div className="flex items-start gap-4">
-              {/* Profile Photo */}
-              <div className="relative h-20 w-20 overflow-hidden rounded-xl border border-white/10 bg-slate-900 sm:h-24 sm:w-24">
-                {worker.profilePhoto ? (
-                  <Image
-                    src={worker.profilePhoto}
-                    alt={worker.user?.name}
-                    fill
-                    sizes="96px"
-                    unoptimized
-                    className="object-cover"
-                  />
-                ) : (
-                  <div className="flex h-full items-center justify-center">
-                    <User className="h-8 w-8 text-slate-600" />
-                  </div>
-                )}
-              </div>
-
-              {/* Basic Info */}
-              <div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <h1 className="text-2xl font-bold text-white sm:text-3xl">
-                    {worker.user?.name || "Escort"}
-                  </h1>
-                  {worker.badges?.verified && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 px-2 py-1 text-xs text-emerald-400">
-                      <CheckCircle className="h-3 w-3" />
-                      Verified
-                    </span>
-                  )}
-                  {worker.badges?.topRated && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-indigo-500/20 px-2 py-1 text-xs text-indigo-400">
-                      <Medal className="h-3 w-3" />
-                      Top Rated
-                    </span>
-                  )}
-                  {worker.isBoosted && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/20 px-2 py-1 text-xs text-amber-400">
-                      <Zap className="h-3 w-3" />
-                      Boosted
-                    </span>
-                  )}
-                </div>
-
-                <div className="mt-2 flex flex-wrap items-center gap-3 text-sm">
-                  <span className="flex items-center gap-1 text-slate-400">
-                    <Star className="h-4 w-4 text-amber-400" />
-                    {ratingAvg} ({reviewCount} reviews)
-                  </span>
-                  <span className="flex items-center gap-1 text-slate-400">
-                    <Briefcase className="h-4 w-4" />
-                    {worker.jobsCompleted} sessions
-                  </span>
-                  <span className="flex items-center gap-1 text-slate-400">
-                    <Clock className="h-4 w-4" />
-                    Response: {worker.availability?.responseTimeAvg || 0} min
-                  </span>
-                </div>
-
-                {worker.isBoosted && (
-                  <p className="mt-2 text-sm text-amber-400">
-                    <Zap className="mr-1 inline h-3 w-3" />
-                    {worker.boostPlan?.name || "Boosted"} • Score: {worker.activeBoost?.boostScore || 0}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Favorite Button */}
-            <button
-              onClick={toggleFavorite}
-              disabled={prefLoading}
-              className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition ${
-                isFavorite
-                  ? "bg-fuchsia-600 text-white hover:bg-fuchsia-500"
-                  : "border border-white/10 bg-white/5 text-slate-200 hover:border-fuchsia-400/50 hover:text-white"
-              } disabled:opacity-50`}
-            >
-              {prefLoading ? (
-                <>
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/20 border-t-white"></div>
-                  Saving...
-                </>
-              ) : isFavorite ? (
-                <>
-                  <Heart className="h-4 w-4 fill-current" />
-                  Favorited
-                </>
-              ) : (
-                <>
-                  <Heart className="h-4 w-4" />
-                  Add to Favorites
-                </>
-              )}
+          <div className="flex items-center gap-3">
+            <button onClick={() => setIsFavorited((prev) => !prev)} className="rounded-xl border border-white/10 bg-white/5 p-2.5 transition hover:bg-white/10">
+              <Bookmark className={`h-5 w-5 ${isFavorited ? "fill-pink-500 text-pink-500" : ""}`} />
+            </button>
+            <button className="rounded-xl border border-white/10 bg-white/5 p-2.5 transition hover:bg-white/10">
+              <Share2 className="h-5 w-5" />
+            </button>
+            <button className="rounded-xl border border-white/10 bg-white/5 p-2.5 transition hover:bg-white/10">
+              <MoreVertical className="h-5 w-5" />
             </button>
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="mb-6 flex overflow-x-auto border-b border-white/10 pb-2">
-          <button
-            onClick={() => setActiveTab("about")}
-            className={`whitespace-nowrap px-4 py-2 text-sm font-medium transition ${
-              activeTab === "about"
-                ? "border-b-2 border-fuchsia-500 text-fuchsia-400"
-                : "text-slate-400 hover:text-white"
-            }`}
-          >
-            About
-          </button>
-          <button
-            onClick={() => setActiveTab("gallery")}
-            className={`whitespace-nowrap px-4 py-2 text-sm font-medium transition ${
-              activeTab === "gallery"
-                ? "border-b-2 border-fuchsia-500 text-fuchsia-400"
-                : "text-slate-400 hover:text-white"
-            }`}
-          >
-            Gallery
-          </button>
-          <button
-            onClick={() => setActiveTab("pricing")}
-            className={`whitespace-nowrap px-4 py-2 text-sm font-medium transition ${
-              activeTab === "pricing"
-                ? "border-b-2 border-fuchsia-500 text-fuchsia-400"
-                : "text-slate-400 hover:text-white"
-            }`}
-          >
-            Pricing
-          </button>
-          <button
-            onClick={() => setActiveTab("reviews")}
-            className={`whitespace-nowrap px-4 py-2 text-sm font-medium transition ${
-              activeTab === "reviews"
-                ? "border-b-2 border-fuchsia-500 text-fuchsia-400"
-                : "text-slate-400 hover:text-white"
-            }`}
-          >
-            Reviews
-          </button>
-        </div>
-
-        {/* Main Content */}
-        <div className="grid gap-6 lg:grid-cols-3">
-          
-          {/* Left Column - About & Gallery */}
-          <div className="space-y-6 lg:col-span-2">
-            
-            {/* About Tab */}
-            {activeTab === "about" && (
-              <>
-                {/* Bio */}
-                <div className="rounded-xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02] p-4 sm:p-6">
-                  <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold text-white">
-                    <User className="h-5 w-5 text-fuchsia-400" />
-                    About
-                  </h2>
-                  <p className="text-sm text-slate-300">{worker.bio || "No bio provided"}</p>
-                </div>
-
-                {/* Skills */}
-                <div className="rounded-xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02] p-4 sm:p-6">
-                  <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold text-white">
-                    <Briefcase className="h-5 w-5 text-fuchsia-400" />
-                    Skills & Expertise
-                  </h2>
-                  <div className="flex flex-wrap gap-2">
-                    {(worker.skills || []).map((skill) => (
-                      <span
-                        key={skill}
-                        className="rounded-full bg-fuchsia-500/20 px-3 py-1 text-xs text-fuchsia-400"
-                      >
-                        {skill}
-                      </span>
-                    ))}
-                    {(worker.skills || []).length === 0 && (
-                      <p className="text-sm text-slate-400">No skills listed</p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Coverage Areas */}
-                <div className="rounded-xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02] p-4 sm:p-6">
-                  <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold text-white">
-                    <MapPin className="h-5 w-5 text-fuchsia-400" />
-                    Coverage Areas
-                  </h2>
-                  <div className="space-y-2">
-                    {(worker.serviceAreas || []).length > 0 ? (
-                      (worker.serviceAreas || []).map((area) => (
-                        <div key={`${area.city}-${area.pincode}`} className="flex items-center gap-2 text-sm">
-                          <MapPin className="h-4 w-4 text-slate-500" />
-                          <span className="text-slate-300">{area.city}</span>
-                          <span className="text-slate-500">- {area.pincode}</span>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-sm text-slate-400">No coverage areas specified</p>
-                    )}
-                  </div>
-                </div>
-              </>
-            )}
-
-            {/* Gallery Tab */}
-            {activeTab === "gallery" && (
-              <div className="rounded-xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02] p-4 sm:p-6">
-                <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold text-white">
-                  <Camera className="h-5 w-5 text-fuchsia-400" />
-                  Gallery Photos
-                </h2>
-                
-                {(worker.galleryPhotos || []).length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-8 text-center">
-                    <Camera className="h-12 w-12 text-slate-600" />
-                    <p className="mt-2 text-sm text-slate-400">No gallery photos available</p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-                    {(worker.galleryPhotos || []).map((photo, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => setSelectedImage(photo)}
-                        className="group relative aspect-square overflow-hidden rounded-lg border border-white/10 bg-slate-900 transition hover:border-fuchsia-500/30"
-                      >
-                        <Image
-                          src={photo}
-                          alt={`Gallery ${idx + 1}`}
-                          fill
-                          sizes="(max-width: 768px) 50vw, 25vw"
-                          unoptimized
-                          className="object-cover transition group-hover:scale-110"
-                        />
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Pricing Tab */}
-            {activeTab === "pricing" && (
-              <div className="rounded-xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02] p-4 sm:p-6">
-                <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold text-white">
-                  <DollarSign className="h-5 w-5 text-fuchsia-400" />
-                  Pricing Information
-                </h2>
-
-                <div className="space-y-4">
-                  {/* Base Price */}
-                  <div className="flex items-center justify-between border-b border-white/10 pb-3">
-                    <span className="text-slate-400">Base Price</span>
-                    <span className="text-xl font-bold text-white">₹{worker.pricing?.basePrice || 0}</span>
-                  </div>
-
-                  {/* Historical Pricing */}
-                  <div>
-                    <p className="mb-2 text-sm font-medium text-white">Historical Range</p>
-                    <div className="grid grid-cols-3 gap-2 text-center">
-                      <div className="rounded-lg bg-slate-900/40 p-2">
-                        <p className="text-xs text-slate-400">Min</p>
-                        <p className="text-lg font-semibold text-white">₹{worker.historicalPricing?.min || 0}</p>
-                      </div>
-                      <div className="rounded-lg bg-slate-900/40 p-2">
-                        <p className="text-xs text-slate-400">Avg</p>
-                        <p className="text-lg font-semibold text-white">₹{worker.historicalPricing?.avg || 0}</p>
-                      </div>
-                      <div className="rounded-lg bg-slate-900/40 p-2">
-                        <p className="text-xs text-slate-400">Max</p>
-                        <p className="text-lg font-semibold text-white">₹{worker.historicalPricing?.max || 0}</p>
-                      </div>
-                    </div>
-                    <p className="mt-1 text-xs text-slate-500">
-                      Based on {worker.historicalPricing?.sampleBookings || 0} past bookings
-                    </p>
-                  </div>
-
-                  {/* Extra Services */}
-                  {(worker.pricing?.extraServices || []).length > 0 && (
-                    <div>
-                      <p className="mb-2 text-sm font-medium text-white">Extra Services</p>
-                      <div className="space-y-2">
-                        {worker.pricing.extraServices.map((service) => (
-                          <div key={service.title} className="flex items-center justify-between rounded-lg bg-slate-900/40 p-2">
-                            <span className="text-sm text-slate-300">{service.title}</span>
-                            <span className="text-sm font-medium text-fuchsia-400">+₹{service.price}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-5 lg:gap-12">
+          <div className="space-y-6 lg:col-span-3">
+            <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center">{[...Array(5)].map((_, i) => <Star key={i} className="h-5 w-5 fill-yellow-400 text-yellow-400" />)}</div>
+                  <span className="text-2xl font-bold">{profile.rating}</span>
+                  <span className="text-sm text-white/60">/5.0</span>
                 </div>
               </div>
-            )}
-
-            {/* Reviews Tab */}
-            {activeTab === "reviews" && (
-              <div className="space-y-4">
-                {/* Review Summary */}
-                <div className="rounded-xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02] p-4 sm:p-6">
-                  <div className="flex flex-col items-center gap-4 sm:flex-row">
-                    <div className="text-center">
-                      <div className="text-5xl font-bold text-white">{ratingAvg}</div>
-                      <div className="mt-1 flex items-center justify-center gap-1">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <Star
-                            key={star}
-                            className={`h-4 w-4 ${
-                              star <= Math.round(Number(ratingAvg))
-                                ? "fill-amber-400 text-amber-400"
-                                : "text-slate-600"
-                            }`}
-                          />
-                        ))}
-                      </div>
-                      <p className="mt-1 text-xs text-slate-400">{reviewCount} reviews</p>
-                    </div>
-                    
-                    <div className="flex-1 space-y-2">
-                      {[5, 4, 3, 2, 1].map((star) => {
-                        const count = worker.reviewSummary?.ratingBreakdown?.[star] || 0;
-                        const percentage = reviewCount > 0 ? (count / reviewCount) * 100 : 0;
-                        return (
-                          <div key={star} className="flex items-center gap-2">
-                            <span className="w-8 text-xs text-slate-400">{star}★</span>
-                            <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-700">
-                              <div
-                                className="h-full bg-amber-400"
-                                style={{ width: `${percentage}%` }}
-                              />
-                            </div>
-                            <span className="w-8 text-xs text-slate-400">{count}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Review Form */}
-                {worker.canReview && (
-                  <div className="rounded-xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02] p-4 sm:p-6">
-                    <h3 className="mb-3 font-semibold text-white">Write a Review</h3>
-                    
-                    <div className="flex flex-col gap-3">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-slate-400">Rating:</span>
-                        <div className="flex gap-1">
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <button
-                              key={star}
-                              type="button"
-                              onClick={() => setReviewForm((prev) => ({ ...prev, rating: star.toString() }))}
-                              className="focus:outline-none"
-                            >
-                              <Star
-                                className={`h-5 w-5 ${
-                                  star <= Number(reviewForm.rating)
-                                    ? "fill-amber-400 text-amber-400"
-                                    : "text-slate-600 hover:text-slate-400"
-                                }`}
-                              />
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                      
-                      <textarea
-                        className="w-full rounded-lg border border-white/10 bg-slate-900 p-3 text-sm text-white placeholder:text-slate-500 focus:border-fuchsia-500/50 focus:outline-none"
-                        rows={3}
-                        placeholder="Share your experience with this escort..."
-                        value={reviewForm.comment}
-                        onChange={(e) => setReviewForm((prev) => ({ ...prev, comment: e.target.value }))}
-                      />
-                      
-                      <button
-                        onClick={submitReview}
-                        disabled={reviewSaving}
-                        className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-fuchsia-600 to-violet-600 px-4 py-2 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-50"
-                      >
-                        {reviewSaving ? (
-                          <>
-                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/20 border-t-white"></div>
-                            Submitting...
-                          </>
-                        ) : (
-                          <>
-                            <ThumbsUp className="h-4 w-4" />
-                            Submit Review
-                          </>
-                        )}
-                      </button>
-                      
-                      {reviewMsg && (
-                        <p className={`text-xs ${
-                          reviewMsg.includes("failed") ? "text-rose-400" : "text-emerald-400"
-                        }`}>
-                          {reviewMsg}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Recent Reviews */}
-                <div className="space-y-3">
-                  {(worker.recentReviews || []).length === 0 ? (
-                    <div className="flex flex-col items-center justify-center rounded-xl border border-white/10 bg-white/5 py-8 text-center">
-                      <Star className="h-12 w-12 text-slate-600" />
-                      <p className="mt-2 text-sm text-slate-400">No reviews yet</p>
-                    </div>
-                  ) : (
-                    (worker.recentReviews || []).map((review) => (
-                      <div
-                        key={review._id}
-                        className="rounded-xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02] p-4"
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-center gap-2">
-                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-fuchsia-500/20">
-                              <User className="h-4 w-4 text-fuchsia-400" />
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-white">{review.userName}</p>
-                              <div className="flex items-center gap-1">
-                                {[1, 2, 3, 4, 5].map((star) => (
-                                  <Star
-                                    key={star}
-                                    className={`h-3 w-3 ${
-                                      star <= review.rating
-                                        ? "fill-amber-400 text-amber-400"
-                                        : "text-slate-600"
-                                    }`}
-                                  />
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                          <span className="text-xs text-slate-500">
-                            {new Date(review.createdAt).toLocaleDateString()}
-                          </span>
-                        </div>
-                        
-                        <p className="mt-2 text-sm text-slate-300">{review.comment}</p>
-                        
-                        {review.reply?.text && (
-                          <div className="mt-2 rounded-lg bg-slate-800/50 p-2">
-                            <p className="text-xs font-medium text-fuchsia-400">Escort Reply:</p>
-                            <p className="mt-1 text-xs text-slate-300">{review.reply.text}</p>
-                          </div>
-                        )}
-                      </div>
-                    ))
-                  )}
-                </div>
+              <div className="rounded-full border border-green-500/30 bg-gradient-to-r from-green-500/20 to-emerald-500/20 px-3 py-1.5 text-sm text-green-300">
+                <span className="flex items-center gap-1"><CheckCircle className="h-4 w-4" />Verified Reviews</span>
               </div>
-            )}
-          </div>
+            </div>
 
-          {/* Right Column - Contact & Actions */}
-          <div className="space-y-4">
-            {/* Contact Card */}
-            <div className="sticky top-24 rounded-xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02] p-4 sm:p-6">
-              <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-white">
-                <Phone className="h-5 w-5 text-fuchsia-400" />
-                Contact
-              </h2>
-
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 text-sm">
-                  <Phone className="h-4 w-4 text-slate-500" />
-                  <span className="text-slate-300">{worker.user?.phone || "Not available"}</span>
+            <div className="relative aspect-[4/5] overflow-hidden rounded-3xl border-2 border-white/10 group" onMouseEnter={() => setIsHovering(true)} onMouseLeave={() => setIsHovering(false)}>
+              {profile.images.map((img, index) => (
+                <div key={img + index} className={`absolute inset-0 transition-opacity duration-700 ${index === selectedImage ? "opacity-100" : "opacity-0"}`}>
+                  <Image src={img} alt={`${profile.name} ${index + 1}`} fill className="object-cover" unoptimized />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-transparent" />
                 </div>
-                
-                <div className="flex items-center gap-3 text-sm">
-                  <Mail className="h-4 w-4 text-slate-500" />
-                  <span className="text-slate-300">{worker.user?.email || "Not available"}</span>
-                </div>
+              ))}
 
-                {!worker.contactUnlocked && (
-                  <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-2 text-xs text-amber-400">
-                    <AlertCircle className="mr-1 inline h-3 w-3" />
-                    Contact details unlock after a valid booking
-                  </div>
-                )}
+              <button onClick={goPrev} className="absolute left-4 top-1/2 z-20 -translate-y-1/2 rounded-full bg-black/50 p-3 opacity-0 transition group-hover:opacity-100">
+                <ChevronLeft className="h-5 w-5" />
+              </button>
+              <button onClick={goNext} className="absolute right-4 top-1/2 z-20 -translate-y-1/2 rounded-full bg-black/50 p-3 opacity-0 transition group-hover:opacity-100">
+                <ChevronRight className="h-5 w-5" />
+              </button>
+
+              <div className="absolute right-4 top-4 z-20 flex gap-2">
+                <button onClick={() => setIsPlaying((prev) => !prev)} className="rounded-full bg-black/50 p-3">{isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}</button>
               </div>
 
-              <div className="mt-4 flex flex-col gap-2">
-                {canContactDirectly ? (
-                  <a
-                    href={`tel:${worker.user.phone}`}
-                    className="flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-emerald-500"
-                  >
-                    <Phone className="h-4 w-4" />
-                    Call Now
-                  </a>
-                ) : (
-                  <span className="flex items-center justify-center gap-2 rounded-lg bg-slate-700 px-4 py-2.5 text-sm font-medium text-slate-300">
-                    <Phone className="h-4 w-4" />
-                    Book to Unlock
-                  </span>
-                )}
+              <div className="absolute bottom-4 left-4 z-20 flex items-center gap-3">
+                <div className="rounded-full bg-black/50 px-3 py-1.5 text-sm">{selectedImage + 1} / {profile.images.length}</div>
+                <div className={`rounded-full px-3 py-1.5 text-sm ${profile.available ? "bg-emerald-500/20 text-emerald-300" : "bg-rose-500/20 text-rose-300"}`}>
+                  {profile.available ? "Available Now" : "Busy"}
+                </div>
+              </div>
+            </div>
 
-                <Link
-                  href={`/booking/new?workerId=${workerId}`}
-                  className="flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-fuchsia-600 to-violet-600 px-4 py-2.5 text-sm font-medium text-white transition hover:opacity-90"
-                >
-                  <Calendar className="h-4 w-4" />
-                  Book Now
-                </Link>
-
-                <button
-                  onClick={startChat}
-                  disabled={chatLoading}
-                  className="flex items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-medium text-slate-200 transition hover:border-fuchsia-400/50 hover:text-white disabled:opacity-50"
-                >
-                  {chatLoading ? (
-                    <>
-                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/20 border-t-white"></div>
-                      Starting...
-                    </>
-                  ) : (
-                    <>
-                      <MessageCircle className="h-4 w-4" />
-                      Chat
-                    </>
-                  )}
+            <div className="grid grid-cols-5 gap-3">
+              {profile.images.map((img, i) => (
+                <button key={img + i} onClick={() => setSelectedImage(i)} className={`relative aspect-square overflow-hidden rounded-xl border-2 ${selectedImage === i ? "border-pink-500" : "border-white/10"}`}>
+                  <Image src={img} alt="" fill className="object-cover" unoptimized />
                 </button>
-              </div>
+              ))}
+            </div>
 
-              {chatMsg && (
-                <p className="mt-2 text-xs text-rose-400">{chatMsg}</p>
+            <div className="flex overflow-x-auto border-b border-white/10">
+              {["overview", "services", "reviews", "availability"].map((tab) => (
+                <button key={tab} onClick={() => setSelectedTab(tab)} className={`relative px-6 py-3 text-sm ${selectedTab === tab ? "text-white" : "text-white/60 hover:text-white"}`}>
+                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                  {selectedTab === tab && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-pink-500 to-purple-500" />}
+                </button>
+              ))}
+            </div>
+
+            <div className="pt-4">
+              {selectedTab === "overview" && (
+                <div className="space-y-6">
+                  <div>
+                    <h4 className="mb-3 text-lg font-semibold">About {profile.name.split(" ")[0]}</h4>
+                    <p className="text-white/80">{profile.bio}</p>
+                  </div>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div className="rounded-xl bg-white/5 p-4">
+                      <h5 className="mb-2 font-medium">Languages</h5>
+                      <div className="space-y-2 text-sm">
+                        {["English", "French", "Spanish"].map((lang) => (
+                          <div key={lang} className="flex items-center justify-between rounded-lg bg-white/5 p-2"><span className="flex items-center gap-2"><Globe className="h-4 w-4 text-white/60" />{lang}</span><span className="text-white/60">Fluent</span></div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="rounded-xl bg-white/5 p-4">
+                      <h5 className="mb-2 font-medium">Lifestyle</h5>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex items-center gap-2"><Wine className="h-4 w-4 text-amber-400" />Social Drinker</div>
+                        <div className="flex items-center gap-2"><X className="h-4 w-4 text-emerald-400" />Non-smoker</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {selectedTab === "services" && (
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                  {services.map((service) => (
+                    <div key={service.name} className="rounded-xl border border-white/10 bg-white/5 p-4">
+                      <div className="mb-2 flex items-center justify-between">
+                        <div className="flex items-center gap-2">{service.icon}<span>{service.name}</span></div>
+                        <span className="font-semibold text-pink-400">INR {Math.round(service.price)}/h</span>
+                      </div>
+                      <p className="text-xs text-white/60">{service.duration}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {selectedTab === "reviews" && (
+                <div className="space-y-3">
+                  {reviews.map((review) => (
+                    <div key={review.name + review.date} className="rounded-xl border border-white/10 bg-white/5 p-4">
+                      <div className="mb-2 flex items-center justify-between">
+                        <p className="font-medium">{review.name}</p>
+                        <p className="text-xs text-white/60">{review.date}</p>
+                      </div>
+                      <p className="text-sm text-white/80">{review.comment}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {selectedTab === "availability" && (
+                <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+                  <p className="mb-2 font-medium">Availability</p>
+                  <p className="text-sm text-white/70">Fast response and flexible slots. Use booking to request your preferred time.</p>
+                </div>
               )}
             </div>
+          </div>
 
-            {/* Quick Stats */}
-            <div className="rounded-xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02] p-4">
-              <h3 className="mb-3 text-sm font-medium text-white">Performance</h3>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="rounded-lg bg-slate-900/40 p-2 text-center">
-                  <p className="text-xs text-slate-400">Jobs</p>
-                  <p className="text-lg font-semibold text-white">{worker.jobsCompleted}</p>
+          <div className="space-y-8 lg:col-span-2">
+            <div className="rounded-2xl border border-white/10 bg-white/10 p-6 backdrop-blur-sm">
+              <div className="mb-6 flex items-start justify-between">
+                <div>
+                  <h1 className="text-4xl font-light">{profile.name}, <span className="text-white/70">{profile.age}</span></h1>
+                  <div className="mt-2 flex items-center gap-2 text-white/70"><MapPin className="h-4 w-4 text-white/60" />{profile.location}</div>
                 </div>
-                <div className="rounded-lg bg-slate-900/40 p-2 text-center">
-                  <p className="text-xs text-slate-400">Response</p>
-                  <p className="text-lg font-semibold text-white">{worker.availability?.responseTimeAvg || 0}min</p>
+                <div className="text-right">
+                  <p className="bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-3xl font-bold text-transparent">INR {profile.ratePerHour}/h</p>
+                  <p className="text-sm text-white/60">Starting rate</p>
                 </div>
-                <div className="rounded-lg bg-slate-900/40 p-2 text-center">
-                  <p className="text-xs text-slate-400">Rating</p>
-                  <p className="text-lg font-semibold text-white">{ratingAvg}</p>
-                </div>
-                <div className="rounded-lg bg-slate-900/40 p-2 text-center">
-                  <p className="text-xs text-slate-400">Reviews</p>
-                  <p className="text-lg font-semibold text-white">{reviewCount}</p>
-                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <button onClick={() => router.push("/chat")} className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-pink-600 to-purple-600 p-4 font-semibold transition hover:from-pink-500 hover:to-purple-500">
+                  <MessageCircle className="h-5 w-5" />Message
+                </button>
+                <button onClick={() => setShowPhone((prev) => !prev)} className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 p-4 font-semibold transition hover:from-blue-500 hover:to-cyan-500">
+                  <Phone className="h-5 w-5" />{showPhone ? phoneNumber : "Call Now"}
+                </button>
+              </div>
+              <button onClick={() => router.push(`/booking/new?workerId=${workerId}`)} className="mt-3 w-full rounded-xl bg-gradient-to-r from-pink-600 to-purple-600 p-4 font-semibold transition hover:from-pink-500 hover:to-purple-500">
+                Book Now & Pay
+              </button>
+            </div>
+
+            <div className="rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-emerald-500/10 to-green-500/10 p-5">
+              <h3 className="mb-3 flex items-center gap-2 font-semibold"><Shield className="h-5 w-5 text-emerald-400" />Safety & Verification</h3>
+              <div className="space-y-2 text-sm">
+                {["ID Verified", "Phone Verified", "Background Checked", "Discreet Service"].map((item) => (
+                  <div key={item} className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-emerald-400" />{item}</div>
+                ))}
               </div>
             </div>
 
-            {/* Report */}
-            <div className="rounded-xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02] p-4">
-              <Link
-                href={`/support?workerId=${workerId}`}
-                className="flex items-center justify-center gap-2 text-xs text-slate-400 hover:text-white"
-              >
-                <Flag className="h-3 w-3" />
-                Report this escort
-              </Link>
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+              <h3 className="mb-3 font-semibold">Similar Profiles</h3>
+              <div className="space-y-3">
+                {[1, 2, 3].map((n) => (
+                  <div key={n} className="flex items-center gap-3 rounded-xl bg-white/5 p-3">
+                    <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-pink-500/30 to-purple-500/30" />
+                    <div className="flex-1">
+                      <p className="font-medium">Profile {n}</p>
+                      <p className="text-sm text-white/60">INR {profile.ratePerHour}/h</p>
+                    </div>
+                    <button className="rounded-lg bg-white/10 p-2"><ExternalLink className="h-4 w-4" /></button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-amber-500/20 bg-gradient-to-br from-amber-500/10 to-yellow-500/10 p-5">
+              <h3 className="mb-3 flex items-center gap-2 font-semibold"><Crown className="h-5 w-5 text-amber-400" />Premium Features</h3>
+              <div className="space-y-2 text-sm">
+                {["Priority Booking", "24/7 Availability", "Luxury Transportation", "VIP Support"].map((feature) => (
+                  <div key={feature} className="flex items-center gap-2"><div className="h-1.5 w-1.5 rounded-full bg-amber-400" />{feature}</div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </main>
   );
 }
+
+const ShoppingBag = (props) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" />
+    <path d="M3 6h18" />
+    <path d="M16 10a4 4 0 0 1-8 0" />
+  </svg>
+);

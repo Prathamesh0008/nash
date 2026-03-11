@@ -101,7 +101,7 @@ export default function AdminWorkersPage() {
       setWorkers(data.workers || []);
     } catch {
       setMsgType("error");
-      setMsg("Failed to load workers");
+      setMsg("Failed to load escorts");
     } finally {
       setLoading(false);
     }
@@ -190,7 +190,7 @@ export default function AdminWorkersPage() {
     let ids = Object.keys(selectedWorkerIds);
     if (ids.length === 0) {
       setMsgType("error");
-      setMsg("Select at least one worker for bulk action");
+      setMsg("Select at least one escort for bulk action");
       return;
     }
 
@@ -277,7 +277,7 @@ export default function AdminWorkersPage() {
     const ids = Object.keys(selectedWorkerIds);
     if (ids.length === 0) {
       setMsgType("error");
-      setMsg("Select at least one worker for bulk re-upload");
+      setMsg("Select at least one escort for bulk re-upload");
       return;
     }
 
@@ -368,9 +368,9 @@ export default function AdminWorkersPage() {
                 <Users className="h-6 w-6 text-white sm:h-7 sm:w-7" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-white sm:text-2xl">Worker Management</h1>
+                <h1 className="text-xl font-bold text-white sm:text-2xl">Escort Management</h1>
                 <p className="text-xs text-slate-400 sm:text-sm">
-                  Review worker profiles, photos, and KYC documents before approval
+                  Review escort profiles, photos, and KYC documents before approval
                 </p>
               </div>
             </div>
@@ -573,7 +573,7 @@ export default function AdminWorkersPage() {
           {!loading && workers.length === 0 && (
             <div className="flex flex-col items-center justify-center rounded-xl border border-white/10 bg-white/5 py-12 text-center">
               <Users className="h-12 w-12 text-slate-600" />
-              <p className="mt-2 text-sm text-slate-400">No workers found</p>
+              <p className="mt-2 text-sm text-slate-400">No escorts found</p>
               <p className="text-xs text-slate-500">Try adjusting your filters</p>
             </div>
           )}
@@ -642,7 +642,7 @@ export default function AdminWorkersPage() {
 
                       <div>
                         <h3 className="text-base font-semibold text-white sm:text-lg">
-                          {worker.user?.name || "Worker"}
+                          {worker.user?.name || "Escort"}
                         </h3>
                         <div className="mt-1 space-y-1 text-sm">
                           <p className="flex items-center gap-1 text-slate-400">

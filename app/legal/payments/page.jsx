@@ -5,7 +5,7 @@ const sections = [
     title: "1. Accepted Payment Methods",
     points: [
       "Payments can be made through supported online gateways and wallet balance.",
-      "Available methods may vary by city, provider, and risk checks at checkout.",
+      "Available methods may vary by city, escort, and risk checks at checkout.",
       "Cash mode is allowed only where explicitly shown during booking.",
     ],
   },
@@ -22,7 +22,7 @@ const sections = [
     points: [
       "Refund eligibility depends on booking status, cancellation timing, and policy rules.",
       "Approved refunds may be returned to original method or wallet, based on platform logic.",
-      "Processing timelines depend on payment provider and banking network.",
+      "Processing timelines depend on payment escort and banking network.",
     ],
   },
   {

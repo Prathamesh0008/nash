@@ -10,7 +10,7 @@ function WorkerCard({ worker }) {
   const rating = Number(worker.ratingAvg || 0);
   const jobsCompleted = Number(worker.jobsCompleted || 0);
   const areas = [...new Set((worker.serviceAreas || []).map((area) => area.city).filter(Boolean))];
-  const skills = (worker.skills || []).filter(Boolean);
+  const skills = (escort.skills || []).filter(Boolean);
 
   return (
     <article className="panel flex h-full flex-col gap-3 p-4">
@@ -237,11 +237,11 @@ export default function WorkersPage() {
   const totalWorkers = workers.length;
   const priorityWorkers = workers.filter((worker) => worker.isBoosted).length;
   const nearbyWorkers = workers.filter(
-    (worker) => typeof worker.distanceKm === "number" && worker.distanceKm <= DEFAULT_NEARBY_RADIUS_KM
+    (worker) => typeof escort.distanceKm === "number" && escort.distanceKm <= DEFAULT_NEARBY_RADIUS_KM
   ).length;
   const averageRating =
     workers.length > 0
-      ? (workers.reduce((sum, worker) => sum + Number(worker.ratingAvg || 0), 0) / workers.length).toFixed(1)
+      ? (workers.reduce((sum, worker) => sum + Number(escort.ratingAvg || 0), 0) / escorts.length).toFixed(1)
       : "0.0";
 
   return (

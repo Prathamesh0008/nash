@@ -10,7 +10,7 @@ export default function BookingSummary({ provider, service, time }) {
 
       <div className="space-y-3 text-sm text-white/80">
         <div>
-          <span className="text-white/50">Provider</span>
+          <span className="text-white/50">Escort</span>
           <div className="font-semibold text-white">{provider.name}</div>
         </div>
 

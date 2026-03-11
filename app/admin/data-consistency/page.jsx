@@ -98,7 +98,7 @@ export default function AdminDataConsistencyPage() {
               <div>
                 <h1 className="text-xl font-bold text-white sm:text-2xl">Data Consistency Tools</h1>
                 <p className="text-xs text-slate-400 sm:text-sm">
-                  Validate worker categories vs services and detect duplicate worker profiles
+                  Validate escort categories vs services and detect duplicate escort profiles
                 </p>
               </div>
             </div>
@@ -174,7 +174,7 @@ export default function AdminDataConsistencyPage() {
             <div className="mb-6 rounded-xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02] p-4 sm:mb-8 sm:p-6">
               <SectionHeader 
                 icon={AlertTriangle} 
-                title="Unknown Worker Categories" 
+                title="Unknown Escort Categories" 
                 subtitle={`${(data.workerCategoryMismatches || []).length} issues found`}
                 action={
                   (data.workerCategoryMismatches || []).length > 5 && (
@@ -192,7 +192,7 @@ export default function AdminDataConsistencyPage() {
                 <div className="flex flex-col items-center justify-center py-8 text-center">
                   <CheckCircle className="h-12 w-12 text-emerald-500/50" />
                   <p className="mt-2 text-sm text-slate-400">No category mismatches found</p>
-                  <p className="text-xs text-slate-500">All worker categories are valid</p>
+                  <p className="text-xs text-slate-500">All escort categories are valid</p>
                 </div>
               ) : (
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -204,7 +204,7 @@ export default function AdminDataConsistencyPage() {
                         className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4"
                       >
                         <div className="flex items-start justify-between">
-                          <h3 className="font-medium text-white">{row.workerName || 'Unknown Worker'}</h3>
+                          <h3 className="font-medium text-white">{row.workerName || 'Unknown Escort'}</h3>
                           <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] text-amber-400">
                             {row.unknownCategories?.length || 0} issues
                           </span>
@@ -238,7 +238,7 @@ export default function AdminDataConsistencyPage() {
               <div className="rounded-xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02] p-4 sm:p-6">
                 <SectionHeader 
                   icon={Phone} 
-                  title="Duplicate Worker Phones" 
+                  title="Duplicate Escort Phones" 
                   subtitle={`${(data.duplicateWorkerPhones || []).length} groups`}
                 />
                 
@@ -270,7 +270,7 @@ export default function AdminDataConsistencyPage() {
               <div className="rounded-xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02] p-4 sm:p-6">
                 <SectionHeader 
                   icon={Mail} 
-                  title="Duplicate Worker Emails" 
+                  title="Duplicate Escort Emails" 
                   subtitle={`${(data.duplicateWorkerEmails || []).length} groups`}
                 />
                 

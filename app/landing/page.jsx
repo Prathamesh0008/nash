@@ -5,7 +5,7 @@ import WorkerProfile from "@/models/WorkerProfile";
 
 export const metadata = {
   title: "City Landing Pages | Nash Elite Escorts",
-  description: "Explore city and service specific pages for verified escort providers.",
+  description: "Explore city and service specific pages for verified escort escorts.",
 };
 
 function slugifyCity(city = "") {

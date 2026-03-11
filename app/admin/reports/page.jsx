@@ -315,7 +315,7 @@ export default function AdminReportsPage() {
                 onChange={(e) => setFilters((prev) => ({ ...prev, targetType: e.target.value }))}
               >
                 <option value="">All Target Types</option>
-                <option value="worker">👤 Worker</option>
+                <option value="worker">👤 Escort</option>
                 <option value="user">👥 User</option>
               </select>
             </div>

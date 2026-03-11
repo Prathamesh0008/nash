@@ -100,7 +100,7 @@ export default function AdminBoostPlansPage() {
             <div>
               <h1 className="text-xl font-bold text-white sm:text-2xl">Boost Plans Management</h1>
               <p className="text-xs text-slate-400 sm:text-sm">
-                Create and manage worker boost plans
+                Create and manage escort boost plans
               </p>
             </div>
           </div>

@@ -29,7 +29,7 @@ const userLinkSections = [
     links: [
       { href: "/services", label: "All Services", badge: "Hot" },
       { href: "/workers", label: "Find Escorts" },
-      { href: "/search", label: "Search Providers", badge: "New" },
+      { href: "/search", label: "Search Escorts", badge: "New" },
       { href: "/faq", label: "FAQ" },
       { href: "/booking/new", label: "Book an Escort" },
     ],
@@ -226,7 +226,7 @@ export default function Footer() {
     if (role === "worker") return workerLinkSections;
     return userLinkSections;
   }, [role]);
-  const roleSummary = role === "admin" ? "Admin operations and moderation tools" : role === "worker" ? "Escort jobs, earnings, and profile tools" : "Private booking and provider discovery";
+  const roleSummary = role === "admin" ? "Admin operations and moderation tools" : role === "worker" ? "Escort jobs, earnings, and profile tools" : "Private booking and escort discovery";
   const rolePrimaryCta = role === "admin"
     ? { href: "/admin/dashboard", label: "Open Admin Dashboard", icon: UserCog }
     : role === "worker"

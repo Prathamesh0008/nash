@@ -144,7 +144,7 @@ export default function AdminPayoutsPage() {
               <div>
                 <h1 className="text-xl font-bold text-white sm:text-2xl">Admin Payouts</h1>
                 <p className="text-xs text-slate-400 sm:text-sm">
-                  Manage worker payout requests and payments
+                  Manage escort payout requests and payments
                 </p>
               </div>
             </div>
@@ -248,7 +248,7 @@ export default function AdminPayoutsPage() {
                     <div className="flex items-center gap-2 rounded-lg bg-slate-900/40 p-2">
                       <User className="h-4 w-4 text-fuchsia-400 shrink-0" />
                       <div className="text-sm min-w-0">
-                        <p className="text-white truncate">{payout.worker?.name || 'Unknown Worker'}</p>
+                        <p className="text-white truncate">{payout.worker?.name || 'Unknown Escort'}</p>
                         <p className="text-xs text-slate-400 truncate">ID: {payout.workerId?.slice(-6)}</p>
                       </div>
                     </div>
@@ -358,7 +358,7 @@ export default function AdminPayoutsPage() {
                   {payout.status === "requested" && (
                     <p className="mt-2 text-xs text-amber-400">
                       <AlertCircle className="mr-1 inline h-3 w-3" />
-                      Review worker details before approving
+                      Review escort details before approving
                     </p>
                   )}
                   

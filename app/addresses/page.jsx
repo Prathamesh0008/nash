@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { showPopup } from "@/lib/popup";
 import {
   MapPin,
   Home,
@@ -31,6 +32,16 @@ export default function AddressesPage() {
   const [msgType, setMsgType] = useState("");
 
   useEffect(() => {
+    if (!msg) return undefined;
+    showPopup(msg, msgType || "info");
+    const timer = setTimeout(() => {
+      setMsg("");
+      setMsgType("");
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [msg, msgType]);
+
+  useEffect(() => {
     const load = async () => {
       const res = await fetch("/api/users/me", { credentials: "include" });
       const data = await res.json();
@@ -52,22 +63,12 @@ export default function AddressesPage() {
     const data = await res.json();
     setMsgType(data.ok ? "success" : "error");
     setMsg(data.ok ? "Addresses updated successfully" : data.error || "Failed to update");
-    
-    // Clear message after 3 seconds
-    setTimeout(() => {
-      setMsg("");
-      setMsgType("");
-    }, 3000);
   };
 
   const removeAddress = (index) => {
     if (addresses.length <= 1) {
       setMsgType("error");
       setMsg("At least one address is required");
-      setTimeout(() => {
-        setMsg("");
-        setMsgType("");
-      }, 3000);
       return;
     }
     setAddresses((prev) => prev.filter((_, i) => i !== index));
@@ -105,24 +106,6 @@ export default function AddressesPage() {
             </div>
           </div>
         </div>
-
-        {/* Message Toast */}
-        {msg && (
-          <div className={`mb-4 rounded-lg p-3 text-sm sm:mb-6 ${
-            msgType === "success" 
-              ? "border border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
-              : "border border-rose-500/30 bg-rose-500/10 text-rose-400"
-          }`}>
-            <div className="flex items-center gap-2">
-              {msgType === "success" ? (
-                <CheckCircle className="h-4 w-4" />
-              ) : (
-                <AlertCircle className="h-4 w-4" />
-              )}
-              {msg}
-            </div>
-          </div>
-        )}
 
         {/* Address Cards */}
         <div className="space-y-4">

@@ -12,7 +12,7 @@ const sections = [
   {
     title: "2. 18+ Access And Verification",
     points: [
-      "All users and providers must be legally adults (18+ minimum).",
+      "All users and escorts must be legally adults (18+ minimum).",
       "Identity checks and verification controls are applied during onboarding.",
       "Suspicious age or identity mismatch can trigger account review.",
     ],

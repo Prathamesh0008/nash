@@ -39,7 +39,7 @@ const sections = [
     title: "5. Pricing And Payments",
     points: [
       "All charges are displayed in-app, including base fee, visit fee, add-ons, taxes, and policy charges.",
-      "Payment may be processed via supported online providers, wallet, or approved methods shown at checkout.",
+      "Payment may be processed via supported online escorts, wallet, or approved methods shown at checkout.",
       "Platform may block or reverse suspicious transactions as part of fraud prevention and compliance checks.",
     ],
   },
@@ -47,7 +47,7 @@ const sections = [
     title: "6. Cancellation, Reschedule, Refunds",
     points: [
       "Reschedule and cancellation outcomes follow the active policy configured on the platform.",
-      "Refund timelines depend on payment method, provider processing windows, and dispute review outcomes.",
+      "Refund timelines depend on payment method, escort processing windows, and dispute review outcomes.",
       "Repeated abuse of cancellation flows, false claims, or payment chargeback misuse can lead to restrictions.",
     ],
   },

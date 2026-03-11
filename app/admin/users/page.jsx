@@ -201,7 +201,7 @@ export default function AdminUsersPage() {
           <StatCard icon={UserX} label="Blocked" value={stats.blocked} color="rose" />
           <StatCard icon={Clock} label="Pending" value={stats.pending} color="amber" />
           <StatCard icon={Shield} label="Admins" value={stats.admins} color="purple" />
-          <StatCard icon={UserCog} label="Workers" value={stats.workers} color="cyan" />
+          <StatCard icon={UserCog} label="Escorts" value={stats.workers} color="cyan" />
         </div>
 
         {/* Filters */}
@@ -248,7 +248,7 @@ export default function AdminUsersPage() {
               >
                 <option value="">All Roles</option>
                 <option value="admin">👤 Admin</option>
-                <option value="worker">👥 Worker</option>
+                <option value="worker">👥 Escort</option>
                 <option value="user">👥 Customer</option>
               </select>
             </div>

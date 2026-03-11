@@ -25,11 +25,11 @@ const quickAccessCards = [
   },
   {
     title: "Live Tracking",
-    desc: "Track provider movement with live status, speed, and update freshness.",
+    desc: "Track escort movement with live status, speed, and update freshness.",
     href: "/orders",
   },
   {
-    title: "Chat With Provider",
+    title: "Chat With Escort",
     desc: "Connect instantly for arrival notes and session preferences.",
     href: "/chat",
   },
@@ -66,7 +66,7 @@ const bookingJourney = [
 const trustPillars = [
   {
     title: "Verified Escort Profiles",
-    desc: "Every provider profile is verified before going live for booking.",
+    desc: "Every escort profile is verified before going live for booking.",
     tone: "from-emerald-500/15 to-emerald-900/10 border-emerald-400/25",
   },
   {
@@ -94,7 +94,7 @@ const liveTrackingHighlights = [
   },
   {
     title: "Distance + ETA",
-    desc: "Know how far your provider is and expected arrival window.",
+    desc: "Know how far your escort is and expected arrival window.",
     icon: Route,
   },
   {
@@ -123,7 +123,7 @@ function mapWorkerToProvider(worker, idx) {
     verified: String(worker?.verificationStatus || "").toUpperCase() === "APPROVED",
     available: worker?.isOnline !== false,
     images,
-    bio: worker?.bio || (skills.length ? skills.slice(0, 3).join(", ") : "Verified escort provider profile."),
+    bio: worker?.bio || (skills.length ? skills.slice(0, 3).join(", ") : "Verified escort escort profile."),
     tags: categories.length ? categories : skills.slice(0, 3),
     ratePerHour: basePrice,
     profileHref: worker?.id ? `/workers/${worker.id}` : "/workers",
@@ -144,7 +144,7 @@ export default function HomePage() {
         const data = await res.json().catch(() => ({}));
         if (!res.ok || !data?.ok) {
           if (active) {
-            setProvidersError(data?.error || "Unable to load live providers.");
+            setProvidersError(data?.error || "Unable to load live escorts.");
             setLiveProviders([]);
           }
           return;
@@ -157,7 +157,7 @@ export default function HomePage() {
         }
       } catch {
         if (active) {
-          setProvidersError("Unable to load live providers.");
+          setProvidersError("Unable to load live escorts.");
           setLiveProviders([]);
         }
       } finally {
@@ -205,9 +205,9 @@ export default function HomePage() {
           </div>
 
           <h2 className="text-2xl font-semibold text-white mb-6">
-            Top Escort Providers
+            Top Escort Escorts
           </h2>
-          {loadingProviders && <p className="mb-3 text-sm text-white/60">Loading live providers...</p>}
+          {loadingProviders && <p className="mb-3 text-sm text-white/60">Loading live escorts...</p>}
           {!loadingProviders && providersError && <p className="mb-3 text-sm text-rose-300">{providersError}</p>}
           <ProviderGrid providers={providers} />
           <div className="mt-4 rounded-2xl border border-white/10 bg-gradient-to-r from-slate-950/80 via-slate-900/70 to-slate-950/80 p-4">
@@ -318,7 +318,7 @@ export default function HomePage() {
                   Ready for instant booking
                 </p>
                 <p className="mt-1 text-lg font-semibold text-white">Need a verified escort today? Start now.</p>
-                <p className="text-sm text-slate-300">Choose a provider and send your private booking request in one flow.</p>
+                <p className="text-sm text-slate-300">Choose a escort and send your private booking request in one flow.</p>
               </div>
               <div className="flex items-center gap-2">
                 <Link href="/booking/new" className="rounded-xl bg-gradient-to-r from-fuchsia-600 to-pink-600 px-4 py-2 text-sm font-semibold text-white hover:brightness-110">

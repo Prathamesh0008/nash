@@ -3,7 +3,7 @@ import ProviderCard from "./ProviderCard";
 export default function ProviderGrid({ providers = [] }) {
   if (!providers || providers.length === 0) {
     return (
-      <p className="text-white/60">No providers found.</p>
+      <p className="text-white/60">No escorts found.</p>
     );
   }
 
