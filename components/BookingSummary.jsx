@@ -1,8 +1,8 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 
 export default function BookingSummary({ provider, service, time }) {
   const profileHref = provider?.id ? `/workers/${provider.id}` : "/workers";
-  const currency = provider?.currency || "INR";
+  const currency = provider?.currency || "EUR";
 
   return (
     <aside className="h-fit rounded-3xl border border-white/10 bg-white/5 p-6">

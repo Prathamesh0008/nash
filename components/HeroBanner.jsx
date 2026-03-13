@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import Image from "next/image";
@@ -250,7 +250,7 @@ export default function HeroBanner({ providers = [] }) {
                         <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                         <span className="font-bold text-white">{p.rating.toFixed(1)}</span>
                       </div>
-                      <span className="text-lg font-bold text-pink-400">INR {p.price}/hr</span>
+                      <span className="text-lg font-bold text-pink-400">EUR {p.price}/hr</span>
                     </div>
 
                     <h3 className="text-xl font-bold text-white">{p.name}</h3>
@@ -336,7 +336,7 @@ export default function HeroBanner({ providers = [] }) {
                   </div>
                     <div className="text-right">
                       <div className="bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-4xl font-bold text-transparent">
-                        INR {featured[0]?.price}
+                        EUR {featured[0]?.price}
                       </div>
                       <div className="text-sm text-gray-400">per hour</div>
                     </div>
@@ -369,7 +369,7 @@ export default function HeroBanner({ providers = [] }) {
                         <span>| Verified Escort</span>
                       </div>
                     </div>
-                    <div className="text-lg font-bold text-pink-400">INR {featured[1]?.price}/hr</div>
+                    <div className="text-lg font-bold text-pink-400">EUR {featured[1]?.price}/hr</div>
                   </div>
 
                   <Link
@@ -398,7 +398,7 @@ export default function HeroBanner({ providers = [] }) {
                             {featured[index]?.rating?.toFixed(1)}
                           </div>
                         </div>
-                        <div className="text-sm font-bold text-pink-400">INR {featured[index]?.price}</div>
+                        <div className="text-sm font-bold text-pink-400">EUR {featured[index]?.price}</div>
                       </div>
 
                       <Link
@@ -431,7 +431,7 @@ export default function HeroBanner({ providers = [] }) {
                         {featured[index]?.rating?.toFixed(1)}
                       </div>
                     </div>
-                    <div className="text-sm font-bold text-pink-400">INR {featured[index]?.price}</div>
+                    <div className="text-sm font-bold text-pink-400">EUR {featured[index]?.price}</div>
                   </div>
 
                   <Link

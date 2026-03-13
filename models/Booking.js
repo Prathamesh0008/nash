@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+﻿import mongoose from "mongoose";
 
 const AddressSchema = new mongoose.Schema(
   {
@@ -33,7 +33,7 @@ const PriceBreakupSchema = new mongoose.Schema(
     tax: { type: Number, default: 0 },
     discount: { type: Number, default: 0 },
     total: { type: Number, required: true },
-    currency: { type: String, default: "INR" },
+    currency: { type: String, default: "EUR" },
   },
   { _id: false }
 );

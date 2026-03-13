@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 
@@ -36,7 +36,7 @@ export default function WalletPage() {
     <section className="space-y-4">
       <div className="panel">
         <h1 className="text-2xl font-semibold">Wallet</h1>
-        <p className="text-sm text-slate-400">Balance: INR {wallet.balance || 0}</p>
+        <p className="text-sm text-slate-400">Balance: EUR {wallet.balance || 0}</p>
       </div>
 
       <div className="panel flex flex-wrap items-center gap-2">
@@ -50,7 +50,7 @@ export default function WalletPage() {
         <div className="space-y-2">
           {(wallet.transactions || []).map((txn) => (
             <div key={txn._id} className="rounded border border-slate-700 p-2 text-sm">
-              {txn.direction.toUpperCase()} INR {txn.amount} - {txn.reason} - Balance {txn.balanceAfter}
+              {txn.direction.toUpperCase()} EUR {txn.amount} - {txn.reason} - Balance {txn.balanceAfter}
             </div>
           ))}
         </div>

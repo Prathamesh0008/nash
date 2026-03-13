@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+﻿import mongoose from "mongoose";
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/dbConnect";
 import Booking from "@/models/Booking";
@@ -88,7 +88,7 @@ export async function POST(req, context) {
     status: "cancelled",
     actorRole: user.role,
     actorId: user.userId,
-    note: `Cancelled with fee INR ${fee}`,
+    note: `Cancelled with fee EUR ${fee}`,
   });
   await booking.save();
 

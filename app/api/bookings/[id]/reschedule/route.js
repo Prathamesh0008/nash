@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+﻿import mongoose from "mongoose";
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/dbConnect";
 import Booking from "@/models/Booking";
@@ -105,7 +105,7 @@ export async function POST(req, context) {
       status: booking.status,
       actorRole: user.role,
       actorId: user.userId,
-      note: `Rescheduled with fee INR ${fee}`,
+      note: `Rescheduled with fee EUR ${fee}`,
     });
     await booking.save();
 
@@ -124,7 +124,7 @@ export async function POST(req, context) {
         actorId: user.userId,
         type: "status",
         title: "Booking rescheduled",
-        body: `New slot: ${new Date(booking.slotTime).toLocaleString()} | Fee: INR ${fee}`,
+        body: `New slot: ${new Date(booking.slotTime).toLocaleString()} | Fee: EUR ${fee}`,
         href: `/orders/${booking._id}`,
         meta: { bookingId: booking._id.toString(), fee },
       });

@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 
 export default function TopModels({ providers = [] }) {
   const top = [...providers].slice(0, 10);
@@ -17,7 +17,7 @@ export default function TopModels({ providers = [] }) {
             <article key={row.id} className="rounded-xl border border-white/10 bg-slate-900/40 p-4">
               <p className="text-sm font-semibold text-white">{row.name}</p>
               <p className="mt-1 text-xs text-slate-400">{row.location || "Location unavailable"}</p>
-              <p className="mt-1 text-xs text-slate-400">INR {row.ratePerHour || 0}/hr</p>
+              <p className="mt-1 text-xs text-slate-400">EUR {row.ratePerHour || 0}/hr</p>
               <Link href={`/workers/${row.id}`} className="mt-3 inline-block rounded-lg bg-fuchsia-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-fuchsia-500">
                 View profile
               </Link>

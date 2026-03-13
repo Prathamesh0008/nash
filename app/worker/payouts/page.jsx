@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 
@@ -51,7 +51,7 @@ export default function WorkerPayoutsPage() {
     <section className="space-y-4">
       <div className="panel">
         <h1 className="text-2xl font-semibold">Payout Requests</h1>
-        <p className="text-sm text-slate-400">Available payout wallet: INR {walletBalance}</p>
+        <p className="text-sm text-slate-400">Available payout wallet: EUR {walletBalance}</p>
       </div>
 
       <div className="grid-auto">
@@ -63,9 +63,9 @@ export default function WorkerPayoutsPage() {
 
       <div className="grid-auto">
         <div className="panel"><p className="text-sm text-slate-400">Completed Jobs</p><p className="text-2xl font-semibold">{earningSummary?.totalCompletedJobs || 0}</p></div>
-        <div className="panel"><p className="text-sm text-slate-400">Gross Earnings</p><p className="text-2xl font-semibold">INR {earningSummary?.grossAmount || 0}</p></div>
-        <div className="panel"><p className="text-sm text-slate-400">Platform Fee</p><p className="text-2xl font-semibold">INR {earningSummary?.platformFee || 0}</p></div>
-        <div className="panel"><p className="text-sm text-slate-400">Net Credited</p><p className="text-2xl font-semibold">INR {earningSummary?.netAmount || 0}</p></div>
+        <div className="panel"><p className="text-sm text-slate-400">Gross Earnings</p><p className="text-2xl font-semibold">EUR {earningSummary?.grossAmount || 0}</p></div>
+        <div className="panel"><p className="text-sm text-slate-400">Platform Fee</p><p className="text-2xl font-semibold">EUR {earningSummary?.platformFee || 0}</p></div>
+        <div className="panel"><p className="text-sm text-slate-400">Net Credited</p><p className="text-2xl font-semibold">EUR {earningSummary?.netAmount || 0}</p></div>
       </div>
 
       <div className="panel flex flex-wrap gap-2">
@@ -79,7 +79,7 @@ export default function WorkerPayoutsPage() {
         {loading && <p className="text-sm text-slate-400">Loading payouts...</p>}
         {payouts.map((payout) => (
           <div key={payout._id} className="rounded border border-slate-700 p-2 text-sm">
-            <p>INR {payout.amount} - {payout.status.toUpperCase()}</p>
+            <p>EUR {payout.amount} - {payout.status.toUpperCase()}</p>
             {payout.bankRef && <p className="text-slate-400">Bank Ref: {payout.bankRef}</p>}
             {payout.note && <p className="text-slate-400">Note: {payout.note}</p>}
             <p className="text-slate-400">Requested: {new Date(payout.createdAt).toLocaleString()}</p>

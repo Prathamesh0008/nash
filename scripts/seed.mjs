@@ -1,4 +1,4 @@
-import dotenv from "dotenv";
+﻿import dotenv from "dotenv";
 import bcrypt from "bcryptjs";
 import mongoose from "mongoose";
 
@@ -362,7 +362,7 @@ async function seed() {
       ],
       assignmentMode: "auto",
       assignmentReason: "Seeded",
-      priceBreakup: { base, visit, addons, tax, total, currency: "INR" },
+      priceBreakup: { base, visit, addons, tax, total, currency: "EUR" },
       paymentMethod: "online",
       paymentStatus: "paid",
       reportWindowEndsAt: status === "completed" ? new Date(Date.now() + 14 * 24 * 60 * 60 * 1000) : null,
@@ -377,7 +377,7 @@ async function seed() {
       bookingId: booking._id,
       type: "booking",
       amount: total,
-      currency: "INR",
+      currency: "EUR",
       provider: "demo",
       status: "paid",
       providerOrderId: `seed_order_${i + 1}`,

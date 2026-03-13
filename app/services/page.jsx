@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -50,7 +50,7 @@ export default function ServicesPage() {
               <h2 className="text-lg font-semibold">{service.title || `Service ${idx + 1}`}</h2>
             </div>
             <p className="text-sm text-slate-400">{service.description || "Verified escort service."}</p>
-            <p className="text-sm">Base: INR {service.basePrice} | Visit: INR {service.visitFee}</p>
+            <p className="text-sm">Base: EUR {service.basePrice} | Travel Fee: EUR {service.visitFee}</p>
             <div className="flex gap-2">
               <Link href={`/service/${service.slug}`} className="app-btn-secondary rounded-lg px-3 py-2 text-sm font-medium">
                 View Escorts

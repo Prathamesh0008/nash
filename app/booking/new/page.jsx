@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -336,7 +336,7 @@ export default function BookingNewPage() {
       setPromoStatus(data.error || "Promo is not valid");
       return;
     }
-    setPromoStatus(`Promo applied: -INR ${data.promo?.discount || 0}, payable INR ${data.promo?.payable || estimated.total}`);
+    setPromoStatus(`Promo applied: -EUR ${data.promo?.discount || 0}, payable EUR ${data.promo?.payable || estimated.total}`);
   };
 
   const createRequestKey = () => {
@@ -656,7 +656,7 @@ export default function BookingNewPage() {
 
                   <div className="flex flex-col gap-2">
                     <span className="text-2xl font-bold text-white">
-                      ₹{Number(workerPricing.basePrice || 0)}
+                      EUR {Number(workerPricing.basePrice || 0)}
                     </span>
                     <p className="text-xs text-slate-400">Base price</p>
                   </div>
@@ -1016,7 +1016,7 @@ export default function BookingNewPage() {
                         className="h-4 w-4 rounded border-slate-600 bg-slate-800 text-fuchsia-500"
                       />
                       <span className="flex-1 text-sm text-slate-300">{item.title}</span>
-                      <span className="text-sm font-medium text-fuchsia-400">+₹{item.price}</span>
+                      <span className="text-sm font-medium text-fuchsia-400">+EUR {item.price}</span>
                     </label>
                   ))}
                 </div>
@@ -1145,28 +1145,28 @@ export default function BookingNewPage() {
                 <div className="space-y-3">
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-400">Base Price</span>
-                    <span className="text-white">₹{estimated.base}</span>
+                    <span className="text-white">EUR {estimated.base}</span>
                   </div>
                   
                   <div className="flex justify-between text-sm">
-                    <span className="text-slate-400">Visit Fee</span>
-                    <span className="text-white">₹{estimated.visit}</span>
+                    <span className="text-slate-400">Travel Fee</span>
+                    <span className="text-white">EUR {estimated.visit}</span>
                   </div>
                   
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-400">Add-ons</span>
-                    <span className="text-white">+₹{estimated.addons}</span>
+                    <span className="text-white">+EUR {estimated.addons}</span>
                   </div>
                   
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-400">Tax</span>
-                    <span className="text-white">₹{estimated.tax}</span>
+                    <span className="text-white">EUR {estimated.tax}</span>
                   </div>
                   
                   <div className="border-t border-white/10 pt-3">
                     <div className="flex justify-between text-lg font-bold">
                       <span className="text-white">Total</span>
-                      <span className="text-fuchsia-400">₹{estimated.total}</span>
+                      <span className="text-fuchsia-400">EUR {estimated.total}</span>
                     </div>
                   </div>
 

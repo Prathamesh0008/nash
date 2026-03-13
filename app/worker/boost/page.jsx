@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useRef, useState } from "react";
 import { showPopup } from "@/lib/popup";
@@ -216,7 +216,7 @@ export default function WorkerBoostPage() {
                       </div>
                       
                       <div className="mb-4">
-                        <span className="text-2xl font-bold text-white">INR {plan.price}</span>
+                        <span className="text-2xl font-bold text-white">EUR {plan.price}</span>
                         <span className="text-xs text-slate-400">/{plan.durationDays} days</span>
                       </div>
 
@@ -259,7 +259,7 @@ export default function WorkerBoostPage() {
                   <div className="rounded-lg border border-sky-800 bg-sky-950/30 p-3">
                     <p className="mb-1 text-xs text-sky-400">Selected Plan</p>
                     <p className="font-medium text-white">{selectedPlan.name}</p>
-                    <p className="text-xs text-slate-400">INR {selectedPlan.price} for {selectedPlan.durationDays} days</p>
+                    <p className="text-xs text-slate-400">EUR {selectedPlan.price} for {selectedPlan.durationDays} days</p>
                   </div>
                 )}
 
@@ -343,7 +343,7 @@ export default function WorkerBoostPage() {
                   <div className="rounded-lg border border-slate-700 bg-slate-800/50 p-3">
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-slate-400">Total Amount</span>
-                      <span className="font-semibold text-white">INR {selectedPlan.price}</span>
+                      <span className="font-semibold text-white">EUR {selectedPlan.price}</span>
                     </div>
                     <div className="mt-2 flex items-center gap-1 text-xs text-slate-500">
                       <Info className="h-3 w-3" />

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -28,13 +28,13 @@ export default function WorkerWalletPage() {
         <div className="panel">
           <p className="text-sm text-slate-400">Payout Wallet Balance</p>
           <p className="text-2xl font-semibold">
-            {loading ? "Loading..." : `INR ${Number(profile?.payoutWalletBalance || 0)}`}
+            {loading ? "Loading..." : `EUR ${Number(profile?.payoutWalletBalance || 0)}`}
           </p>
         </div>
         <div className="panel">
           <p className="text-sm text-slate-400">Total Earnings</p>
           <p className="text-2xl font-semibold">
-            {loading ? "Loading..." : `INR ${Number(profile?.totalEarnings || 0)}`}
+            {loading ? "Loading..." : `EUR ${Number(profile?.totalEarnings || 0)}`}
           </p>
         </div>
       </div>

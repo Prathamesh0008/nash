@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+﻿import mongoose from "mongoose";
 
 const ServiceAreaSchema = new mongoose.Schema(
   {
@@ -101,7 +101,7 @@ const WorkerProfileSchema = new mongoose.Schema(
     pricing: {
       basePrice: { type: Number, default: 0, min: 0 },
       extraServices: { type: [WorkerExtraServiceSchema], default: [] },
-      currency: { type: String, default: "INR" },
+      currency: { type: String, default: "EUR" },
     },
     address: { type: String, trim: true, default: "" },
     docs: {

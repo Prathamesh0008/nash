@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 export default function StepReviewSubmit({
   form,
@@ -36,7 +36,7 @@ export default function StepReviewSubmit({
           <ul className="text-sm list-disc pl-5">
             {(form.services || []).map((s, i) => (
               <li key={i}>
-                {s.name} - {s.experienceYears || 0} yrs - INR {s.basePrice || 0}
+                {s.name} - {s.experienceYears || 0} yrs - EUR {s.basePrice || 0}
               </li>
             ))}
           </ul>
@@ -47,7 +47,7 @@ export default function StepReviewSubmit({
             <div className="font-semibold mt-3 mb-1">Extra Services</div>
             <ul className="text-sm list-disc pl-5">
               {(form.extraServices || []).map((x, i) => (
-                <li key={i}>{x.title} - INR {x.price || 0}</li>
+                <li key={i}>{x.title} - EUR {x.price || 0}</li>
               ))}
             </ul>
           </>

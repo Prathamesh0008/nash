@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -18,7 +18,7 @@ export default function ProviderCard({ provider }) {
   const ratingValue = Number(provider.rating || 0);
   const reviewsCount = Number(provider.reviewsCount || provider.jobs || 0);
   const tags = provider.tags?.length ? provider.tags : provider.specialties || [];
-  const currency = provider.currency || "INR";
+  const currency = provider.currency || "EUR";
 
   useEffect(() => {
     if (!images.length || isHovering) return;
@@ -122,7 +122,7 @@ export default function ProviderCard({ provider }) {
                     alt={`${provider.name} - Image ${index + 1}`}
                     fill
                     sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                    className="object-cover"
+                    className="object-contain bg-slate-950"
                     priority={index === 0}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent" />

@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+﻿import mongoose from "mongoose";
 
 const PaymentSchema = new mongoose.Schema(
   {
@@ -11,7 +11,7 @@ const PaymentSchema = new mongoose.Schema(
       required: true,
     },
     amount: { type: Number, required: true, min: 0 },
-    currency: { type: String, default: "INR" },
+    currency: { type: String, default: "EUR" },
     provider: { type: String, default: "demo" },
     status: { type: String, enum: ["created", "paid", "failed", "refunded"], default: "created", index: true },
     providerOrderId: { type: String, default: "" },

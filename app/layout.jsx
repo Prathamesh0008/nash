@@ -1,9 +1,8 @@
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
-import MainNav from "@/components/MainNav";
-import Footer from "@/components/Footer";
 import LiveLocationTracker from "@/components/LiveLocationTracker";
 import PopupHost from "@/components/PopupHost";
+import AppFrame from "@/components/AppFrame";
 
 export const metadata = {
   title: "Nash Elite Escorts",
@@ -17,11 +16,7 @@ export default function RootLayout({ children }) {
         <AuthProvider>
           <LiveLocationTracker />
           <PopupHost />
-          <div className="flex min-h-screen flex-col">
-            <MainNav />
-            <main className="page w-full flex-1">{children}</main>
-            <Footer />
-          </div>
+          <AppFrame>{children}</AppFrame>
         </AuthProvider>
       </body>
     </html>

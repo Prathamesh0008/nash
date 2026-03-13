@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { uploadToCloudinary } from "@/lib/uploadToCloudinary";
@@ -64,7 +64,7 @@ function parseExtraServiceRows(rows = []) {
 
     const price = Number(priceRaw);
     if (!Number.isFinite(price) || price < 0) {
-      return { extraServices: [], error: `Enter valid extra service Price (INR)` };
+      return { extraServices: [], error: `Enter valid extra service Price (EUR)` };
     }
 
     extraServices.push({ title, price });
@@ -625,7 +625,7 @@ export default function WorkerOnboardingPage() {
             <div>
               <label className="mb-2 flex items-center gap-2 text-sm font-medium text-slate-300">
                 <DollarSign className="h-4 w-4 text-fuchsia-400" />
-                Base Price (INR)
+                Base Price (EUR)
               </label>
               <input
                 className="w-full rounded-lg border border-slate-700 bg-slate-900/50 p-2 text-sm text-slate-300 focus:border-fuchsia-500 focus:ring-2 focus:ring-fuchsia-500/30 focus:outline-none"
@@ -656,7 +656,7 @@ export default function WorkerOnboardingPage() {
               <div className="space-y-2">
                 <div className="hidden grid-cols-[1fr_120px_80px] gap-2 px-2 text-xs font-medium text-slate-400 md:grid">
                   <p>Service</p>
-                  <p>Price (INR)</p>
+                  <p>Price (EUR)</p>
                   <p></p>
                 </div>
                 
@@ -672,7 +672,7 @@ export default function WorkerOnboardingPage() {
                       />
                     </div>
                     <div>
-                      <p className="mb-1 text-xs text-slate-400 md:hidden">Price (INR)</p>
+                      <p className="mb-1 text-xs text-slate-400 md:hidden">Price (EUR)</p>
                       <input
                         className="w-full rounded-lg border border-slate-700 bg-slate-900/50 p-2 text-sm text-slate-300 focus:border-fuchsia-500 focus:ring-2 focus:ring-fuchsia-500/30 focus:outline-none"
                         placeholder="0"
@@ -933,7 +933,7 @@ export default function WorkerOnboardingPage() {
                       onClick={payFee}
                       className="flex items-center justify-center gap-2 rounded-lg bg-amber-600 px-6 py-2 text-sm font-medium text-white transition hover:bg-amber-500"
                     >
-                      Pay Fee (INR 299)
+                      Pay Fee (EUR 299)
                     </button>
                   </>
                 ) : (

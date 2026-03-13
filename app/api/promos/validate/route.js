@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+﻿import mongoose from "mongoose";
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/dbConnect";
 import PromoCode from "@/models/PromoCode";
@@ -41,7 +41,7 @@ export async function POST(req) {
   if (!promo) return NextResponse.json({ ok: false, error: "Invalid or expired promo" }, { status: 404 });
 
   if (Number(promo.minOrderAmount || 0) > amount) {
-    return NextResponse.json({ ok: false, error: `Minimum order INR ${promo.minOrderAmount}` }, { status: 400 });
+    return NextResponse.json({ ok: false, error: `Minimum order EUR ${promo.minOrderAmount}` }, { status: 400 });
   }
   if (Number(promo.maxUses || 0) > 0 && Number(promo.usedCount || 0) >= Number(promo.maxUses || 0)) {
     return NextResponse.json({ ok: false, error: "Promo usage limit reached" }, { status: 400 });

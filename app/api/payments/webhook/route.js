@@ -1,4 +1,4 @@
-import crypto from "crypto";
+﻿import crypto from "crypto";
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/dbConnect";
 import Payment from "@/models/Payment";
@@ -48,7 +48,7 @@ async function markPaymentPaid({ providerOrderId = "", providerPaymentId = "" })
     actorId: null,
     type: "status",
     title: "Payment received",
-    body: `Your payment of INR ${payment.amount} is confirmed.`,
+    body: `Your payment of EUR ${payment.amount} is confirmed.`,
     href: payment.bookingId ? `/orders/${payment.bookingId}` : "/wallet",
     meta: { paymentId: payment._id.toString(), status: "paid" },
   });

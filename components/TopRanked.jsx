@@ -1,4 +1,4 @@
-import Image from "next/image";
+﻿import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Crown, Star } from "lucide-react";
 
@@ -40,7 +40,7 @@ export default function TopRanked({ providers = [] }) {
                 <Star className="h-3.5 w-3.5 text-amber-300" />
                 {Number(row.rating || 0).toFixed(1)}
               </p>
-              <p className="mt-1 text-xs text-slate-400">INR {row.ratePerHour || 0}/hr</p>
+              <p className="mt-1 text-xs text-slate-400">EUR {row.ratePerHour || 0}/hr</p>
             </Link>
           ))}
         </div>

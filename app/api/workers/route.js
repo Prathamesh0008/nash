@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import dbConnect from "@/lib/dbConnect";
 import WorkerProfile from "@/models/WorkerProfile";
 import User from "@/models/User";
@@ -116,7 +116,7 @@ export async function GET(req) {
       categories: worker.categories,
       serviceAreas: worker.serviceAreas,
       basePrice: Number(worker?.pricing?.basePrice || 0),
-      currency: worker?.pricing?.currency || "INR",
+      currency: worker?.pricing?.currency || "EUR",
       ratingAvg: worker.ratingAvg,
       jobsCompleted: worker.jobsCompleted,
       isOnline: worker.isOnline,

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import {
@@ -150,7 +150,7 @@ export default function AdminBoostPlansPage() {
               {/* Price & Duration Row */}
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-400">Price (INR)</label>
+                  <label className="mb-1 block text-xs font-medium text-slate-400">Price (EUR)</label>
                   <div className="relative">
                     <DollarSign className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
                     <input
@@ -308,7 +308,7 @@ export default function AdminBoostPlansPage() {
                       <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
                         <div>
                           <p className="text-slate-500">Price</p>
-                          <p className="font-medium text-white">₹{plan.price}</p>
+                          <p className="font-medium text-white">EUR {plan.price}</p>
                         </div>
                         <div>
                           <p className="text-slate-500">Duration</p>

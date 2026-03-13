@@ -11,6 +11,7 @@
     "lint:all": "eslint . --ext .js,.jsx --ignore-pattern .history/**",
     "check": "npm run lint && npm run build",
     "migrate:gender": "node scripts/migrate-gender.mjs",
+    "migrate:domain-terms": "node scripts/migrate-domain-terms.mjs",
     "smoke:chat-notifications": "node scripts/smoke-chat-notifications.mjs",
     "smoke:socket-security": "node scripts/smoke-socket-security.mjs",
     "smoke:e2e-critical": "node scripts/e2e-critical.mjs",

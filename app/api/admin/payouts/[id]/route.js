@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+﻿import mongoose from "mongoose";
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/dbConnect";
 import Payout from "@/models/Payout";
@@ -67,7 +67,7 @@ export async function PATCH(req, context) {
     title: `Payout ${status}`,
     body:
       status === "rejected" && payout.walletRefunded
-        ? `Payout rejected. INR ${payout.amount} returned to payout wallet.`
+        ? `Payout rejected. EUR ${payout.amount} returned to payout wallet.`
         : `Payout request updated to ${status}.`,
     href: "/worker/payouts",
     meta: { payoutId: payout._id.toString(), status },

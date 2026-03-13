@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { Star, MapPin } from "lucide-react";
 
 export default function ModelsGrid({ workers = [] }) {
@@ -16,7 +16,7 @@ export default function ModelsGrid({ workers = [] }) {
         <article key={worker.id} className="rounded-xl border border-white/10 bg-slate-900/40 p-4">
           <div className="flex items-center justify-between gap-2">
             <h3 className="truncate text-base font-semibold text-white">{worker.name}</h3>
-            <span className="text-xs text-slate-400">INR {worker.ratePerHour || 0}/hr</span>
+            <span className="text-xs text-slate-400">EUR {worker.ratePerHour || 0}/hr</span>
           </div>
           <p className="mt-1 flex items-center gap-1 text-xs text-slate-400">
             <MapPin className="h-3.5 w-3.5" />

@@ -48,7 +48,7 @@ export default function LoginPage() {
     const me = await refreshMe();
     if (me?.role === "admin") router.push("/admin/dashboard");
     else if (me?.role === "worker") router.push("/worker/dashboard");
-    else router.push("/services");
+    else router.push("/");
   };
 
   return (

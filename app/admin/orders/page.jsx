@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -257,7 +257,7 @@ export default function AdminOrdersPage() {
           <StatCard icon={ShoppingBag} label="Total Orders" value={summary?.totalOrders || 0} color="blue" />
           <StatCard icon={UserCheck} label="Assigned" value={summary?.byStatus?.assigned || 0} color="purple" />
           <StatCard icon={CheckCircle} label="Completed" value={summary?.byStatus?.completed || 0} color="emerald" />
-          <StatCard icon={DollarSign} label="Gross (INR)" value={summary?.grossAmount || 0} color="amber" />
+          <StatCard icon={DollarSign} label="Gross (EUR)" value={summary?.grossAmount || 0} color="amber" />
         </div>
 
         {/* Filters */}
@@ -359,7 +359,7 @@ export default function AdminOrdersPage() {
                       </span>
                     </div>
                     <span className="text-sm font-semibold text-white">
-                      ₹{order.priceBreakup?.total || 0}
+                      EUR {order.priceBreakup?.total || 0}
                     </span>
                   </div>
 

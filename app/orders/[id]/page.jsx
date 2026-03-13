@@ -721,7 +721,7 @@ export default function OrderDetailPage() {
                   <span className="text-white">₹{booking.priceBreakup?.base || 0}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-slate-400">Visit</span>
+                  <span className="text-slate-400">Travel Fee</span>
                   <span className="text-white">₹{booking.priceBreakup?.visit || 0}</span>
                 </div>
                 <div className="flex justify-between text-sm">

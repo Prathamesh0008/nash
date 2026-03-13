@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
@@ -46,7 +46,7 @@ export default function SearchClient() {
           rating: Number(worker.ratingAvg || 0),
           reviewsCount: Number(worker.jobsCompleted || 0),
           ratePerHour: Number(worker.basePrice || 0),
-          currency: worker.currency || "INR",
+          currency: worker.currency || "EUR",
           images: [worker.profilePhoto, ...(worker.galleryPhotos || [])].filter(Boolean),
           bio:
             worker.bio ||

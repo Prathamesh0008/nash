@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import dbConnect from "@/lib/dbConnect";
 import Payout from "@/models/Payout";
 import WorkerProfile from "@/models/WorkerProfile";
@@ -99,7 +99,7 @@ export async function POST(req) {
     actorId: user.userId,
     type: "status",
     title: "New payout request",
-    body: `Worker requested INR ${amount}`,
+    body: `Worker requested EUR ${amount}`,
     href: "/admin/payouts",
     meta: { payoutId: payout._id.toString(), workerId: user.userId, amount },
   });

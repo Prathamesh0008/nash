@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -86,7 +86,7 @@ export default function MembershipPage() {
           <p className="text-sm">{active.planSnapshot?.name} ({active.planSnapshot?.code})</p>
           <p className="text-xs text-slate-400">Valid: {formatDate(active.startedAt)} - {formatDate(active.endsAt)}</p>
           <p className="text-xs text-slate-400">
-            Savings used: INR {Number(active.discountUsed || 0)} | Remaining cap: {typeof activeRemaining === "number" ? `INR ${activeRemaining}` : activeRemaining}
+            Savings used: EUR {Number(active.discountUsed || 0)} | Remaining cap: {typeof activeRemaining === "number" ? `EUR ${activeRemaining}` : activeRemaining}
           </p>
           {String(active.planSnapshot?.code || "").toUpperCase() === "FAMILY" && (
             <Link href="/family-pass" className="inline-block rounded bg-amber-700 px-3 py-2 text-sm text-white hover:bg-amber-600">
@@ -141,11 +141,11 @@ export default function MembershipPage() {
               )}
               <h3 className="text-lg font-semibold">{plan.name}</h3>
               <p className="text-sm text-slate-400">{plan.description || "-"}</p>
-              <p className="text-sm">INR {plan.price} / {plan.durationDays} days</p>
+              <p className="text-sm">EUR {plan.price} / {plan.durationDays} days</p>
               <p className="text-xs text-slate-400">
-                Discount: {plan.discountType === "percent" ? `${plan.discountValue}%` : `INR ${plan.discountValue}`} | Max/booking: INR {plan.maxDiscountPerBooking || 0}
+                Discount: {plan.discountType === "percent" ? `${plan.discountValue}%` : `EUR ${plan.discountValue}`} | Max/booking: EUR {plan.maxDiscountPerBooking || 0}
               </p>
-              <p className="text-xs text-slate-400">Total cap: INR {plan.maxTotalDiscount || 0}</p>
+              <p className="text-xs text-slate-400">Total cap: EUR {plan.maxTotalDiscount || 0}</p>
               {(plan.perks || []).length > 0 && (
                 <ul className="list-disc pl-5 text-xs text-slate-300">
                   {(plan.perks || []).map((perk) => (

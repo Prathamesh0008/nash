@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import dbConnect from "@/lib/dbConnect";
 import WorkerProfile from "@/models/WorkerProfile";
 import { requireAuth, applyRefreshCookies } from "@/lib/apiAuth";
@@ -18,7 +18,7 @@ function normalizeWorkerPricing(pricing = {}) {
   return {
     basePrice,
     extraServices,
-    currency: "INR",
+    currency: "EUR",
   };
 }
 

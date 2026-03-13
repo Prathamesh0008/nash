@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -204,8 +204,8 @@ export default function AdminDashboardPage() {
               <StatCard icon={Users} label="Users" value={safe.usersCount} tone="blue" />
               <StatCard icon={Briefcase} label="Escorts" value={safe.workersCount} tone="purple" />
               <StatCard icon={TrendingUp} label="Bookings (7d)" value={safe.bookingsLast7Days} tone="emerald" />
-              <StatCard icon={DollarSign} label="Revenue" value={`INR ${safe.revenue}`} tone="amber" />
-              <StatCard icon={CreditCard} label="Avg Ticket" value={`INR ${safe.avgTicketSize}`} tone="blue" />
+              <StatCard icon={DollarSign} label="Revenue" value={`EUR ${safe.revenue}`} tone="amber" />
+              <StatCard icon={CreditCard} label="Avg Ticket" value={`EUR ${safe.avgTicketSize}`} tone="blue" />
               <StatCard icon={CheckCircle} label="Completion Rate" value={`${safe.completionRate}%`} tone="emerald" />
               <StatCard icon={XCircle} label="Cancel Rate" value={`${safe.cancelRate}%`} tone="rose" />
               <StatCard icon={Gift} label="Promos / Referrals" value={`${safe.promosCount} / ${safe.referralsCount}`} tone="purple" />

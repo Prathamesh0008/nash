@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import dbConnect from "@/lib/dbConnect";
 import Payment from "@/models/Payment";
 import { requireAuth, applyRefreshCookies } from "@/lib/apiAuth";
@@ -29,7 +29,7 @@ export async function POST(req) {
 
     const order = await createPaymentOrder({
       amount: data.amount,
-      currency: "INR",
+      currency: "EUR",
       receipt: `${data.type}_${Date.now()}`,
       notes: {
         bookingId: data.bookingId || "",

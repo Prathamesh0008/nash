@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+﻿import mongoose from "mongoose";
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/dbConnect";
 import WorkerProfile from "@/models/WorkerProfile";
@@ -129,14 +129,14 @@ export async function GET(req, context) {
         max: Math.round(Number(pricingAgg[0].max || 0)),
         avg: Math.round(Number(pricingAgg[0].avg || 0)),
         sampleBookings: Number(pricingAgg[0].count || 0),
-        currency: "INR",
+        currency: "EUR",
       }
     : {
         min: 0,
         max: 0,
         avg: 0,
         sampleBookings: 0,
-        currency: "INR",
+        currency: "EUR",
       };
 
   const res = NextResponse.json({
@@ -180,7 +180,7 @@ export async function GET(req, context) {
       pricing: {
         basePrice: Number(worker?.pricing?.basePrice || 0),
         extraServices: Array.isArray(worker?.pricing?.extraServices) ? worker.pricing.extraServices : [],
-        currency: worker?.pricing?.currency || "INR",
+        currency: worker?.pricing?.currency || "EUR",
       },
       historicalPricing,
       servicePricing: serviceOptions.map((service) => {

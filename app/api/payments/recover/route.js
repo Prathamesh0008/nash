@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+﻿import mongoose from "mongoose";
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/dbConnect";
 import Payment from "@/models/Payment";
@@ -76,7 +76,7 @@ export async function POST(req) {
       actorId: user.userId,
       type: "status",
       title: "Payment recovered",
-      body: `Your payment of INR ${payment.amount} has been successfully recovered.`,
+      body: `Your payment of EUR ${payment.amount} has been successfully recovered.`,
       href: payment.bookingId ? `/orders/${payment.bookingId}` : "/wallet",
       meta: { paymentId: payment._id.toString(), status: "paid", recovered: true },
     });

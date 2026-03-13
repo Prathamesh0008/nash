@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+﻿import mongoose from "mongoose";
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/dbConnect";
 import { requireAuth, applyRefreshCookies } from "@/lib/apiAuth";
@@ -83,7 +83,7 @@ function calculateWorkerPriceBreakup({ workerProfile, selectedExtras = [], taxPe
     addons,
     tax,
     total,
-    currency: "INR",
+    currency: "EUR",
   };
 }
 
@@ -448,7 +448,7 @@ export async function POST(req) {
         return NextResponse.json({ ok: false, error: "Invalid or expired promo code" }, { status: 400 });
       }
       if (Number(promo.minOrderAmount || 0) > Number(priceBreakup.total || 0)) {
-        return NextResponse.json({ ok: false, error: `Promo requires minimum order of INR ${promo.minOrderAmount}` }, { status: 400 });
+        return NextResponse.json({ ok: false, error: `Promo requires minimum order of EUR ${promo.minOrderAmount}` }, { status: 400 });
       }
       if (Number(promo.maxUses || 0) > 0 && Number(promo.usedCount || 0) >= Number(promo.maxUses || 0)) {
         return NextResponse.json({ ok: false, error: "Promo usage limit reached" }, { status: 400 });
@@ -1002,7 +1002,7 @@ export async function POST(req) {
         actorId: user.userId,
         type: "status",
         title: "Referral reward credited",
-        body: `INR ${Number(DEFAULT_REFERRAL_REWARD || 0)} added to your wallet.`,
+        body: `EUR ${Number(DEFAULT_REFERRAL_REWARD || 0)} added to your wallet.`,
         href: "/wallet",
         meta: { bookingId: booking._id.toString(), reward: Number(DEFAULT_REFERRAL_REWARD || 0) },
       });
